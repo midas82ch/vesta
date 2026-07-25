@@ -42,8 +42,43 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = Field(
         default=None, validation_alias="ANTHROPIC_API_KEY"
     )
-    openai_model: str = Field(default="gpt-4o-mini", validation_alias="VESTA_OPENAI_MODEL")
+    anthropic_api_key_file: Path | None = Field(
+        default=None, validation_alias="ANTHROPIC_API_KEY_FILE"
+    )
+    openai_model: str = Field(
+        default="gpt-5.4-mini-2026-03-17",
+        validation_alias="VESTA_OPENAI_MODEL",
+    )
     openai_api_key: SecretStr | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    openai_api_key_file: Path | None = Field(
+        default=None, validation_alias="OPENAI_API_KEY_FILE"
+    )
+
+    @staticmethod
+    def _get_optional_secret(
+        *,
+        inline_secret: SecretStr | None,
+        secret_file: Path | None,
+    ) -> str | None:
+        if secret_file is not None:
+            try:
+                value = secret_file.read_text(encoding="utf-8").strip()
+            except FileNotFoundError:
+                return None
+            return value or None
+        return inline_secret.get_secret_value() if inline_secret is not None else None
+
+    def get_anthropic_api_key(self) -> str | None:
+        return self._get_optional_secret(
+            inline_secret=self.anthropic_api_key,
+            secret_file=self.anthropic_api_key_file,
+        )
+
+    def get_openai_api_key(self) -> str | None:
+        return self._get_optional_secret(
+            inline_secret=self.openai_api_key,
+            secret_file=self.openai_api_key_file,
+        )
 
     def get_database_url(self) -> str | None:
         if self.database_url_file is not None:

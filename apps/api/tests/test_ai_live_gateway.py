@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from vesta_api.ai.live_gateway import (  # noqa: E402
     _EXPLANATION_SCHEMA,
     _INTERPRETATION_SCHEMA,
+    _INTERPRETATION_SYSTEM,
     _QUESTION_SCHEMA,
     _bundle_payload,
     _describe_catalog,
@@ -67,6 +68,13 @@ class SchemaShapeTest(unittest.TestCase):
             self.assertEqual("object", schema["type"])
             self.assertFalse(schema["additionalProperties"])
             self.assertEqual(set(schema["properties"]), set(schema["required"]))
+
+
+class InterpretationPromptTest(unittest.TestCase):
+    def test_separates_need_from_attribute_confirmations(self) -> None:
+        self.assertIn("need_key gehoert nie in requires_confirmation", _INTERPRETATION_SYSTEM)
+        self.assertIn("exakt die Schluessel aus proposals", _INTERPRETATION_SYSTEM)
+        self.assertIn("ausdruecklich genannt", _INTERPRETATION_SYSTEM)
 
 
 if __name__ == "__main__":

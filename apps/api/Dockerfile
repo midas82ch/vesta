@@ -8,7 +8,7 @@ WORKDIR /app
 
 COPY apps/api/pyproject.toml /app/apps/api/pyproject.toml
 COPY apps/api/src /app/apps/api/src
-RUN pip install --no-cache-dir /app/apps/api
+RUN pip install --no-cache-dir '/app/apps/api[ai]'
 
 COPY apps/api/alembic.ini /app/apps/api/alembic.ini
 COPY apps/api/migrations /app/apps/api/migrations

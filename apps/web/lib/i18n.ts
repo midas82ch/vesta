@@ -151,9 +151,9 @@ const de = {
   "privacy.offers.text":
     "Das Angebotsregister enthält geprüfte, öffentliche Informationen zu Hilfsangeboten in Bern – keine personenbezogenen Daten von Nutzenden.",
   "privacy.ai.eyebrow": "AI",
-  "privacy.ai.title": "Sprachmodell aktuell deaktiviert",
+  "privacy.ai.title": "AI-Sprachmodell im Testbetrieb",
   "privacy.ai.text":
-    "Die AI-gestützte Spracherklärung ist in dieser Version deaktiviert. Sie wird erst aktiviert, wenn Anbieter, Zweck und Datenfluss gesondert geprüft und offengelegt sind.",
+    "Freitexte, freigegebene Fragen und begrenzte Angebotsfakten werden zur Interpretation und verständlichen Formulierung an OpenAI übermittelt. Die AI entscheidet weder über den Zugang noch über Plätze. Bitte keine Namen, Adressen oder Kontaktdaten eingeben.",
   "privacy.hosting.eyebrow": "Hosting",
   "privacy.hosting.title": "Schweizer Infrastruktur vorgesehen",
   "privacy.hosting.text":
@@ -185,6 +185,8 @@ const de = {
   "dialogue.freeText.label": "Beschreibe kurz, was du brauchst",
   "dialogue.freeText.placeholder":
     "z. B. Ich brauche heute einen Schlafplatz mit meinem Hund",
+  "dialogue.freeText.privacy":
+    "Keine Namen, Adressen oder Kontaktdaten eingeben. Der Text wird zur Interpretation an OpenAI übermittelt.",
   "dialogue.freeText.submit": "Vorschlag prüfen",
   "dialogue.freeText.loading": "Wird geprüft …",
   "dialogue.interpretation.unavailable":
@@ -355,9 +357,9 @@ const fr: Record<MessageKey, string> = {
   "privacy.offers.text":
     "Le registre des offres contient des informations publiques et vérifiées sur les offres d’aide à Berne – aucune donnée personnelle des utilisateurs et utilisatrices.",
   "privacy.ai.eyebrow": "IA",
-  "privacy.ai.title": "Modèle de langage actuellement désactivé",
+  "privacy.ai.title": "Modèle d’IA en phase de test",
   "privacy.ai.text":
-    "L’explication assistée par IA est désactivée dans cette version. Elle ne sera activée qu’une fois le fournisseur, la finalité et le flux de données examinés séparément et rendus publics.",
+    "Les textes libres, les questions validées et des informations limitées sur les offres sont transmis à OpenAI pour interprétation et reformulation. L’IA ne décide ni de l’accès ni de l’attribution de places. Ne saisis aucun nom, adresse ou coordonnée.",
   "privacy.hosting.eyebrow": "Hébergement",
   "privacy.hosting.title": "Infrastructure suisse prévue",
   "privacy.hosting.text":
@@ -390,6 +392,8 @@ const fr: Record<MessageKey, string> = {
   "dialogue.freeText.label": "Décris brièvement ce dont tu as besoin",
   "dialogue.freeText.placeholder":
     "p. ex. J'ai besoin d'une place pour dormir ce soir avec mon chien",
+  "dialogue.freeText.privacy":
+    "Ne saisis aucun nom, adresse ou coordonnée. Le texte est transmis à OpenAI pour interprétation.",
   "dialogue.freeText.submit": "Vérifier la proposition",
   "dialogue.freeText.loading": "Vérification en cours …",
   "dialogue.interpretation.unavailable":
@@ -558,9 +562,9 @@ const en: Record<MessageKey, string> = {
   "privacy.offers.text":
     "The service register contains verified, public information about support services in Bern — no personal data of users.",
   "privacy.ai.eyebrow": "AI",
-  "privacy.ai.title": "Language model currently disabled",
+  "privacy.ai.title": "AI language model in test operation",
   "privacy.ai.text":
-    "AI-assisted explanation is disabled in this version. It will only be enabled once the provider, purpose and data flow have been separately reviewed and disclosed.",
+    "Free text, approved questions and limited service facts are sent to OpenAI for interpretation and plain-language wording. AI does not decide access or allocate places. Do not enter names, addresses or contact details.",
   "privacy.hosting.eyebrow": "Hosting",
   "privacy.hosting.title": "Swiss infrastructure planned",
   "privacy.hosting.text":
@@ -592,6 +596,8 @@ const en: Record<MessageKey, string> = {
   "dialogue.eyebrow": "Prototype: AI dialogue",
   "dialogue.freeText.label": "Briefly describe what you need",
   "dialogue.freeText.placeholder": "e.g. I need a place to sleep tonight with my dog",
+  "dialogue.freeText.privacy":
+    "Do not enter names, addresses or contact details. The text is sent to OpenAI for interpretation.",
   "dialogue.freeText.submit": "Check suggestion",
   "dialogue.freeText.loading": "Checking …",
   "dialogue.interpretation.unavailable":
@@ -759,9 +765,9 @@ const ar: Record<MessageKey, string> = {
   "privacy.offers.text":
     "يحتوي سجل الخدمات على معلومات عامة تم التحقق منها حول خدمات المساعدة في برن - ولا يحتوي على بيانات شخصية للمستخدمين.",
   "privacy.ai.eyebrow": "الذكاء الاصطناعي",
-  "privacy.ai.title": "نموذج اللغة معطّل حالياً",
+  "privacy.ai.title": "نموذج الذكاء الاصطناعي في مرحلة الاختبار",
   "privacy.ai.text":
-    "الشرح المدعوم بالذكاء الاصطناعي معطّل في هذا الإصدار. لن يُفعَّل إلا بعد مراجعة الجهة المزوّدة والغرض وتدفق البيانات بشكل منفصل والإفصاح عنها.",
+    "تُرسل النصوص الحرة والأسئلة المعتمدة ومعلومات محدودة عن الخدمات إلى OpenAI للتفسير والصياغة الواضحة. لا يقرر الذكاء الاصطناعي الوصول إلى الخدمات ولا يخصص أماكن. لا تُدخل أسماء أو عناوين أو بيانات اتصال.",
   "privacy.hosting.eyebrow": "الاستضافة",
   "privacy.hosting.title": "يُخطَّط لبنية تحتية سويسرية",
   "privacy.hosting.text":
@@ -792,6 +798,8 @@ const ar: Record<MessageKey, string> = {
   "dialogue.eyebrow": "نموذج أولي: حوار الذكاء الاصطناعي",
   "dialogue.freeText.label": "صف باختصار ما تحتاجه",
   "dialogue.freeText.placeholder": "مثال: أحتاج مكانًا للنوم الليلة مع كلبي",
+  "dialogue.freeText.privacy":
+    "لا تُدخل أسماء أو عناوين أو بيانات اتصال. يُرسل النص إلى OpenAI للتفسير.",
   "dialogue.freeText.submit": "التحقق من الاقتراح",
   "dialogue.freeText.loading": "جارٍ التحقق…",
   "dialogue.interpretation.unavailable":

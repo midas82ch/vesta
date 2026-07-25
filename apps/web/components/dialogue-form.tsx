@@ -52,7 +52,7 @@ type RenderedQuestion = {
 
 type DialogueTurn = {
   session_id: string;
-  ai_mode: "ai" | "template";
+  ai_mode: "live" | "template";
   question: RenderedQuestion | null;
   candidates: ExplainedCandidate[];
   human_handoff_required: boolean;
@@ -164,13 +164,18 @@ export function DialogueForm() {
             <label className="select-label" htmlFor="dialogue-free-text">
               {t("dialogue.freeText.label")}
               <textarea
+                aria-describedby="dialogue-free-text-privacy"
                 id="dialogue-free-text"
+                maxLength={2000}
                 placeholder={t("dialogue.freeText.placeholder")}
                 value={freeText}
                 onChange={(event) => setFreeText(event.target.value)}
                 rows={3}
               />
             </label>
+            <p className="field-hint" id="dialogue-free-text-privacy">
+              {t("dialogue.freeText.privacy")}
+            </p>
             <button className="primary-button" disabled={busy} type="submit">
               {phase === "interpreting" ? t("dialogue.freeText.loading") : t("dialogue.freeText.submit")}
             </button>
@@ -238,7 +243,9 @@ export function DialogueForm() {
           <h3>{turn.question.text}</h3>
           {turn.question.help_text && <p>{turn.question.help_text}</p>}
           <p className="field-hint">
-            {turn.ai_mode === "ai" ? t("dialogue.aiBadge") : t("dialogue.templateBadge")}
+            {turn.ai_mode === "live"
+              ? t("dialogue.aiBadge")
+              : t("dialogue.templateBadge")}
           </p>
 
           <div className="need-options">

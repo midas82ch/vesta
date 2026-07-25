@@ -50,7 +50,7 @@ def create_ai_gateway() -> AiGateway:
     provider = settings.ai_provider.lower()
 
     if provider == "openai":
-        api_key = settings.openai_api_key
+        api_key = settings.get_openai_api_key()
         if api_key is None:
             logger.warning(
                 "VESTA_AI_ENABLED is set but OPENAI_API_KEY is missing; using template mode"
@@ -59,13 +59,13 @@ def create_ai_gateway() -> AiGateway:
         try:
             from vesta_api.ai.openai_gateway import OpenAiGateway
 
-            live = OpenAiGateway(api_key=api_key.get_secret_value(), model=settings.openai_model)
+            live = OpenAiGateway(api_key=api_key, model=settings.openai_model)
             return AiGateway(enabled=True, live=live)
         except ModuleNotFoundError:
             logger.warning("VESTA_AI_ENABLED is set but the 'openai' package is not installed")
             return AiGateway(enabled=False)
 
-    api_key = settings.anthropic_api_key
+    api_key = settings.get_anthropic_api_key()
     if api_key is None:
         logger.warning(
             "VESTA_AI_ENABLED is set but ANTHROPIC_API_KEY is missing; using template mode"
@@ -75,7 +75,7 @@ def create_ai_gateway() -> AiGateway:
     try:
         from vesta_api.ai.live_gateway import AnthropicGateway
 
-        live = AnthropicGateway(api_key=api_key.get_secret_value(), model=settings.ai_model)
+        live = AnthropicGateway(api_key=api_key, model=settings.ai_model)
         return AiGateway(enabled=True, live=live)
     except ModuleNotFoundError:
         logger.warning("VESTA_AI_ENABLED is set but the 'anthropic' package is not installed")

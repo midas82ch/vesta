@@ -65,9 +65,14 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL_FILE: /run/secrets/database-url
+      OPENAI_API_KEY_FILE: /run/secrets/openai-api-key
+      VESTA_AI_ENABLED: ${VESTA_AI_ENABLED:-false}
+      VESTA_AI_PROVIDER: ${VESTA_AI_PROVIDER:-openai}
+      VESTA_OPENAI_MODEL: ${VESTA_OPENAI_MODEL:-gpt-5.4-mini-2026-03-17}
       VESTA_ENV: production
     secrets:
       - database-url
+      - openai-api-key
     expose:
       - "8000"
     networks:
@@ -150,3 +155,5 @@ secrets:
     file: ${DATABASE_URL_FILE:-./secrets/database-url}
   database-ingest-url:
     file: ${DATABASE_INGEST_URL_FILE:-./secrets/database-ingest-url}
+  openai-api-key:
+    file: ${OPENAI_API_KEY_FILE:-./secrets/openai-api-key}

@@ -89,13 +89,14 @@ _EXPLANATION_SCHEMA = {
 }
 
 _INTERPRETATION_SYSTEM = (
-    "Du unterstuetzt den Vesta-Sozial-Lotsen fuer Bern. Du uebersetzt Freitext "
-    "einer Person in einen Vorschlag aus vorgegebenen Bedarfs- und Merkmalsschluesseln. "
-    "Du entscheidest nichts und bestaetigst nichts - jeder Vorschlag muss in "
-    "requires_confirmation stehen. Verwende ausschliesslich die im Katalog "
-    "aufgefuehrten Schluessel. Erfinde keine neuen Merkmale und frage nicht nach "
-    "Informationen, die nicht im Katalog stehen. Wenn der Text mehrdeutig ist, "
-    "trage das in ambiguities ein statt zu raten."
+    "Du ordnest einen Freitext ausschliesslich den vorgegebenen Bedarfs- und "
+    "Merkmalsschluesseln zu. need_key darf nur ein Bedarfschluessel oder null "
+    "sein. requires_confirmation enthaelt ausschliesslich und exakt die "
+    "Schluessel aus proposals; need_key gehoert nie in requires_confirmation. "
+    "Erzeuge proposals nur fuer Merkmale, deren Wert im Freitext ausdruecklich "
+    "genannt ist; nicht erwaehnte Merkmale bleiben weg. Kein Raten. Jeder "
+    "proposal-Schluessel muss in requires_confirmation stehen. Verwende keine "
+    "unbekannten Schluessel. Bei Mehrdeutigkeit ambiguities statt raten."
 )
 
 _QUESTION_SYSTEM = (

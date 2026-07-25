@@ -54,6 +54,31 @@ class DatabaseConfigurationTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "sslmode"):
             settings.get_database_url()
 
+    def test_reads_openai_api_key_from_secret_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            secret_file = Path(temporary_directory) / "openai-api-key"
+            secret_file.write_text("test-key\n", encoding="utf-8")
+            settings = Settings(
+                _env_file=None,
+                OPENAI_API_KEY="inline-key-must-not-win",
+                OPENAI_API_KEY_FILE=secret_file,
+            )
+
+            api_key = settings.get_openai_api_key()
+
+        self.assertEqual("test-key", api_key)
+
+    def test_empty_openai_secret_file_disables_live_gateway(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            secret_file = Path(temporary_directory) / "openai-api-key"
+            secret_file.write_text("", encoding="utf-8")
+            settings = Settings(
+                _env_file=None,
+                OPENAI_API_KEY_FILE=secret_file,
+            )
+
+            self.assertIsNone(settings.get_openai_api_key())
+
 
 class PostgresOfferMappingTest(unittest.TestCase):
     def test_maps_database_row_to_domain_offer(self) -> None:
