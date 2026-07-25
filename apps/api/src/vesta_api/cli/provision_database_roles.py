@@ -24,6 +24,13 @@ ROLES = (
             "offers": ("SELECT",),
             "offer_categories": ("SELECT",),
             "offer_verifications": ("SELECT",),
+            "need_definitions": ("SELECT",),
+            "need_localizations": ("SELECT",),
+            "attribute_definitions": ("SELECT",),
+            "attribute_options": ("SELECT",),
+            "attribute_option_localizations": ("SELECT",),
+            "question_definitions": ("SELECT",),
+            "question_localizations": ("SELECT",),
         },
     ),
     DatabaseRole(
