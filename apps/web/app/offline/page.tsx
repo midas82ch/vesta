@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { useI18n } from "@/components/i18n-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-
+import { VestaMark } from "@/components/vesta-mark";
 
 export default function OfflinePage() {
   const { t } = useI18n();
@@ -14,7 +14,7 @@ export default function OfflinePage() {
       <div className="offline-toolbar">
         <Link className="brand" href="/" aria-label={t("brand.homeLabel")}>
           <span className="brand-mark" aria-hidden="true">
-            V
+            <VestaMark />
           </span>
           <span>Vesta</span>
         </Link>

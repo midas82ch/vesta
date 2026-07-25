@@ -107,9 +107,9 @@ p {
 
 .site-header {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 0.75rem;
-  justify-content: space-between;
+  grid-template-columns: auto minmax(0, 1fr);
   margin-inline: auto;
   max-width: 80rem;
   padding:
@@ -149,6 +149,34 @@ p {
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+
+.primary-nav {
+  border-block-start: 1px solid var(--line);
+  display: grid;
+  gap: 0.35rem;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-block-start: 0.65rem;
+}
+
+.primary-nav a {
+  align-items: center;
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 0.9rem;
+  text-decoration: none;
+}
+
+.primary-nav a[aria-current="page"] {
+  background: var(--green-light);
+  box-shadow: inset 0 -3px 0 var(--orange-button);
+  color: var(--green);
 }
 
 .pilot-label {
@@ -569,70 +597,215 @@ select {
   margin: 0.9rem 0 0;
 }
 
-.principles {
-  background: var(--green);
-  color: var(--paper);
+.imprint-main {
+  margin-inline: auto;
+  max-width: 76rem;
   padding:
-    4.5rem
+    1rem
     max(1rem, env(safe-area-inset-right))
-    4.5rem
+    4rem
     max(1rem, env(safe-area-inset-left));
 }
 
-.principles .eyebrow {
+.imprint-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.imprint-intro,
+.imprint-section {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  padding: clamp(1.35rem, 6vw, 3.5rem);
+}
+
+.imprint-intro {
+  background:
+    radial-gradient(circle at 92% 12%, rgb(238 119 77 / 25%), transparent 16rem),
+    var(--green);
+  box-shadow: var(--shadow);
+  color: var(--paper);
+}
+
+.imprint-intro .eyebrow {
   color: #ffad8b;
 }
 
-.section-heading {
-  display: grid;
-  gap: 1.25rem;
-  margin-block-end: 2.5rem;
-  margin-inline: auto;
-  max-width: 75rem;
+.imprint-intro h1 {
+  font-size: clamp(2.5rem, 12vw, 5rem);
+  max-width: 56rem;
 }
 
-.section-heading h2 {
+.imprint-intro .lead {
+  color: #d5e2de;
+  margin-block-end: 0;
+  max-width: 50rem;
+}
+
+.imprint-section {
+  background: var(--paper);
+  border: 1px solid rgb(22 79 71 / 14%);
+}
+
+.imprint-section > .eyebrow {
+  margin-block-end: 0.75rem;
+}
+
+.imprint-section h2 {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.2rem, 11vw, 3.6rem);
+  font-size: clamp(1.9rem, 8vw, 3rem);
   font-weight: 500;
-  letter-spacing: -0.045em;
-  line-height: 1.05;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-block-end: 1rem;
+  max-width: 44rem;
+}
+
+.imprint-section > p:not(.eyebrow, .imprint-notice, .section-note) {
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 64rem;
+}
+
+.audience-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-block-start: 1.75rem;
+}
+
+.audience-grid article {
+  background: var(--green-light);
+  border-block-start: 4px solid var(--orange-button);
+  border-radius: 0.85rem;
+  padding: 1.15rem;
+}
+
+.audience-grid h3 {
+  font-size: 1rem;
+  margin-block-end: 0.45rem;
+}
+
+.audience-grid p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.imprint-principles {
+  display: grid;
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+}
+
+.imprint-principles li {
+  border-block-start: 1px solid var(--line);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  padding-block: 1.25rem;
+}
+
+.principle-number {
+  color: var(--orange);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  padding-block-start: 0.2rem;
+}
+
+.imprint-principles h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin-block-end: 0.45rem;
+}
+
+.imprint-principles p {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.65;
   margin: 0;
   max-width: 44rem;
 }
 
-.principle-grid {
+.responsibility-section {
+  background: var(--green-light);
+  border-inline-start: 5px solid var(--orange-button);
+}
+
+.section-note {
+  border-inline-start: 3px solid var(--orange-button);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 1.5rem 0 0;
+  padding-inline-start: 1rem;
+}
+
+.legal-section {
+  border-block-start: 5px solid var(--green);
+}
+
+.imprint-details {
   display: grid;
-  margin-inline: auto;
-  max-width: 75rem;
+  margin: 1.5rem 0;
 }
 
-.principle-card {
-  border-block-start: 1px solid rgb(255 253 248 / 35%);
-  padding-block: 1.65rem;
+.imprint-details div {
+  border-block-start: 1px solid var(--line);
+  display: grid;
+  gap: 0.35rem;
+  padding-block: 1rem;
 }
 
-.principle-number {
-  color: #bad0c9;
+.imprint-details dt {
+  color: var(--muted);
   font-size: 0.76rem;
   font-weight: 850;
-  letter-spacing: 0.1em;
-  margin-block-end: 1.25rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.principle-card h3 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.45rem;
-  font-weight: 500;
-  margin-block-end: 0.8rem;
+.imprint-details dd {
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
 }
 
-.principle-card > p:last-child {
-  color: #d5e2de;
-  font-size: 0.94rem;
-  line-height: 1.65;
+.imprint-details a,
+.source-code-link a {
+  color: var(--green);
+}
+
+.imprint-notice {
+  background: var(--danger-background);
+  border: 1px solid #e8b9a6;
+  border-radius: 0.85rem;
+  color: var(--danger-ink);
+  line-height: 1.6;
+  padding: 1rem;
+}
+
+.source-code-link {
+  font-weight: 800;
   margin-block-end: 0;
-  max-width: 25rem;
+}
+
+.back-link {
+  align-items: center;
+  color: var(--green);
+  display: inline-flex;
+  font-weight: 850;
+  gap: 0.65rem;
+  justify-self: start;
+  min-height: 44px;
+  padding-inline: 0.75rem;
+}
+
+[dir="rtl"] .back-link > span {
+  transform: scaleX(-1);
 }
 
 footer {
@@ -653,6 +826,18 @@ footer {
 
 footer p {
   margin: 0;
+}
+
+.footer-meta {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+footer a {
+  color: var(--paper);
+  font-weight: 800;
 }
 
 .offline-page {
@@ -715,6 +900,11 @@ footer p {
     transform: translateY(-1px);
   }
 
+  .primary-nav a:hover {
+    background: rgb(220 232 223 / 65%);
+    color: var(--green);
+  }
+
   .primary-button:hover,
   .install-button:hover {
     filter: brightness(0.94);
@@ -743,6 +933,7 @@ footer p {
 
 @media (min-width: 48rem) {
   .site-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
     padding:
       max(1.25rem, env(safe-area-inset-top))
       max(1.5rem, env(safe-area-inset-right))
@@ -764,20 +955,39 @@ footer p {
     padding: 2rem;
   }
 
+  .primary-nav {
+    border: 0;
+    display: flex;
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .header-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
   .form-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
-  .section-heading {
-    margin-block-end: 3.5rem;
+  .imprint-main {
+    padding:
+      2rem
+      max(1.5rem, env(safe-area-inset-right))
+      6rem
+      max(1.5rem, env(safe-area-inset-left));
   }
 
-  .principles {
-    padding:
-      5.5rem
-      max(1.5rem, env(safe-area-inset-right))
-      5.5rem
-      max(1.5rem, env(safe-area-inset-left));
+  .audience-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .imprint-details div {
+    gap: 2rem;
+    grid-template-columns: minmax(9rem, 0.35fr) minmax(0, 1fr);
   }
 
   footer {
@@ -786,32 +996,34 @@ footer p {
     justify-content: space-between;
     padding-inline: max(1.5rem, calc((100vw - 75rem) / 2));
   }
+
+  .footer-meta {
+    align-items: flex-end;
+  }
 }
 
 @media (min-width: 60rem) {
-  .section-heading {
-    align-items: start;
-    gap: 2.5rem;
-    grid-template-columns: minmax(12rem, 0.5fr) minmax(0, 1fr);
-  }
-
-  .principle-grid {
+  .imprint-principles {
+    gap: 1.5rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .principle-card {
+  .imprint-principles li {
+    align-content: start;
     border-block-start: 0;
     border-inline-start: 1px solid rgb(255 253 248 / 35%);
-    padding: 0.6rem 2rem 1.25rem;
+    display: block;
+    padding: 0.5rem 1.5rem;
   }
 
-  .principle-card:first-child {
+  .imprint-principles li:first-child {
     border-inline-start: 0;
     padding-inline-start: 0;
   }
 
   .principle-number {
-    margin-block-end: 3rem;
+    display: block;
+    margin-block-end: 1.5rem;
   }
 }
 
@@ -847,7 +1059,7 @@ footer p {
 @media (forced-colors: active) {
   .brand-mark,
   .install-button,
-  .principles,
+  .imprint-intro,
   footer {
     border: 1px solid CanvasText;
   }

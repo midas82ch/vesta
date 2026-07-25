@@ -1,13 +1,12 @@
 import type { MetadataRoute } from "next";
 
-
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
     name: "Vesta – Berner Sozial-Lotse",
     short_name: "Vesta",
     description:
-      "Verständliche und verifizierte Orientierung zu sozialen Angeboten in Bern.",
+      "Der verifizierte, mehrsprachige Sozial-Lotse für Bern: passende Hilfe finden, Fachpersonen entlasten und Systemlücken sichtbar machen.",
     start_url: "/?source=pwa",
     scope: "/",
     display: "standalone",

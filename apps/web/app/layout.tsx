@@ -6,12 +6,30 @@ import { ServiceWorkerRegistration } from "@/components/pwa-controls";
 
 import "./globals.css";
 
-
 export const metadata: Metadata = {
-  title: "Vesta – Berner Sozial-Lotse",
+  metadataBase: new URL("https://vesta.vielzuwenig.ch"),
+  title: "Vesta – Weniger Systemreibung. Mehr Zugang zu Hilfe.",
   description:
-    "Verständliche und verifizierte Orientierung zu sozialen Angeboten in Bern.",
+    "Der verifizierte, mehrsprachige Sozial-Lotse für Bern: passende Hilfe finden, Fachpersonen entlasten und Systemlücken sichtbar machen.",
   applicationName: "Vesta",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Vesta – Berner Sozial-Lotse",
+    description:
+      "Weniger Systemreibung, mehr Zugang zu Hilfe: verständlich, mehrsprachig und mit sichtbaren Quellen.",
+    type: "website",
+    url: "/",
+    siteName: "Vesta",
+    locale: "de_CH",
+  },
+  twitter: {
+    card: "summary",
+    title: "Vesta – Berner Sozial-Lotse",
+    description:
+      "Weniger Systemreibung, mehr Zugang zu Hilfe: verständlich, mehrsprachig und mit sichtbaren Quellen.",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

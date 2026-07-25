@@ -2,6 +2,8 @@ import { createElement } from "react";
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
+import { VestaMark } from "@/components/vesta-mark";
+
 export function GET(request: NextRequest) {
   const requestedSize = Number(request.nextUrl.searchParams.get("size"));
   const size = requestedSize === 192 ? 192 : 512;
@@ -14,17 +16,15 @@ export function GET(request: NextRequest) {
         style: {
           alignItems: "center",
           background: "#164f47",
-          color: "#fffdf8",
+          borderRadius: maskable ? 0 : size * 0.22,
           display: "flex",
-          fontFamily: "Georgia, serif",
-          fontSize: size * (maskable ? 0.46 : 0.56),
-          fontWeight: 700,
           height: "100%",
           justifyContent: "center",
+          padding: size * (maskable ? 0.2 : 0.08),
           width: "100%",
         },
       },
-      "V",
+      createElement(VestaMark),
     ),
     {
       width: size,

@@ -3,20 +3,20 @@ import { ImageResponse } from "next/og";
 import { VestaMark } from "@/components/vesta-mark";
 
 export const size = {
-  width: 512,
-  height: 512,
+  width: 180,
+  height: 180,
 };
 
 export const contentType = "image/png";
 
-export default function Icon() {
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
         style={{
           alignItems: "center",
           background: "#164f47",
-          borderRadius: 112,
+          borderRadius: 40,
           display: "flex",
           height: "100%",
           justifyContent: "center",

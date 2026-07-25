@@ -7,6 +7,9 @@ const de = {
   "a11y.opensNewTab": "öffnet in einem neuen Tab",
   "brand.homeLabel": "Vesta Startseite",
   "pilot.label": "Pilot · Bern",
+  "nav.primaryLabel": "Hauptnavigation",
+  "nav.home": "Suche",
+  "nav.imprint": "Impressum",
   "locale.label": "Sprache der Oberfläche",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -16,7 +19,7 @@ const de = {
   "hero.eyebrow": "Berner Sozial-Lotse",
   "hero.title": "Was brauchst du gerade?",
   "hero.lead":
-    "Wir helfen dir, ein passendes Angebot zu finden. Einfach, verständlich und mit sichtbaren Quellen.",
+    "Finde passende soziale Angebote in Bern – einfach und mit sichtbaren Quellen.",
   "hero.trust":
     "Du brauchst kein Konto. Deine Suche wird nicht als Dossier gespeichert.",
   "form.help":
@@ -72,9 +75,54 @@ const de = {
   "principle.handoff.title": "Menschliche Übergabe",
   "principle.handoff.text":
     "Bei Gefahr, Unsicherheit oder auf Wunsch übernimmt eine Fachperson.",
+  "about.back": "Zur Hilfe-Suche",
+  "about.eyebrow": "Über Vesta & Impressum",
+  "about.title": "Weniger Systemreibung. Mehr Zugang zu Hilfe.",
+  "about.lead":
+    "Vesta entwickelt eine verifizierte, mehrsprachige Zugangsschicht für das Berner Hilfesystem. Bestehende Hilfe soll leichter auffindbar, verständlich und überprüfbar werden.",
+  "about.problem.eyebrow": "Warum Vesta",
+  "about.problem.title":
+    "Hilfe ist vorhanden. Der Weg dorthin ist oft kompliziert.",
+  "about.problem.text":
+    "Angebote, Zuständigkeiten und Zugangsbedingungen sind über viele Stellen verteilt. Vesta setzt dort an, wo digitale Unterstützung realistisch helfen kann: bei Orientierung, Sprache und einem verständlichen nächsten Schritt.",
+  "about.people.title": "Für Menschen",
+  "about.people.text":
+    "Weniger Fachsprache, weniger Umwege und passende Angebote mit sichtbaren Quellen und Unsicherheiten.",
+  "about.professionals.title": "Für Fachpersonen",
+  "about.professionals.text":
+    "Weniger wiederkehrende Recherche und eine verlässliche gemeinsame Wissensbasis für die Vermittlung.",
+  "about.system.title": "Für Bern",
+  "about.system.text":
+    "Erfolglose Hilfewege und fehlende Angebote können sichtbar werden, ohne daraus Personenprofile zu erstellen.",
+  "about.responsibility.eyebrow": "Verantwortung",
+  "about.responsibility.title":
+    "AI erklärt. Regeln prüfen. Menschen übernehmen.",
+  "about.responsibility.text":
+    "Vesta automatisiert keine Fallentscheide und verteilt keine knappen Plätze. AI darf Sprache verstehen und geprüfte Informationen erklären. Sicherheit, Zugang und Übergaben bleiben nachvollziehbaren Regeln und verantwortlichen Menschen vorbehalten.",
+  "about.pilot.eyebrow": "Pilotprojekt",
+  "about.pilot.title": "Klein starten. Gemeinsam lernen.",
+  "about.pilot.text":
+    "Der erste Prototyp konzentriert sich auf Übernachtung, Grundversorgung und Beratung. Er arbeitet ohne Konto und ohne Personendossier. Betroffene, Fachpersonen und Organisationen sollen mitbestimmen, was nützlich und sicher ist.",
+  "about.pilot.link": "Projekt auf GitHub ansehen",
+  "about.pilot.note":
+    "Der technische Prototyp ist öffentlich einsehbar. Rückmeldungen und Mitwirkung sind willkommen.",
+  "imprint.eyebrow": "Transparenz",
+  "imprint.title": "Impressum",
+  "imprint.project.label": "Projekt",
+  "imprint.project.value": "Vesta – Berner Sozial-Lotse",
+  "imprint.status.label": "Status",
+  "imprint.status.value": "Unabhängiger technischer Prototyp in Entwicklung",
+  "imprint.responsibility.label": "Trägerschaft",
+  "imprint.responsibility.value":
+    "Für einen öffentlichen Feldbetrieb noch nicht formell bestimmt",
+  "imprint.contact.label": "Projekt und Rückmeldungen",
+  "imprint.contact.value": "GitHub-Repository von Vesta",
+  "imprint.note":
+    "Vor einem öffentlichen Feldbetrieb werden verantwortliche Kontaktstelle, Trägerschaft, Datenschutzinformationen und beteiligte Partner verbindlich ergänzt.",
   "footer.emergency": "Vesta ersetzt keine Notfallhilfe und reserviert keine Plätze.",
   "footer.prototype":
     "Initialer Prototyp · Angaben noch nicht für den Feldeinsatz freigegeben",
+  "footer.imprint": "Über Vesta & Impressum",
   "offline.eyebrow": "Keine Verbindung",
   "offline.title": "Vesta ist gerade offline.",
   "offline.body":
@@ -90,6 +138,9 @@ const fr: Record<MessageKey, string> = {
   "a11y.opensNewTab": "s’ouvre dans un nouvel onglet",
   "brand.homeLabel": "Page d’accueil de Vesta",
   "pilot.label": "Projet pilote · Berne",
+  "nav.primaryLabel": "Navigation principale",
+  "nav.home": "Recherche",
+  "nav.imprint": "Mentions légales",
   "locale.label": "Langue de l’interface",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -99,7 +150,7 @@ const fr: Record<MessageKey, string> = {
   "hero.eyebrow": "Guide social bernois",
   "hero.title": "De quoi as-tu besoin maintenant ?",
   "hero.lead":
-    "Nous t’aidons à trouver une offre adaptée, simplement, clairement et avec des sources visibles.",
+    "Trouve des offres sociales adaptées à Berne, simplement et avec des sources visibles.",
   "hero.trust":
     "Aucun compte n’est nécessaire. Ta recherche n’est pas enregistrée comme dossier.",
   "form.help":
@@ -155,10 +206,55 @@ const fr: Record<MessageKey, string> = {
   "principle.handoff.title": "Relais humain",
   "principle.handoff.text":
     "En cas de danger, d’incertitude ou sur demande, une personne spécialisée prend le relais.",
+  "about.back": "Retour à la recherche d’aide",
+  "about.eyebrow": "À propos de Vesta & mentions légales",
+  "about.title": "Moins de frictions. Un meilleur accès à l’aide.",
+  "about.lead":
+    "Vesta développe une couche d’accès vérifiée et multilingue pour le système d’aide bernois. Les services existants doivent devenir plus faciles à trouver, à comprendre et à vérifier.",
+  "about.problem.eyebrow": "Pourquoi Vesta",
+  "about.problem.title":
+    "L’aide existe. Le chemin pour y accéder est souvent compliqué.",
+  "about.problem.text":
+    "Les offres, les responsabilités et les conditions d’accès sont réparties entre de nombreux services. Vesta intervient là où le numérique peut réellement aider : l’orientation, la langue et la prochaine étape à suivre.",
+  "about.people.title": "Pour les personnes",
+  "about.people.text":
+    "Moins de jargon, moins de détours et des offres adaptées avec des sources et des incertitudes visibles.",
+  "about.professionals.title": "Pour les spécialistes",
+  "about.professionals.text":
+    "Moins de recherches répétitives et une base de connaissances commune et fiable pour l’orientation.",
+  "about.system.title": "Pour Berne",
+  "about.system.text":
+    "Les parcours d’aide infructueux et les offres manquantes peuvent devenir visibles sans créer de profils individuels.",
+  "about.responsibility.eyebrow": "Responsabilité",
+  "about.responsibility.title":
+    "L’IA explique. Les règles vérifient. Les humains prennent le relais.",
+  "about.responsibility.text":
+    "Vesta n’automatise pas les décisions de suivi et n’attribue pas les places limitées. L’IA peut comprendre la langue et expliquer des informations vérifiées. La sécurité, l’accès et les relais restent soumis à des règles transparentes et à la responsabilité humaine.",
+  "about.pilot.eyebrow": "Projet pilote",
+  "about.pilot.title": "Commencer petit. Apprendre ensemble.",
+  "about.pilot.text":
+    "Le premier prototype se concentre sur l’hébergement, les besoins essentiels et le conseil. Il fonctionne sans compte ni dossier personnel. Les personnes concernées, les spécialistes et les organisations doivent participer aux décisions sur son utilité et sa sécurité.",
+  "about.pilot.link": "Voir le projet sur GitHub",
+  "about.pilot.note":
+    "Le prototype technique est consultable publiquement. Les retours et la participation sont les bienvenus.",
+  "imprint.eyebrow": "Transparence",
+  "imprint.title": "Mentions légales",
+  "imprint.project.label": "Projet",
+  "imprint.project.value": "Vesta – guide social bernois",
+  "imprint.status.label": "Statut",
+  "imprint.status.value": "Prototype technique indépendant en développement",
+  "imprint.responsibility.label": "Organisme responsable",
+  "imprint.responsibility.value":
+    "Pas encore formellement désigné pour une utilisation publique",
+  "imprint.contact.label": "Projet et retours",
+  "imprint.contact.value": "Dépôt GitHub de Vesta",
+  "imprint.note":
+    "Avant toute utilisation publique, le contact responsable, l’organisme porteur, les informations sur la protection des données et les partenaires seront indiqués de manière contraignante.",
   "footer.emergency":
     "Vesta ne remplace pas l’aide d’urgence et ne réserve aucune place.",
   "footer.prototype":
     "Prototype initial · informations non encore autorisées pour le terrain",
+  "footer.imprint": "À propos & mentions légales",
   "offline.eyebrow": "Pas de connexion",
   "offline.title": "Vesta est actuellement hors ligne.",
   "offline.body":
@@ -172,6 +268,9 @@ const en: Record<MessageKey, string> = {
   "a11y.opensNewTab": "opens in a new tab",
   "brand.homeLabel": "Vesta home page",
   "pilot.label": "Pilot · Bern",
+  "nav.primaryLabel": "Main navigation",
+  "nav.home": "Search",
+  "nav.imprint": "Imprint",
   "locale.label": "Interface language",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -181,7 +280,7 @@ const en: Record<MessageKey, string> = {
   "hero.eyebrow": "Bern social services guide",
   "hero.title": "What do you need right now?",
   "hero.lead":
-    "We help you find a suitable service, simply and clearly, with visible sources.",
+    "Find suitable social services in Bern, simply and with visible sources.",
   "hero.trust":
     "You do not need an account. Your search is not stored as a case file.",
   "form.help":
@@ -237,10 +336,55 @@ const en: Record<MessageKey, string> = {
   "principle.handoff.title": "Human handoff",
   "principle.handoff.text":
     "In case of danger, uncertainty or on request, a qualified professional takes over.",
+  "about.back": "Back to help search",
+  "about.eyebrow": "About Vesta & legal notice",
+  "about.title": "Less system friction. Better access to help.",
+  "about.lead":
+    "Vesta is developing a verified, multilingual access layer for Bern’s support system. Existing help should become easier to find, understand and verify.",
+  "about.problem.eyebrow": "Why Vesta",
+  "about.problem.title":
+    "Help exists. Finding the right way to it is often difficult.",
+  "about.problem.text":
+    "Services, responsibilities and access conditions are spread across many organisations. Vesta focuses on where digital support can realistically help: orientation, language and a clear next step.",
+  "about.people.title": "For people",
+  "about.people.text":
+    "Less jargon, fewer detours and suitable services with visible sources and uncertainties.",
+  "about.professionals.title": "For professionals",
+  "about.professionals.text":
+    "Less repeated research and a reliable shared knowledge base for referrals.",
+  "about.system.title": "For Bern",
+  "about.system.text":
+    "Unsuccessful routes to help and missing services can become visible without creating personal profiles.",
+  "about.responsibility.eyebrow": "Responsibility",
+  "about.responsibility.title":
+    "AI explains. Rules check. People take over.",
+  "about.responsibility.text":
+    "Vesta does not automate case decisions or allocate scarce places. AI may understand language and explain verified information. Safety, access and handoffs remain governed by transparent rules and accountable people.",
+  "about.pilot.eyebrow": "Pilot project",
+  "about.pilot.title": "Start small. Learn together.",
+  "about.pilot.text":
+    "The first prototype focuses on overnight shelter, basic needs and advice. It works without an account or case file. People with lived experience, professionals and organisations should help determine what is useful and safe.",
+  "about.pilot.link": "View the project on GitHub",
+  "about.pilot.note":
+    "The technical prototype is publicly available. Feedback and participation are welcome.",
+  "imprint.eyebrow": "Transparency",
+  "imprint.title": "Legal notice",
+  "imprint.project.label": "Project",
+  "imprint.project.value": "Vesta – Bern social services guide",
+  "imprint.status.label": "Status",
+  "imprint.status.value": "Independent technical prototype in development",
+  "imprint.responsibility.label": "Responsible organisation",
+  "imprint.responsibility.value":
+    "Not yet formally designated for public field use",
+  "imprint.contact.label": "Project and feedback",
+  "imprint.contact.value": "Vesta GitHub repository",
+  "imprint.note":
+    "Before public field use, the accountable contact, responsible organisation, privacy information and participating partners will be formally identified.",
   "footer.emergency":
     "Vesta does not replace emergency assistance and does not reserve places.",
   "footer.prototype":
     "Initial prototype · information not yet approved for field use",
+  "footer.imprint": "About Vesta & legal notice",
   "offline.eyebrow": "No connection",
   "offline.title": "Vesta is currently offline.",
   "offline.body":
@@ -254,6 +398,9 @@ const ar: Record<MessageKey, string> = {
   "a11y.opensNewTab": "يفتح في علامة تبويب جديدة",
   "brand.homeLabel": "الصفحة الرئيسية لفيستا",
   "pilot.label": "مشروع تجريبي · برن",
+  "nav.primaryLabel": "التنقل الرئيسي",
+  "nav.home": "البحث",
+  "nav.imprint": "معلومات قانونية",
   "locale.label": "لغة الواجهة",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -263,7 +410,7 @@ const ar: Record<MessageKey, string> = {
   "hero.eyebrow": "دليل الخدمات الاجتماعية في برن",
   "hero.title": "ما الذي تحتاج إليه الآن؟",
   "hero.lead":
-    "نساعدك في العثور على خدمة مناسبة بطريقة بسيطة وواضحة مع عرض المصادر.",
+    "اعثر على خدمات اجتماعية مناسبة في برن بسهولة ومع عرض المصادر.",
   "hero.trust": "لا تحتاج إلى حساب. لا يُحفَظ بحثك كملف حالة.",
   "form.help":
     "أدخل فقط المعلومات المهمة لبحثك، ثم سنعرض الخدمات المحتملة.",
@@ -318,9 +465,54 @@ const ar: Record<MessageKey, string> = {
   "principle.handoff.title": "إحالة إلى شخص مختص",
   "principle.handoff.text":
     "عند وجود خطر أو عدم يقين أو بناءً على الطلب، يتولى شخص مختص المتابعة.",
+  "about.back": "العودة إلى البحث عن المساعدة",
+  "about.eyebrow": "حول فيستا والمعلومات القانونية",
+  "about.title": "عقبات أقل في النظام. وصول أسهل إلى المساعدة.",
+  "about.lead":
+    "تطوّر فيستا بوابة موثوقة ومتعددة اللغات إلى منظومة الدعم في برن، لتصبح الخدمات المتاحة أسهل في العثور عليها وفهمها والتحقق منها.",
+  "about.problem.eyebrow": "لماذا فيستا",
+  "about.problem.title":
+    "المساعدة موجودة، لكن الوصول إليها غالباً ما يكون معقداً.",
+  "about.problem.text":
+    "تتوزع الخدمات والمسؤوليات وشروط الوصول بين جهات عديدة. تركز فيستا على المجالات التي يمكن للدعم الرقمي أن يفيد فيها فعلياً: التوجيه واللغة وتوضيح الخطوة التالية.",
+  "about.people.title": "للأشخاص",
+  "about.people.text":
+    "مصطلحات أقل تعقيداً وطرق أقصر وخدمات مناسبة مع إظهار المصادر وأوجه عدم اليقين.",
+  "about.professionals.title": "للمختصين",
+  "about.professionals.text":
+    "وقت أقل للبحث المتكرر وقاعدة معلومات مشتركة وموثوقة للإحالة إلى الخدمات.",
+  "about.system.title": "لمدينة برن",
+  "about.system.text":
+    "يمكن إظهار مسارات المساعدة غير الناجحة والخدمات الناقصة من دون إنشاء ملفات شخصية.",
+  "about.responsibility.eyebrow": "المسؤولية",
+  "about.responsibility.title":
+    "الذكاء الاصطناعي يشرح. القواعد تتحقق. والأشخاص يتولون المسؤولية.",
+  "about.responsibility.text":
+    "لا تؤتمت فيستا القرارات المتعلقة بالحالات ولا توزع الأماكن المحدودة. يمكن للذكاء الاصطناعي فهم اللغة وشرح المعلومات المتحقق منها، بينما تبقى السلامة والوصول والإحالة خاضعة لقواعد واضحة ولمسؤولية بشرية.",
+  "about.pilot.eyebrow": "مشروع تجريبي",
+  "about.pilot.title": "نبدأ بخطوات صغيرة ونتعلم معاً.",
+  "about.pilot.text":
+    "يركز النموذج الأولي على المبيت والاحتياجات الأساسية والاستشارة. ويعمل من دون حساب أو ملف حالة. يجب أن يشارك أصحاب التجربة والمختصون والمنظمات في تحديد ما هو مفيد وآمن.",
+  "about.pilot.link": "عرض المشروع على GitHub",
+  "about.pilot.note":
+    "النموذج التقني متاح للاطلاع العام، ونرحب بالملاحظات والمشاركة.",
+  "imprint.eyebrow": "الشفافية",
+  "imprint.title": "المعلومات القانونية",
+  "imprint.project.label": "المشروع",
+  "imprint.project.value": "فيستا – دليل الخدمات الاجتماعية في برن",
+  "imprint.status.label": "الحالة",
+  "imprint.status.value": "نموذج تقني أولي مستقل قيد التطوير",
+  "imprint.responsibility.label": "الجهة المسؤولة",
+  "imprint.responsibility.value":
+    "لم تُحدَّد رسمياً بعد للاستخدام الميداني العام",
+  "imprint.contact.label": "المشروع والملاحظات",
+  "imprint.contact.value": "مستودع فيستا على GitHub",
+  "imprint.note":
+    "قبل أي استخدام ميداني عام، ستُحدَّد رسمياً جهة الاتصال المسؤولة والجهة المشغلة ومعلومات الخصوصية والشركاء المشاركون.",
   "footer.emergency": "لا تحل فيستا محل خدمات الطوارئ ولا تحجز أماكن.",
   "footer.prototype":
     "نموذج أولي · المعلومات غير معتمدة بعد للاستخدام الميداني",
+  "footer.imprint": "حول فيستا والمعلومات القانونية",
   "offline.eyebrow": "لا يوجد اتصال",
   "offline.title": "فيستا غير متصلة بالإنترنت حالياً.",
   "offline.body":
