@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Vesta offer import every day
+
+[Timer]
+OnCalendar=*-*-* 05:17:00
+RandomizedDelaySec=20min
+Persistent=true
+Unit=vesta-offer-ingest.service
+
+[Install]
+WantedBy=timers.target

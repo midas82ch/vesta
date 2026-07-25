@@ -28,6 +28,7 @@ apps/
   web/                  Mobile Next.js-PWA
 data/
   seed/                 Ausschliesslich geprüfte oder klar markierte Testdaten
+  sources/              Kuratierte öffentliche Quellen und Evidenzbegriffe
 docs/
   adr/                  Architekturentscheide
   architecture.md       System- und Sicherheitsarchitektur
@@ -101,16 +102,62 @@ cp .env.example .env
 # VESTA_SITE_ADDRESS in .env setzen
 install -d -m 700 secrets
 read -rsp "Exoscale PostgreSQL URI: " DATABASE_URI
-printf '%s' "$DATABASE_URI" > secrets/database-url
+printf '%s' "$DATABASE_URI" > secrets/database-admin-url
 unset DATABASE_URI
-chmod 600 secrets/database-url
-sudo docker compose -f compose.prod.yaml up --build -d
+chmod 600 secrets/database-admin-url
+sudo docker compose -f compose.prod.yaml build api migrate
+sudo docker compose -f compose.prod.yaml run --rm migrate
+sudo docker run --rm \
+  -e DATABASE_ADMIN_URL_FILE=/run/secrets/database-admin-url \
+  -e DATABASE_SECRET_OUTPUT=/run/vesta-secret-output \
+  -v "$PWD/secrets/database-admin-url:/run/secrets/database-admin-url:ro" \
+  -v "$PWD/secrets:/run/vesta-secret-output" \
+  vesta-api:latest \
+  python -m vesta_api.cli.provision_database_roles
+sudo docker compose -f compose.prod.yaml up -d --wait
 sudo docker compose -f compose.prod.yaml ps
 ```
 
 Die URI muss TLS aktivieren (`sslmode=require` oder stärker). Der Ordner
 `secrets/` wird von Git und vom Docker-Build-Kontext ausgeschlossen. Vor dem
 API-Start führt Compose alle noch offenen Alembic-Migrationen aus.
+`avnadmin` wird nur für Migrationen verwendet. Die API verbindet sich als
+`vesta_app` mit Leserechten; der Quellenimport verwendet `vesta_ingest` mit
+Schreibrechten ausschliesslich auf den Angebotstabellen.
+
+## Öffentliche Testangebote aktualisieren
+
+`data/sources/bern_offers.json` enthält kuratierte, offizielle Berner
+Quellseiten. Der Importer respektiert `robots.txt`, lädt höchstens 2 MB pro
+Seite und akzeptiert einen Datensatz nur, wenn alle hinterlegten
+Evidenzbegriffe weiterhin vorkommen. Er übernimmt keine freien Kapazitäten und
+markiert jeden Datensatz sichtbar als Test.
+
+Quellen ohne Datenbankzugriff prüfen:
+
+```bash
+cd apps/api
+python -m vesta_api.cli.check_offer_sources
+```
+
+Import manuell ausführen:
+
+```bash
+sudo docker compose -f compose.prod.yaml \
+  --profile jobs run --rm --no-deps ingest
+```
+
+Für die tägliche Ausführung stehen eine One-shot-Unit und ein Timer bereit:
+
+```bash
+sudo install -m 644 infra/systemd/vesta-offer-ingest.service \
+  /etc/systemd/system/vesta-offer-ingest.service
+sudo install -m 644 infra/systemd/vesta-offer-ingest.timer \
+  /etc/systemd/system/vesta-offer-ingest.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now vesta-offer-ingest.timer
+systemctl list-timers vesta-offer-ingest.timer
+```
 
 Für einen ersten Test über eine IP-Adresse wird beispielsweise
 `VESTA_SITE_ADDRESS=http://203.0.113.10` gesetzt. Sobald ein DNS-Name auf die

@@ -15,8 +15,10 @@ type Candidate = {
     is_demo: boolean;
     source: {
       label: string;
+      url: string | null;
       verified_at: string;
       expires_at: string;
+      verified_by: string;
     };
   };
   reasons: string[];
@@ -60,6 +62,7 @@ const availabilityLabels = {
 export function NavigatorForm() {
   const [selectedNeed, setSelectedNeed] = useState<Need>("sleep_tonight");
   const [language, setLanguage] = useState("de");
+  const [targetGroup, setTargetGroup] = useState("");
   const [dog, setDog] = useState(false);
   const [hasIdentityDocument, setHasIdentityDocument] = useState(true);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
@@ -79,6 +82,7 @@ export function NavigatorForm() {
         body: JSON.stringify({
           need: selectedNeed,
           language,
+          gender: targetGroup || null,
           dog,
           has_identity_document: hasIdentityDocument,
           risk_flags: [],
@@ -138,6 +142,17 @@ export function NavigatorForm() {
               <option value="ar">العربية</option>
             </select>
           </label>
+          <label className="select-label">
+            Zielgruppe
+            <select
+              value={targetGroup}
+              onChange={(event) => setTargetGroup(event.target.value)}
+            >
+              <option value="">Keine Angabe</option>
+              <option value="finta">Frau / FINTA</option>
+              <option value="other">Andere / allgemeine Suche</option>
+            </select>
+          </label>
           <div className="check-group">
             <label>
               <input
@@ -185,7 +200,9 @@ export function NavigatorForm() {
 
             {result.candidates.map((candidate) => (
               <article className="result-card" key={candidate.offer.id}>
-                {candidate.offer.is_demo && <p className="demo-badge">Nur Demo</p>}
+                {candidate.offer.is_demo && (
+                  <p className="demo-badge">Testdaten · nicht für den Feldeinsatz</p>
+                )}
                 <h3>{candidate.offer.name}</h3>
                 <p>{candidate.offer.summary}</p>
                 <p className="availability">
@@ -194,10 +211,23 @@ export function NavigatorForm() {
                 {candidate.uncertainties.length > 0 && (
                   <p className="uncertainty">Einzelne Angaben müssen abgeklärt werden.</p>
                 )}
+                <p className="contact-note">{candidate.offer.contact_note}</p>
                 <p className="source">
-                  Quelle: {candidate.offer.source.label} · geprüft{" "}
+                  Automatisch geprüft{" "}
                   {new Intl.DateTimeFormat("de-CH").format(
                     new Date(candidate.offer.source.verified_at),
+                  )}{" "}
+                  · Quelle:{" "}
+                  {candidate.offer.source.url ? (
+                    <a
+                      href={candidate.offer.source.url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {candidate.offer.source.label}
+                    </a>
+                  ) : (
+                    candidate.offer.source.label
                   )}
                 </p>
               </article>

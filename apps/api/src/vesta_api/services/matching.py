@@ -48,6 +48,7 @@ class MatchingService:
         if query.gender and access.accepted_genders:
             if query.gender not in access.accepted_genders:
                 return None
+        target_group_unknown = not query.gender and bool(access.accepted_genders)
         if query.age is not None:
             if access.minimum_age is not None and query.age < access.minimum_age:
                 return None
@@ -80,6 +81,8 @@ class MatchingService:
             and access.identity_document_required is None
         ):
             uncertainties.append("identity_document_rule_unknown")
+        if target_group_unknown:
+            uncertainties.append("target_group_must_be_confirmed")
 
         return Candidate(
             offer=offer,

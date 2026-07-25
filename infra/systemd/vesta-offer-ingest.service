@@ -1,0 +1,14 @@
+[Unit]
+Description=Vesta verified public offer import
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/vesta
+ExecStart=/usr/bin/docker compose -f /opt/vesta/compose.prod.yaml --profile jobs run --rm --no-deps ingest
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=multi-user.target
