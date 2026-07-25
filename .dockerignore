@@ -1,0 +1,14 @@
+.git
+.github
+.env
+.next
+.venv
+node_modules
+.corepack
+.pnpm-store
+*.tsbuildinfo
+__pycache__
+.pytest_cache
+.ruff_cache
+coverage
+postgres-data

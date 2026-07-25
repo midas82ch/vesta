@@ -1,0 +1,83 @@
+{
+  "dataset": {
+    "classification": "demo_only",
+    "notice": "Diese Datensätze beschreiben keine realen Angebote."
+  },
+  "offers": [
+    {
+      "id": "demo-sleep",
+      "name": "Demo-Angebot Übernachtung (nicht real)",
+      "summary": "Beispieldatensatz für das Matching eines Schlafplatzes.",
+      "needs": ["sleep_tonight"],
+      "languages": ["de", "fr", "en"],
+      "access": {
+        "accepts_dogs": null,
+        "identity_document_required": false,
+        "accepted_genders": [],
+        "minimum_age": 18,
+        "maximum_age": null
+      },
+      "availability": "call_to_confirm",
+      "contact_note": "Dies ist ein Testdatensatz. Nicht kontaktieren.",
+      "source": {
+        "label": "Vesta Testfixture",
+        "url": null,
+        "verified_at": "2026-07-25T00:00:00Z",
+        "expires_at": "2027-01-01T00:00:00Z",
+        "verified_by": "development-team"
+      },
+      "published": true,
+      "is_demo": true
+    },
+    {
+      "id": "demo-basic-needs",
+      "name": "Demo-Angebot Grundversorgung (nicht real)",
+      "summary": "Beispieldatensatz für Essen, Dusche oder Ersthilfe.",
+      "needs": ["basic_needs"],
+      "languages": ["de", "fr", "en", "ar"],
+      "access": {
+        "accepts_dogs": true,
+        "identity_document_required": false,
+        "accepted_genders": [],
+        "minimum_age": null,
+        "maximum_age": null
+      },
+      "availability": "confirmed",
+      "contact_note": "Dies ist ein Testdatensatz. Nicht kontaktieren.",
+      "source": {
+        "label": "Vesta Testfixture",
+        "url": null,
+        "verified_at": "2026-07-25T00:00:00Z",
+        "expires_at": "2027-01-01T00:00:00Z",
+        "verified_by": "development-team"
+      },
+      "published": true,
+      "is_demo": true
+    },
+    {
+      "id": "demo-counselling",
+      "name": "Demo-Angebot Beratung (nicht real)",
+      "summary": "Beispieldatensatz für Beratung zu Wohnen, Sucht oder Finanzen.",
+      "needs": ["counselling"],
+      "languages": ["de", "fr"],
+      "access": {
+        "accepts_dogs": null,
+        "identity_document_required": null,
+        "accepted_genders": [],
+        "minimum_age": null,
+        "maximum_age": null
+      },
+      "availability": "unknown",
+      "contact_note": "Dies ist ein Testdatensatz. Nicht kontaktieren.",
+      "source": {
+        "label": "Vesta Testfixture",
+        "url": null,
+        "verified_at": "2026-07-25T00:00:00Z",
+        "expires_at": "2027-01-01T00:00:00Z",
+        "verified_by": "development-team"
+      },
+      "published": true,
+      "is_demo": true
+    }
+  ]
+}

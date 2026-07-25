@@ -1,0 +1,11 @@
+{
+  "name": "vesta",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "dev:web": "pnpm --filter @vesta/web dev",
+    "build": "pnpm --filter @vesta/web build",
+    "lint": "pnpm --filter @vesta/web lint",
+    "typecheck": "pnpm --filter @vesta/web typecheck"
+  }
+}

@@ -1,0 +1,1 @@
+"""Fachmodelle des Vermittlungskerns."""
