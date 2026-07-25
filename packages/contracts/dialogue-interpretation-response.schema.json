@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vesta.example/schemas/dialogue-interpretation-response.schema.json",
+  "title": "DialogueInterpretationResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["need_key", "proposals", "requires_confirmation", "ambiguities", "source"],
+  "properties": {
+    "need_key": {
+      "type": ["string", "null"]
+    },
+    "proposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "value", "confidence"],
+        "properties": {
+          "key": { "type": "string" },
+          "value": {},
+          "confidence": { "enum": ["clear", "unclear"] }
+        }
+      }
+    },
+    "requires_confirmation": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "source": {
+      "enum": ["ai", "template"]
+    }
+  }
+}

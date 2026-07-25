@@ -1,5 +1,6 @@
 "use client";
 
+import { DialogueForm } from "@/components/dialogue-form";
 import { useI18n } from "@/components/i18n-provider";
 import { NavigatorForm } from "@/components/navigator-form";
 import { SiteFooter } from "@/components/site-footer";
@@ -24,6 +25,10 @@ export default function Home() {
           </div>
 
           <NavigatorForm />
+        </section>
+
+        <section className="hero" id="dialogue-prototype">
+          <DialogueForm />
         </section>
       </main>
 

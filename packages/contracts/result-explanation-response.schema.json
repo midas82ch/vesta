@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vesta.example/schemas/result-explanation-response.schema.json",
+  "title": "ResultExplanationResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["headline", "reasons", "clarification", "next_action", "source"],
+  "properties": {
+    "headline": { "type": "string", "minLength": 1 },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "supported_by"],
+        "properties": {
+          "text": { "type": "string" },
+          "supported_by": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "clarification": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "supported_by"],
+          "properties": {
+            "text": { "type": "string" },
+            "supported_by": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "next_action": {
+      "type": ["string", "null"]
+    },
+    "source": {
+      "enum": ["ai", "template"]
+    }
+  }
+}

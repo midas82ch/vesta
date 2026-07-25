@@ -1,0 +1,219 @@
+{
+  "needs": [
+    {
+      "key": "sleep_tonight",
+      "sort_order": 1,
+      "localizations": {
+        "de": { "title": "Heute schlafen", "description": "Einen Platz für die Nacht suchen" },
+        "fr": { "title": "Dormir ce soir", "description": "Chercher une place pour la nuit" },
+        "en": { "title": "Sleep tonight", "description": "Find a place for the night" },
+        "ar": { "title": "النوم الليلة", "description": "البحث عن مكان لقضاء الليلة" }
+      }
+    },
+    {
+      "key": "basic_needs",
+      "sort_order": 2,
+      "localizations": {
+        "de": { "title": "Grundversorgung", "description": "Essen, Dusche oder Ersthilfe" },
+        "fr": { "title": "Besoins de base", "description": "Nourriture, douche ou premiers secours" },
+        "en": { "title": "Basic needs", "description": "Food, shower or first aid" },
+        "ar": { "title": "الاحتياجات الأساسية", "description": "الطعام أو الاستحمام أو الإسعافات الأولية" }
+      }
+    },
+    {
+      "key": "counselling",
+      "sort_order": 3,
+      "localizations": {
+        "de": { "title": "Beratung", "description": "Hilfe bei Sucht, Wohnen oder Geld" },
+        "fr": { "title": "Conseil", "description": "Aide en cas de dépendance, logement ou argent" },
+        "en": { "title": "Counselling", "description": "Help with addiction, housing or money" },
+        "ar": { "title": "الاستشارة", "description": "المساعدة في الإدمان أو السكن أو المال" }
+      }
+    }
+  ],
+  "attributes": [
+    {
+      "key": "person.has_dog",
+      "value_type": "boolean",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": []
+    },
+    {
+      "key": "person.has_identity_document",
+      "value_type": "boolean",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": []
+    },
+    {
+      "key": "person.gender",
+      "value_type": "enum",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": [
+        {
+          "value": "finta",
+          "sort_order": 1,
+          "localizations": {
+            "de": { "label": "Frau / FINTA" },
+            "fr": { "label": "Femme / FINTA" },
+            "en": { "label": "Woman / FINTA" },
+            "ar": { "label": "امرأة / FINTA" }
+          }
+        },
+        {
+          "value": "other",
+          "sort_order": 2,
+          "localizations": {
+            "de": { "label": "Andere / allgemeine Suche" },
+            "fr": { "label": "Autre / recherche générale" },
+            "en": { "label": "Other / general search" },
+            "ar": { "label": "أخرى / بحث عام" }
+          }
+        }
+      ]
+    },
+    {
+      "key": "person.age",
+      "value_type": "integer",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": []
+    }
+  ],
+  "questions": [
+    {
+      "key": "sleep.has_dog",
+      "attribute_key": "person.has_dog",
+      "answer_type": "yes_no_unknown",
+      "priority": 10,
+      "ai_rephrasing_allowed": true,
+      "localizations": {
+        "de": {
+          "canonical_text": "Führen Sie ein Tier mit sich?",
+          "help_text": "Einige Schlafangebote können keine Hunde aufnehmen.",
+          "unknown_label": "Weiss nicht",
+          "decline_label": "Möchte ich nicht sagen"
+        },
+        "fr": {
+          "canonical_text": "Avez-vous un animal avec vous ?",
+          "help_text": "Certaines offres d'hébergement n'acceptent pas les chiens.",
+          "unknown_label": "Je ne sais pas",
+          "decline_label": "Je préfère ne pas dire"
+        },
+        "en": {
+          "canonical_text": "Do you have an animal with you?",
+          "help_text": "Some overnight offers cannot accept dogs.",
+          "unknown_label": "Don't know",
+          "decline_label": "Prefer not to say"
+        },
+        "ar": {
+          "canonical_text": "هل معك حيوان؟",
+          "help_text": "بعض أماكن المبيت لا يمكنها استقبال الكلاب.",
+          "unknown_label": "لا أعرف",
+          "decline_label": "أفضل عدم الإجابة"
+        }
+      }
+    },
+    {
+      "key": "sleep.has_identity_document",
+      "attribute_key": "person.has_identity_document",
+      "answer_type": "yes_no_unknown",
+      "priority": 20,
+      "ai_rephrasing_allowed": true,
+      "localizations": {
+        "de": {
+          "canonical_text": "Haben Sie einen Ausweis dabei?",
+          "help_text": "Einige Angebote setzen einen Ausweis voraus.",
+          "unknown_label": "Weiss nicht",
+          "decline_label": "Möchte ich nicht sagen"
+        },
+        "fr": {
+          "canonical_text": "Avez-vous une pièce d'identité ?",
+          "help_text": "Certaines offres exigent une pièce d'identité.",
+          "unknown_label": "Je ne sais pas",
+          "decline_label": "Je préfère ne pas dire"
+        },
+        "en": {
+          "canonical_text": "Do you have an identity document?",
+          "help_text": "Some offers require an identity document.",
+          "unknown_label": "Don't know",
+          "decline_label": "Prefer not to say"
+        },
+        "ar": {
+          "canonical_text": "هل معك وثيقة هوية؟",
+          "help_text": "بعض العروض تتطلب وثيقة هوية.",
+          "unknown_label": "لا أعرف",
+          "decline_label": "أفضل عدم الإجابة"
+        }
+      }
+    },
+    {
+      "key": "sleep.gender",
+      "attribute_key": "person.gender",
+      "answer_type": "single_choice",
+      "priority": 30,
+      "ai_rephrasing_allowed": true,
+      "localizations": {
+        "de": {
+          "canonical_text": "Welche Zielgruppe trifft auf Sie zu?",
+          "help_text": "Die Angabe hilft, Angebote mit besonderen Zugangsbedingungen korrekt einzuordnen.",
+          "unknown_label": "Weiss nicht",
+          "decline_label": "Keine Angabe"
+        },
+        "fr": {
+          "canonical_text": "Quel groupe cible vous correspond ?",
+          "help_text": "Cette information aide à identifier les offres avec des conditions d'accès particulières.",
+          "unknown_label": "Je ne sais pas",
+          "decline_label": "Sans indication"
+        },
+        "en": {
+          "canonical_text": "Which target group applies to you?",
+          "help_text": "This helps match offers with specific access conditions.",
+          "unknown_label": "Don't know",
+          "decline_label": "Prefer not to say"
+        },
+        "ar": {
+          "canonical_text": "ما هي الفئة المستهدفة التي تنطبق عليك؟",
+          "help_text": "تساعد هذه المعلومة في تحديد العروض ذات شروط الوصول الخاصة.",
+          "unknown_label": "لا أعرف",
+          "decline_label": "دون تحديد"
+        }
+      }
+    },
+    {
+      "key": "sleep.age",
+      "attribute_key": "person.age",
+      "answer_type": "number",
+      "priority": 40,
+      "ai_rephrasing_allowed": true,
+      "localizations": {
+        "de": {
+          "canonical_text": "Wie alt sind Sie?",
+          "help_text": "Einige Angebote gelten nur ab oder bis zu einem bestimmten Alter.",
+          "unknown_label": "Weiss nicht",
+          "decline_label": "Möchte ich nicht sagen"
+        },
+        "fr": {
+          "canonical_text": "Quel âge avez-vous ?",
+          "help_text": "Certaines offres s'appliquent seulement à partir ou jusqu'à un certain âge.",
+          "unknown_label": "Je ne sais pas",
+          "decline_label": "Je préfère ne pas dire"
+        },
+        "en": {
+          "canonical_text": "How old are you?",
+          "help_text": "Some offers only apply from or up to a certain age.",
+          "unknown_label": "Don't know",
+          "decline_label": "Prefer not to say"
+        },
+        "ar": {
+          "canonical_text": "كم عمرك؟",
+          "help_text": "بعض العروض تنطبق فقط بدءًا من أو حتى عمر معين.",
+          "unknown_label": "لا أعرف",
+          "decline_label": "أفضل عدم الإجابة"
+        }
+      }
+    }
+  ]
+}

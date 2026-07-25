@@ -150,6 +150,11 @@ export default function ImprintPage() {
                 </span>
               </a>
             </p>
+            <p className="source-code-link">
+              <Link href={`/datenschutz?lang=${locale}`}>
+                {t("footer.privacy")}
+              </Link>
+            </p>
           </section>
 
           <Link className="back-link" href={`/?lang=${locale}`}>

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vesta.example/schemas/question-render-response.schema.json",
+  "title": "QuestionRenderResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "help_text", "unknown_label", "decline_label", "options", "source"],
+  "properties": {
+    "text": { "type": "string", "minLength": 1 },
+    "help_text": { "type": ["string", "null"] },
+    "unknown_label": { "type": "string" },
+    "decline_label": { "type": "string" },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "label"],
+        "properties": {
+          "value": { "type": "string" },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "source": {
+      "enum": ["ai", "template"]
+    }
+  }
+}

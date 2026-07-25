@@ -10,6 +10,7 @@ const de = {
   "nav.primaryLabel": "Hauptnavigation",
   "nav.home": "Suche",
   "nav.imprint": "Impressum",
+  "nav.privacy": "Datenschutz",
   "locale.label": "Sprache der Oberfläche",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -119,16 +120,88 @@ const de = {
   "imprint.contact.value": "GitHub-Repository von Vesta",
   "imprint.note":
     "Vor einem öffentlichen Feldbetrieb werden verantwortliche Kontaktstelle, Trägerschaft, Datenschutzinformationen und beteiligte Partner verbindlich ergänzt.",
+  "privacy.eyebrow": "Transparenz",
+  "privacy.title": "Datenschutzerklärung",
+  "privacy.lead":
+    "Vesta befindet sich in einer frühen Pilotphase. Diese Seite beschreibt, welche Daten wir aktuell verarbeiten – bewusst so wenig wie möglich.",
+  "privacy.scope.eyebrow": "Was wir verarbeiten",
+  "privacy.scope.title": "Nur die Angaben deiner aktuellen Suche",
+  "privacy.scope.text":
+    "Für eine Suche verarbeitet Vesta ausschliesslich die Angaben, die du im Formular auswählst: den gewählten Bereich, deine Sprache und optionale Angaben wie Hund, fehlender Ausweis, Zielgruppe, Alter oder Sicherheitshinweise. Diese Angaben werden nur für die einzelne Suche verwendet.",
+  "privacy.scope.noAccount":
+    "Vesta funktioniert ohne Konto. Deine Suche wird nicht als Dossier oder Profil gespeichert.",
+  "privacy.storage.eyebrow": "Speicherung",
+  "privacy.storage.title": "Keine dauerhafte Speicherung deiner Suche",
+  "privacy.storage.text":
+    "Die Angaben deiner Suche werden an die Vesta-API übermittelt, dort für die Auswertung verwendet und danach nicht in einer Datenbank gespeichert. Es entsteht kein Verlauf früherer Suchen.",
+  "privacy.device.eyebrow": "Auf deinem Gerät",
+  "privacy.device.title": "Nur deine Spracheinstellung",
+  "privacy.device.text":
+    "Vesta speichert lokal auf deinem Gerät ausschliesslich deine gewählte Sprache, damit die Oberfläche beim nächsten Besuch in der richtigen Sprache erscheint. Diese Angabe verlässt dein Gerät nicht.",
+  "privacy.offline.eyebrow": "Offline-Nutzung",
+  "privacy.offline.title": "Der Offline-Speicher enthält keine Suchergebnisse",
+  "privacy.offline.text":
+    "Für die Installation als App speichert Vesta technische Bestandteile wie Seitengerüst, Symbole und Schriften zwischen. Anfragen an die Such-API werden davon ausdrücklich ausgenommen und nie zwischengespeichert.",
+  "privacy.logs.eyebrow": "Technische Protokolle",
+  "privacy.logs.title": "Betriebs-Logs enthalten keine vollständigen Eingaben",
+  "privacy.logs.text":
+    "Der Betrieb der Website erzeugt wie bei jedem Webdienst technische Protokolle, zum Beispiel IP-Adresse, Zeitpunkt und aufgerufene Adresse, für Sicherheit und Fehlersuche. Aufbewahrungsdauer und Löschprozess sind vor einem öffentlichen Feldbetrieb verbindlich festzulegen.",
+  "privacy.offers.eyebrow": "Angebotsregister",
+  "privacy.offers.title": "Öffentliche Informationen zu Hilfsangeboten",
+  "privacy.offers.text":
+    "Das Angebotsregister enthält geprüfte, öffentliche Informationen zu Hilfsangeboten in Bern – keine personenbezogenen Daten von Nutzenden.",
+  "privacy.ai.eyebrow": "AI",
+  "privacy.ai.title": "Sprachmodell aktuell deaktiviert",
+  "privacy.ai.text":
+    "Die AI-gestützte Spracherklärung ist in dieser Version deaktiviert. Sie wird erst aktiviert, wenn Anbieter, Zweck und Datenfluss gesondert geprüft und offengelegt sind.",
+  "privacy.hosting.eyebrow": "Hosting",
+  "privacy.hosting.title": "Schweizer Infrastruktur vorgesehen",
+  "privacy.hosting.text":
+    "Für den Betrieb ist Infrastruktur in der Schweiz vorgesehen. Vor einem öffentlichen Feldbetrieb werden Auftragsbearbeitungsvertrag, Subprozessoren, Speicherorte und eine Datenschutz-Folgenabschätzung verbindlich geklärt.",
+  "privacy.rights.eyebrow": "Deine Rechte",
+  "privacy.rights.title": "Auskunft, Berichtigung und Löschung",
+  "privacy.rights.text":
+    "Da Vesta ohne Konto arbeitet und keine Suchverläufe speichert, betreffen Auskunfts-, Berichtigungs- und Löschungsrechte vor allem technische Protokolle. Bitte wende dich dafür an die unten genannte Kontaktstelle.",
+  "privacy.responsible.eyebrow": "Verantwortliche Stelle",
+  "privacy.responsible.title": "Noch nicht formell bestimmt",
+  "privacy.responsible.text":
+    "Vesta ist aktuell ein unabhängiger technischer Prototyp. Eine verantwortliche Stelle für den öffentlichen Feldbetrieb ist noch nicht formell bestimmt.",
+  "privacy.contact.label": "Fragen und Rückmeldungen",
+  "privacy.contact.value": "GitHub-Repository von Vesta",
+  "privacy.note":
+    "Diese Erklärung beschreibt den aktuellen Prototyp-Stand. Vor einem öffentlichen Feldbetrieb wird sie mit verantwortlicher Kontaktstelle, Trägerschaft und geprüften Subprozessoren verbindlich ergänzt.",
   "footer.emergency": "Vesta ersetzt keine Notfallhilfe und reserviert keine Plätze.",
   "footer.prototype":
     "Initialer Prototyp · Angaben noch nicht für den Feldeinsatz freigegeben",
   "footer.imprint": "Über Vesta & Impressum",
+  "footer.privacy": "Datenschutzerklärung",
   "offline.eyebrow": "Keine Verbindung",
   "offline.title": "Vesta ist gerade offline.",
   "offline.body":
     "Ohne Internetverbindung zeigen wir bewusst keine möglicherweise veralteten Angebote. Stelle die Verbindung wieder her und versuche es erneut.",
   "offline.retry": "Erneut versuchen",
   "offline.back": "Zur Startseite",
+  "dialogue.eyebrow": "Prototyp: AI-Dialog",
+  "dialogue.freeText.label": "Beschreibe kurz, was du brauchst",
+  "dialogue.freeText.placeholder":
+    "z. B. Ich brauche heute einen Schlafplatz mit meinem Hund",
+  "dialogue.freeText.submit": "Vorschlag prüfen",
+  "dialogue.freeText.loading": "Wird geprüft …",
+  "dialogue.interpretation.unavailable":
+    "Automatische Texterkennung ist gerade nicht aktiv (Vorlagen-Modus). Wähle unten direkt einen Bereich für den AI-Dialog.",
+  "dialogue.interpretation.needApplied": "AI-Vorschlag übernommen: {need}",
+  "dialogue.needPicker.legend": "Bereich für den AI-Dialog",
+  "dialogue.start": "AI-Dialog starten",
+  "dialogue.loading": "Wird verarbeitet …",
+  "dialogue.error": "Der AI-Dialog ist gerade nicht erreichbar.",
+  "dialogue.question.eyebrow": "Eine Frage noch",
+  "dialogue.question.yes": "Ja",
+  "dialogue.question.no": "Nein",
+  "dialogue.question.numberSubmit": "Bestätigen",
+  "dialogue.result.eyebrow": "Erklärtes Ergebnis",
+  "dialogue.aiBadge": "AI-Erklärung",
+  "dialogue.templateBadge": "Standardtext · AI nicht aktiv",
+  "dialogue.restart": "Neu starten",
 } as const;
 
 export type MessageKey = keyof typeof de;
@@ -141,6 +214,7 @@ const fr: Record<MessageKey, string> = {
   "nav.primaryLabel": "Navigation principale",
   "nav.home": "Recherche",
   "nav.imprint": "Mentions légales",
+  "nav.privacy": "Protection des données",
   "locale.label": "Langue de l’interface",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -250,17 +324,89 @@ const fr: Record<MessageKey, string> = {
   "imprint.contact.value": "Dépôt GitHub de Vesta",
   "imprint.note":
     "Avant toute utilisation publique, le contact responsable, l’organisme porteur, les informations sur la protection des données et les partenaires seront indiqués de manière contraignante.",
+  "privacy.eyebrow": "Transparence",
+  "privacy.title": "Déclaration de protection des données",
+  "privacy.lead":
+    "Vesta est encore en phase pilote. Cette page décrit les données que nous traitons actuellement – volontairement le moins possible.",
+  "privacy.scope.eyebrow": "Ce que nous traitons",
+  "privacy.scope.title": "Uniquement les informations de ta recherche actuelle",
+  "privacy.scope.text":
+    "Pour une recherche, Vesta traite uniquement les informations que tu sélectionnes dans le formulaire : le domaine choisi, ta langue et des informations optionnelles comme un chien, l’absence de pièce d’identité, le groupe cible, l’âge ou des indications de sécurité. Ces informations ne servent qu’à cette recherche précise.",
+  "privacy.scope.noAccount":
+    "Vesta fonctionne sans compte. Ta recherche n’est pas enregistrée comme dossier ou profil.",
+  "privacy.storage.eyebrow": "Conservation",
+  "privacy.storage.title": "Aucune conservation durable de ta recherche",
+  "privacy.storage.text":
+    "Les informations de ta recherche sont transmises à l’API de Vesta, utilisées pour l’évaluation, puis ne sont pas enregistrées dans une base de données. Aucun historique de recherches précédentes n’est créé.",
+  "privacy.device.eyebrow": "Sur ton appareil",
+  "privacy.device.title": "Uniquement ta préférence de langue",
+  "privacy.device.text":
+    "Vesta enregistre localement sur ton appareil uniquement la langue choisie, afin que l’interface s’affiche dans la bonne langue lors de ta prochaine visite. Cette information ne quitte jamais ton appareil.",
+  "privacy.offline.eyebrow": "Utilisation hors ligne",
+  "privacy.offline.title": "Le stockage hors ligne ne contient aucun résultat de recherche",
+  "privacy.offline.text":
+    "Pour l’installation en tant qu’application, Vesta met en cache des éléments techniques comme la structure des pages, les icônes et les polices. Les requêtes envoyées à l’API de recherche en sont explicitement exclues et ne sont jamais mises en cache.",
+  "privacy.logs.eyebrow": "Journaux techniques",
+  "privacy.logs.title": "Les journaux d’exploitation ne contiennent pas tes réponses complètes",
+  "privacy.logs.text":
+    "Comme tout service web, l’exploitation du site génère des journaux techniques, par exemple l’adresse IP, l’heure et l’adresse consultée, à des fins de sécurité et de dépannage. La durée de conservation et le processus de suppression seront définis de manière contraignante avant toute utilisation publique sur le terrain.",
+  "privacy.offers.eyebrow": "Registre des offres",
+  "privacy.offers.title": "Informations publiques sur les offres d’aide",
+  "privacy.offers.text":
+    "Le registre des offres contient des informations publiques et vérifiées sur les offres d’aide à Berne – aucune donnée personnelle des utilisateurs et utilisatrices.",
+  "privacy.ai.eyebrow": "IA",
+  "privacy.ai.title": "Modèle de langage actuellement désactivé",
+  "privacy.ai.text":
+    "L’explication assistée par IA est désactivée dans cette version. Elle ne sera activée qu’une fois le fournisseur, la finalité et le flux de données examinés séparément et rendus publics.",
+  "privacy.hosting.eyebrow": "Hébergement",
+  "privacy.hosting.title": "Infrastructure suisse prévue",
+  "privacy.hosting.text":
+    "L’exploitation est prévue sur une infrastructure suisse. Avant toute utilisation publique sur le terrain, le contrat de sous-traitance, les sous-traitants, les lieux de stockage et une analyse d’impact relative à la protection des données seront définis de manière contraignante.",
+  "privacy.rights.eyebrow": "Tes droits",
+  "privacy.rights.title": "Accès, rectification et suppression",
+  "privacy.rights.text":
+    "Comme Vesta fonctionne sans compte et ne conserve aucun historique de recherche, les droits d’accès, de rectification et de suppression concernent surtout les journaux techniques. Adresse-toi pour cela au contact indiqué ci-dessous.",
+  "privacy.responsible.eyebrow": "Organisme responsable",
+  "privacy.responsible.title": "Pas encore formellement désigné",
+  "privacy.responsible.text":
+    "Vesta est actuellement un prototype technique indépendant. Un organisme responsable pour une utilisation publique sur le terrain n’a pas encore été formellement désigné.",
+  "privacy.contact.label": "Questions et retours",
+  "privacy.contact.value": "Dépôt GitHub de Vesta",
+  "privacy.note":
+    "Cette déclaration décrit l’état actuel du prototype. Avant toute utilisation publique sur le terrain, elle sera complétée de manière contraignante avec un contact responsable, un organisme porteur et des sous-traitants vérifiés.",
   "footer.emergency":
     "Vesta ne remplace pas l’aide d’urgence et ne réserve aucune place.",
   "footer.prototype":
     "Prototype initial · informations non encore autorisées pour le terrain",
   "footer.imprint": "À propos & mentions légales",
+  "footer.privacy": "Déclaration de protection des données",
   "offline.eyebrow": "Pas de connexion",
   "offline.title": "Vesta est actuellement hors ligne.",
   "offline.body":
     "Sans connexion internet, nous n’affichons volontairement aucune offre potentiellement obsolète. Rétablis la connexion et réessaie.",
   "offline.retry": "Réessayer",
   "offline.back": "Retour à l’accueil",
+  "dialogue.eyebrow": "Prototype : dialogue AI",
+  "dialogue.freeText.label": "Décris brièvement ce dont tu as besoin",
+  "dialogue.freeText.placeholder":
+    "p. ex. J'ai besoin d'une place pour dormir ce soir avec mon chien",
+  "dialogue.freeText.submit": "Vérifier la proposition",
+  "dialogue.freeText.loading": "Vérification en cours …",
+  "dialogue.interpretation.unavailable":
+    "La reconnaissance automatique de texte n'est pas active actuellement (mode modèle). Choisis un domaine ci-dessous pour le dialogue AI.",
+  "dialogue.interpretation.needApplied": "Proposition de l'AI reprise : {need}",
+  "dialogue.needPicker.legend": "Domaine pour le dialogue AI",
+  "dialogue.start": "Démarrer le dialogue AI",
+  "dialogue.loading": "Traitement en cours …",
+  "dialogue.error": "Le dialogue AI n'est pas disponible actuellement.",
+  "dialogue.question.eyebrow": "Encore une question",
+  "dialogue.question.yes": "Oui",
+  "dialogue.question.no": "Non",
+  "dialogue.question.numberSubmit": "Confirmer",
+  "dialogue.result.eyebrow": "Résultat expliqué",
+  "dialogue.aiBadge": "Explication AI",
+  "dialogue.templateBadge": "Texte standard · AI inactive",
+  "dialogue.restart": "Recommencer",
 };
 
 const en: Record<MessageKey, string> = {
@@ -271,6 +417,7 @@ const en: Record<MessageKey, string> = {
   "nav.primaryLabel": "Main navigation",
   "nav.home": "Search",
   "nav.imprint": "Imprint",
+  "nav.privacy": "Privacy",
   "locale.label": "Interface language",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -380,17 +527,88 @@ const en: Record<MessageKey, string> = {
   "imprint.contact.value": "Vesta GitHub repository",
   "imprint.note":
     "Before public field use, the accountable contact, responsible organisation, privacy information and participating partners will be formally identified.",
+  "privacy.eyebrow": "Transparency",
+  "privacy.title": "Privacy notice",
+  "privacy.lead":
+    "Vesta is still in an early pilot phase. This page describes what data we currently process — deliberately as little as possible.",
+  "privacy.scope.eyebrow": "What we process",
+  "privacy.scope.title": "Only the details of your current search",
+  "privacy.scope.text":
+    "For a search, Vesta only processes the details you choose in the form: the selected area, your language, and optional details such as a dog, missing identity document, target group, age or safety flags. These details are only used for that one search.",
+  "privacy.scope.noAccount":
+    "Vesta works without an account. Your search is not stored as a case file or profile.",
+  "privacy.storage.eyebrow": "Storage",
+  "privacy.storage.title": "No lasting storage of your search",
+  "privacy.storage.text":
+    "Your search details are sent to the Vesta API, used to work out the result, and are not saved in a database afterwards. No history of past searches is created.",
+  "privacy.device.eyebrow": "On your device",
+  "privacy.device.title": "Only your language preference",
+  "privacy.device.text":
+    "Vesta stores only your chosen language locally on your device, so the interface appears in the right language on your next visit. This detail never leaves your device.",
+  "privacy.offline.eyebrow": "Offline use",
+  "privacy.offline.title": "Offline storage holds no search results",
+  "privacy.offline.text":
+    "To allow installation as an app, Vesta caches technical parts such as the page shell, icons and fonts. Requests to the search API are explicitly excluded and are never cached.",
+  "privacy.logs.eyebrow": "Technical logs",
+  "privacy.logs.title": "Operational logs do not contain your full answers",
+  "privacy.logs.text":
+    "Like any web service, running the site creates technical logs, for example IP address, time and requested address, for security and troubleshooting. Retention period and deletion process will be formally defined before any public field use.",
+  "privacy.offers.eyebrow": "Service register",
+  "privacy.offers.title": "Public information about support services",
+  "privacy.offers.text":
+    "The service register contains verified, public information about support services in Bern — no personal data of users.",
+  "privacy.ai.eyebrow": "AI",
+  "privacy.ai.title": "Language model currently disabled",
+  "privacy.ai.text":
+    "AI-assisted explanation is disabled in this version. It will only be enabled once the provider, purpose and data flow have been separately reviewed and disclosed.",
+  "privacy.hosting.eyebrow": "Hosting",
+  "privacy.hosting.title": "Swiss infrastructure planned",
+  "privacy.hosting.text":
+    "Operation is planned on Swiss infrastructure. Before any public field use, the data processing agreement, subprocessors, storage locations and a data protection impact assessment will be formally clarified.",
+  "privacy.rights.eyebrow": "Your rights",
+  "privacy.rights.title": "Access, correction and deletion",
+  "privacy.rights.text":
+    "Because Vesta works without an account and keeps no search history, access, correction and deletion rights mainly concern technical logs. Please use the contact below for this.",
+  "privacy.responsible.eyebrow": "Responsible organisation",
+  "privacy.responsible.title": "Not yet formally designated",
+  "privacy.responsible.text":
+    "Vesta is currently an independent technical prototype. A responsible organisation for public field use has not yet been formally designated.",
+  "privacy.contact.label": "Questions and feedback",
+  "privacy.contact.value": "Vesta GitHub repository",
+  "privacy.note":
+    "This notice describes the current prototype state. Before any public field use, it will be formally completed with an accountable contact, a responsible organisation and verified subprocessors.",
   "footer.emergency":
     "Vesta does not replace emergency assistance and does not reserve places.",
   "footer.prototype":
     "Initial prototype · information not yet approved for field use",
   "footer.imprint": "About Vesta & legal notice",
+  "footer.privacy": "Privacy notice",
   "offline.eyebrow": "No connection",
   "offline.title": "Vesta is currently offline.",
   "offline.body":
     "Without an internet connection, we deliberately do not show services that may be out of date. Reconnect and try again.",
   "offline.retry": "Try again",
   "offline.back": "Back to home",
+  "dialogue.eyebrow": "Prototype: AI dialogue",
+  "dialogue.freeText.label": "Briefly describe what you need",
+  "dialogue.freeText.placeholder": "e.g. I need a place to sleep tonight with my dog",
+  "dialogue.freeText.submit": "Check suggestion",
+  "dialogue.freeText.loading": "Checking …",
+  "dialogue.interpretation.unavailable":
+    "Automatic text understanding is not active right now (template mode). Choose an area below to start the AI dialogue.",
+  "dialogue.interpretation.needApplied": "AI suggestion applied: {need}",
+  "dialogue.needPicker.legend": "Area for the AI dialogue",
+  "dialogue.start": "Start AI dialogue",
+  "dialogue.loading": "Processing …",
+  "dialogue.error": "The AI dialogue is currently unavailable.",
+  "dialogue.question.eyebrow": "One more question",
+  "dialogue.question.yes": "Yes",
+  "dialogue.question.no": "No",
+  "dialogue.question.numberSubmit": "Confirm",
+  "dialogue.result.eyebrow": "Explained result",
+  "dialogue.aiBadge": "AI explanation",
+  "dialogue.templateBadge": "Standard text · AI inactive",
+  "dialogue.restart": "Start over",
 };
 
 const ar: Record<MessageKey, string> = {
@@ -401,6 +619,7 @@ const ar: Record<MessageKey, string> = {
   "nav.primaryLabel": "التنقل الرئيسي",
   "nav.home": "البحث",
   "nav.imprint": "معلومات قانونية",
+  "nav.privacy": "الخصوصية",
   "locale.label": "لغة الواجهة",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
@@ -509,16 +728,87 @@ const ar: Record<MessageKey, string> = {
   "imprint.contact.value": "مستودع فيستا على GitHub",
   "imprint.note":
     "قبل أي استخدام ميداني عام، ستُحدَّد رسمياً جهة الاتصال المسؤولة والجهة المشغلة ومعلومات الخصوصية والشركاء المشاركون.",
+  "privacy.eyebrow": "الشفافية",
+  "privacy.title": "إشعار الخصوصية",
+  "privacy.lead":
+    "لا تزال فيستا في مرحلة تجريبية مبكرة. توضح هذه الصفحة البيانات التي نعالجها حالياً - وهي بيانات قليلة عمداً.",
+  "privacy.scope.eyebrow": "ما الذي نعالجه",
+  "privacy.scope.title": "فقط معلومات بحثك الحالي",
+  "privacy.scope.text":
+    "عند إجراء بحث، تعالج فيستا فقط المعلومات التي تختارها في النموذج: المجال المختار، لغتك، ومعلومات اختيارية مثل وجود كلب، أو عدم وجود وثيقة هوية، أو الفئة المستهدفة، أو العمر، أو مؤشرات السلامة. تُستخدم هذه المعلومات فقط لهذا البحث.",
+  "privacy.scope.noAccount":
+    "تعمل فيستا من دون حساب. لا يُحفَظ بحثك كملف حالة أو ملف شخصي.",
+  "privacy.storage.eyebrow": "التخزين",
+  "privacy.storage.title": "لا يُحفَظ بحثك بشكل دائم",
+  "privacy.storage.text":
+    "تُرسَل معلومات بحثك إلى واجهة برمجة تطبيقات فيستا، وتُستخدم لتقييم النتيجة، ولا تُحفَظ بعد ذلك في قاعدة بيانات. لا يُنشأ أي سجل لعمليات بحث سابقة.",
+  "privacy.device.eyebrow": "على جهازك",
+  "privacy.device.title": "فقط تفضيل اللغة",
+  "privacy.device.text":
+    "تُخزّن فيستا محلياً على جهازك اللغة التي اخترتها فقط، حتى تظهر الواجهة باللغة الصحيحة في زيارتك القادمة. لا تغادر هذه المعلومة جهازك أبداً.",
+  "privacy.offline.eyebrow": "الاستخدام دون اتصال",
+  "privacy.offline.title": "لا يحتوي التخزين دون اتصال على نتائج بحث",
+  "privacy.offline.text":
+    "لتمكين التثبيت كتطبيق، تخزّن فيستا مؤقتاً عناصر تقنية مثل هيكل الصفحة والأيقونات والخطوط. تُستثنى طلبات واجهة برمجة تطبيقات البحث من ذلك صراحةً ولا تُخزَّن مؤقتاً أبداً.",
+  "privacy.logs.eyebrow": "السجلات التقنية",
+  "privacy.logs.title": "سجلات التشغيل لا تحتوي على إجاباتك الكاملة",
+  "privacy.logs.text":
+    "كما هو الحال مع أي خدمة ويب، ينشئ تشغيل الموقع سجلات تقنية، مثل عنوان IP والوقت والعنوان المطلوب، لأغراض الأمان واستكشاف الأخطاء. سيتم تحديد مدة الاحتفاظ وعملية الحذف بشكل ملزم قبل أي استخدام ميداني عام.",
+  "privacy.offers.eyebrow": "سجل الخدمات",
+  "privacy.offers.title": "معلومات عامة عن خدمات المساعدة",
+  "privacy.offers.text":
+    "يحتوي سجل الخدمات على معلومات عامة تم التحقق منها حول خدمات المساعدة في برن - ولا يحتوي على بيانات شخصية للمستخدمين.",
+  "privacy.ai.eyebrow": "الذكاء الاصطناعي",
+  "privacy.ai.title": "نموذج اللغة معطّل حالياً",
+  "privacy.ai.text":
+    "الشرح المدعوم بالذكاء الاصطناعي معطّل في هذا الإصدار. لن يُفعَّل إلا بعد مراجعة الجهة المزوّدة والغرض وتدفق البيانات بشكل منفصل والإفصاح عنها.",
+  "privacy.hosting.eyebrow": "الاستضافة",
+  "privacy.hosting.title": "يُخطَّط لبنية تحتية سويسرية",
+  "privacy.hosting.text":
+    "من المخطط تشغيل الخدمة على بنية تحتية سويسرية. قبل أي استخدام ميداني عام، سيتم تحديد اتفاقية معالجة البيانات والجهات الفرعية المعالِجة ومواقع التخزين وتقييم الأثر على حماية البيانات بشكل ملزم.",
+  "privacy.rights.eyebrow": "حقوقك",
+  "privacy.rights.title": "الاطلاع والتصحيح والحذف",
+  "privacy.rights.text":
+    "بما أن فيستا تعمل من دون حساب ولا تحتفظ بسجل بحث، فإن حقوق الاطلاع والتصحيح والحذف تتعلق بشكل أساسي بالسجلات التقنية. يرجى التواصل عبر جهة الاتصال أدناه لهذا الغرض.",
+  "privacy.responsible.eyebrow": "الجهة المسؤولة",
+  "privacy.responsible.title": "لم تُحدَّد رسمياً بعد",
+  "privacy.responsible.text":
+    "فيستا حالياً نموذج تقني أولي مستقل. لم تُحدَّد بعد رسمياً جهة مسؤولة عن الاستخدام الميداني العام.",
+  "privacy.contact.label": "الأسئلة والملاحظات",
+  "privacy.contact.value": "مستودع فيستا على GitHub",
+  "privacy.note":
+    "يصف هذا الإشعار حالة النموذج الأولي الحالية. قبل أي استخدام ميداني عام، سيُستكمَل بشكل ملزم بجهة اتصال مسؤولة وجهة مشغّلة وجهات معالجة فرعية تم التحقق منها.",
   "footer.emergency": "لا تحل فيستا محل خدمات الطوارئ ولا تحجز أماكن.",
   "footer.prototype":
     "نموذج أولي · المعلومات غير معتمدة بعد للاستخدام الميداني",
   "footer.imprint": "حول فيستا والمعلومات القانونية",
+  "footer.privacy": "إشعار الخصوصية",
   "offline.eyebrow": "لا يوجد اتصال",
   "offline.title": "فيستا غير متصلة بالإنترنت حالياً.",
   "offline.body":
     "من دون اتصال بالإنترنت لا نعرض عمداً خدمات قد تكون معلوماتها قديمة. أعد الاتصال وحاول مرة أخرى.",
   "offline.retry": "إعادة المحاولة",
   "offline.back": "العودة إلى الصفحة الرئيسية",
+  "dialogue.eyebrow": "نموذج أولي: حوار الذكاء الاصطناعي",
+  "dialogue.freeText.label": "صف باختصار ما تحتاجه",
+  "dialogue.freeText.placeholder": "مثال: أحتاج مكانًا للنوم الليلة مع كلبي",
+  "dialogue.freeText.submit": "التحقق من الاقتراح",
+  "dialogue.freeText.loading": "جارٍ التحقق…",
+  "dialogue.interpretation.unavailable":
+    "التعرف التلقائي على النص غير مفعل حاليًا (وضع القوالب). اختر مجالاً أدناه لبدء حوار الذكاء الاصطناعي.",
+  "dialogue.interpretation.needApplied": "تم تطبيق اقتراح الذكاء الاصطناعي: {need}",
+  "dialogue.needPicker.legend": "المجال لحوار الذكاء الاصطناعي",
+  "dialogue.start": "بدء حوار الذكاء الاصطناعي",
+  "dialogue.loading": "جارٍ المعالجة…",
+  "dialogue.error": "حوار الذكاء الاصطناعي غير متاح حاليًا.",
+  "dialogue.question.eyebrow": "سؤال آخر",
+  "dialogue.question.yes": "نعم",
+  "dialogue.question.no": "لا",
+  "dialogue.question.numberSubmit": "تأكيد",
+  "dialogue.result.eyebrow": "نتيجة موضحة",
+  "dialogue.aiBadge": "توضيح الذكاء الاصطناعي",
+  "dialogue.templateBadge": "نص قياسي · الذكاء الاصطناعي غير مفعل",
+  "dialogue.restart": "البدء من جديد",
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = {

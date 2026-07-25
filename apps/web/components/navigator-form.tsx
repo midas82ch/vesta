@@ -6,7 +6,7 @@ import { useI18n } from "@/components/i18n-provider";
 import type { MessageKey } from "@/lib/i18n";
 
 
-type Need = "sleep_tonight" | "basic_needs" | "counselling";
+export type Need = "sleep_tonight" | "basic_needs" | "counselling";
 
 type Candidate = {
   offer: {
@@ -35,14 +35,14 @@ type MatchResponse = {
   disclaimer: string;
 };
 
-type NeedOption = {
+export type NeedOption = {
   value: Need;
   title: MessageKey;
   detail: MessageKey;
   icon: string;
 };
 
-const needs: NeedOption[] = [
+export const needs: NeedOption[] = [
   {
     value: "sleep_tonight",
     title: "need.sleep.title",

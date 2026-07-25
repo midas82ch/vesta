@@ -8,13 +8,14 @@ import { PwaInstallButton } from "@/components/pwa-controls";
 import { VestaMark } from "@/components/vesta-mark";
 
 type SiteHeaderProps = {
-  currentPage: "home" | "imprint";
+  currentPage: "home" | "imprint" | "privacy";
 };
 
 export function SiteHeader({ currentPage }: Readonly<SiteHeaderProps>) {
   const { locale, t } = useI18n();
   const homeHref = `/?lang=${locale}`;
   const imprintHref = `/impressum?lang=${locale}`;
+  const privacyHref = `/datenschutz?lang=${locale}`;
 
   return (
     <header className="site-header">
@@ -37,6 +38,12 @@ export function SiteHeader({ currentPage }: Readonly<SiteHeaderProps>) {
           href={imprintHref}
         >
           {t("nav.imprint")}
+        </Link>
+        <Link
+          aria-current={currentPage === "privacy" ? "page" : undefined}
+          href={privacyHref}
+        >
+          {t("nav.privacy")}
         </Link>
       </nav>
 

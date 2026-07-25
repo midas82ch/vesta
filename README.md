@@ -44,6 +44,7 @@ Bewegung und erzwungene Kontrastfarben.
 ```text
 apps/
   api/                  FastAPI und deterministisches Matching
+    evals/              Eval-Set fuer AI-Interpretation und -Erklaerung
   web/                  Mobile Next.js-PWA
 data/
   seed/                 Ausschliesslich geprüfte oder klar markierte Testdaten

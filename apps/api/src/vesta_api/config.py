@@ -10,6 +10,9 @@ DEFAULT_DATA_PATH = (
 DEFAULT_SOURCE_CATALOG_PATH = (
     Path(__file__).resolve().parents[4] / "data" / "sources" / "bern_offers.json"
 )
+DEFAULT_DIALOGUE_CATALOG_PATH = (
+    Path(__file__).resolve().parents[4] / "data" / "seed" / "dialogue_catalog.json"
+)
 
 
 class Settings(BaseSettings):
@@ -29,6 +32,18 @@ class Settings(BaseSettings):
         default=DEFAULT_SOURCE_CATALOG_PATH,
         validation_alias="OFFER_SOURCE_CATALOG_PATH",
     )
+    dialogue_catalog_path: Path = Field(
+        default=DEFAULT_DIALOGUE_CATALOG_PATH,
+        validation_alias="DIALOGUE_CATALOG_PATH",
+    )
+    ai_enabled: bool = Field(default=False, validation_alias="VESTA_AI_ENABLED")
+    ai_provider: str = Field(default="anthropic", validation_alias="VESTA_AI_PROVIDER")
+    ai_model: str = Field(default="claude-haiku-4-5", validation_alias="VESTA_AI_MODEL")
+    anthropic_api_key: SecretStr | None = Field(
+        default=None, validation_alias="ANTHROPIC_API_KEY"
+    )
+    openai_model: str = Field(default="gpt-4o-mini", validation_alias="VESTA_OPENAI_MODEL")
+    openai_api_key: SecretStr | None = Field(default=None, validation_alias="OPENAI_API_KEY")
 
     def get_database_url(self) -> str | None:
         if self.database_url_file is not None:

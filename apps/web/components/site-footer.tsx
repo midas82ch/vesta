@@ -13,6 +13,7 @@ export function SiteFooter() {
       <div className="footer-meta">
         <p>{t("footer.prototype")}</p>
         <Link href={`/impressum?lang=${locale}`}>{t("footer.imprint")}</Link>
+        <Link href={`/datenschutz?lang=${locale}`}>{t("footer.privacy")}</Link>
       </div>
     </footer>
   );

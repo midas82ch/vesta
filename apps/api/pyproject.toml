@@ -21,6 +21,10 @@ dev = [
   "httpx2>=2,<3",
   "ruff>=0.12,<1",
 ]
+ai = [
+  "anthropic>=0.70,<1",
+  "openai>=1.40,<2",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vesta_api"]

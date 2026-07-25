@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from vesta_api.domain.models import Availability, Need, RiskFlag
+from vesta_api.domain.models import Availability, Candidate, Need, RiskFlag
 
 
 class MatchRequest(BaseModel):
@@ -45,3 +45,26 @@ class MatchResponse(BaseModel):
     human_handoff_required: bool
     handoff_reason: str | None
     disclaimer: str
+
+
+def candidate_to_response(candidate: Candidate) -> CandidateResponse:
+    return CandidateResponse(
+        offer=OfferResponse(
+            id=candidate.offer.id,
+            name=candidate.offer.name,
+            summary=candidate.offer.summary,
+            languages=list(candidate.offer.languages),
+            availability=candidate.offer.availability,
+            contact_note=candidate.offer.contact_note,
+            source=OfferSourceResponse(
+                label=candidate.offer.source.label,
+                url=candidate.offer.source.url,
+                verified_at=candidate.offer.source.verified_at,
+                expires_at=candidate.offer.source.expires_at,
+                verified_by=candidate.offer.source.verified_by,
+            ),
+            is_demo=candidate.offer.is_demo,
+        ),
+        reasons=list(candidate.reasons),
+        uncertainties=list(candidate.uncertainties),
+    )

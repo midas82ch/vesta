@@ -4,11 +4,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from vesta_api.api.schemas import (
-    CandidateResponse,
     MatchRequest,
     MatchResponse,
-    OfferResponse,
-    OfferSourceResponse,
+    candidate_to_response,
 )
 from vesta_api.domain.models import MatchQuery
 from vesta_api.repositories.offers import OfferRepository
@@ -63,29 +61,7 @@ def create_match(
     )
 
     return MatchResponse(
-        candidates=[
-            CandidateResponse(
-                offer=OfferResponse(
-                    id=candidate.offer.id,
-                    name=candidate.offer.name,
-                    summary=candidate.offer.summary,
-                    languages=list(candidate.offer.languages),
-                    availability=candidate.offer.availability,
-                    contact_note=candidate.offer.contact_note,
-                    source=OfferSourceResponse(
-                        label=candidate.offer.source.label,
-                        url=candidate.offer.source.url,
-                        verified_at=candidate.offer.source.verified_at,
-                        expires_at=candidate.offer.source.expires_at,
-                        verified_by=candidate.offer.source.verified_by,
-                    ),
-                    is_demo=candidate.offer.is_demo,
-                ),
-                reasons=list(candidate.reasons),
-                uncertainties=list(candidate.uncertainties),
-            )
-            for candidate in result.candidates
-        ],
+        candidates=[candidate_to_response(candidate) for candidate in result.candidates],
         human_handoff_required=result.human_handoff_required,
         handoff_reason=result.handoff_reason,
         disclaimer=(
