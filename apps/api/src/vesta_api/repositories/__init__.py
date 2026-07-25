@@ -1,0 +1,1 @@
+"""Datenzugriffe für Angebotsinformationen."""

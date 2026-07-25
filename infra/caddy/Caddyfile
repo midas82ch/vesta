@@ -1,0 +1,22 @@
+{
+	admin off
+}
+
+{$VESTA_SITE_ADDRESS:http://localhost} {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+	}
+
+	reverse_proxy web:3000
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vesta.example/schemas/match-request.schema.json",
+  "title": "MatchRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["need", "language"],
+  "properties": {
+    "need": {
+      "enum": ["sleep_tonight", "basic_needs", "counselling"]
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 12
+    },
+    "dog": {
+      "type": ["boolean", "null"]
+    },
+    "has_identity_document": {
+      "type": ["boolean", "null"]
+    },
+    "gender": {
+      "type": ["string", "null"],
+      "maxLength": 40
+    },
+    "age": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 120
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "unconscious_or_not_breathing",
+          "possible_overdose",
+          "severe_injury",
+          "immediate_violence",
+          "exposure_risk",
+          "acute_self_harm",
+          "minor_in_danger"
+        ]
+      },
+      "uniqueItems": true
+    }
+  }
+}
