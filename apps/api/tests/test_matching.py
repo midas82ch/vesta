@@ -31,6 +31,7 @@ def offer(
     *,
     accepts_dogs: bool | None = True,
     requires_id: bool | None = False,
+    accepted_genders: tuple[str, ...] = (),
     expires_at: datetime | None = None,
 ) -> Offer:
     return Offer(
@@ -42,6 +43,7 @@ def offer(
         access=AccessRules(
             accepts_dogs=accepts_dogs,
             identity_document_required=requires_id,
+            accepted_genders=accepted_genders,
         ),
         availability=Availability.CALL_TO_CONFIRM,
         contact_note="Test",
@@ -99,6 +101,37 @@ class MatchingServiceTest(unittest.TestCase):
 
         result = service.match(
             MatchQuery(need=Need.SLEEP_TONIGHT, language="de", at=NOW)
+        )
+
+        self.assertEqual((), result.candidates)
+
+    def test_marks_unknown_target_group_as_uncertain(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository((offer(accepted_genders=("finta",)),))
+        )
+
+        result = service.match(
+            MatchQuery(need=Need.SLEEP_TONIGHT, language="de", at=NOW)
+        )
+
+        self.assertEqual(1, len(result.candidates))
+        self.assertIn(
+            "target_group_must_be_confirmed",
+            result.candidates[0].uncertainties,
+        )
+
+    def test_excludes_offer_for_different_target_group(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository((offer(accepted_genders=("finta",)),))
+        )
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                gender="other",
+                at=NOW,
+            )
         )
 
         self.assertEqual((), result.candidates)

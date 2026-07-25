@@ -7,6 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 DEFAULT_DATA_PATH = (
     Path(__file__).resolve().parents[4] / "data" / "seed" / "offers.example.json"
 )
+DEFAULT_SOURCE_CATALOG_PATH = (
+    Path(__file__).resolve().parents[4] / "data" / "sources" / "bern_offers.json"
+)
 
 
 class Settings(BaseSettings):
@@ -22,6 +25,10 @@ class Settings(BaseSettings):
         validation_alias="DATABASE_URL_FILE",
     )
     offer_data_path: Path = DEFAULT_DATA_PATH
+    offer_source_catalog_path: Path = Field(
+        default=DEFAULT_SOURCE_CATALOG_PATH,
+        validation_alias="OFFER_SOURCE_CATALOG_PATH",
+    )
 
     def get_database_url(self) -> str | None:
         if self.database_url_file is not None:

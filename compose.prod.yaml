@@ -105,11 +105,30 @@ services:
         "head",
       ]
     environment:
-      DATABASE_URL_FILE: /run/secrets/database-url
+      DATABASE_URL_FILE: /run/secrets/database-admin-url
     secrets:
-      - database-url
+      - database-admin-url
     networks:
       - egress
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  ingest:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["python", "-m", "vesta_api.cli.ingest_offers"]
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database-ingest-url
+      OFFER_SOURCE_CATALOG_PATH: /app/data/sources/bern_offers.json
+      VESTA_ENV: production
+    secrets:
+      - database-ingest-url
+    networks:
+      - egress
+    profiles:
+      - jobs
     security_opt:
       - no-new-privileges:true
     logging: *default-logging
@@ -125,5 +144,9 @@ volumes:
   caddy-config:
 
 secrets:
+  database-admin-url:
+    file: ${DATABASE_ADMIN_URL_FILE:-./secrets/database-admin-url}
   database-url:
     file: ${DATABASE_URL_FILE:-./secrets/database-url}
+  database-ingest-url:
+    file: ${DATABASE_INGEST_URL_FILE:-./secrets/database-ingest-url}

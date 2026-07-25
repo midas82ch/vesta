@@ -257,7 +257,7 @@ legend {
   border-top: 1px solid var(--line);
   display: grid;
   gap: 22px;
-  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-columns: 0.8fr 1fr 1.25fr;
   margin-top: 26px;
   padding-top: 24px;
 }
@@ -401,9 +401,23 @@ select {
   margin-bottom: 6px;
 }
 
+.contact-note {
+  background: var(--green-light);
+  border-radius: 10px;
+  color: var(--ink) !important;
+  margin: 12px 0;
+  padding: 11px 12px;
+}
+
 .source {
   font-size: 0.72rem !important;
   margin-bottom: 0;
+}
+
+.source a {
+  color: var(--green);
+  font-weight: 750;
+  text-underline-offset: 2px;
 }
 
 .disclaimer {

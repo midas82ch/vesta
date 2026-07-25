@@ -46,6 +46,20 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  ingest:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["python", "-m", "vesta_api.cli.ingest_offers"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://vesta:vesta-local@db:5432/vesta}
+      OFFER_SOURCE_CATALOG_PATH: /app/data/sources/bern_offers.json
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    profiles:
+      - jobs
+
   api:
     build:
       context: .
