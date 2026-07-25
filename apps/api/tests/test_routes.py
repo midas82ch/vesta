@@ -6,7 +6,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+from vesta_api.api.routes import offer_repository  # noqa: E402
 from vesta_api.main import app  # noqa: E402
+
+
+class UnavailableRepository:
+    def healthcheck(self) -> None:
+        raise ConnectionError("database is unavailable")
 
 
 class RoutesTest(unittest.TestCase):
@@ -16,6 +22,24 @@ class RoutesTest(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual({"status": "ok"}, response.json())
+
+    def test_ready_checks_repository(self) -> None:
+        with TestClient(app) as client:
+            response = client.get("/ready")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"status": "ready"}, response.json())
+
+    def test_ready_reports_unavailable_database(self) -> None:
+        app.dependency_overrides[offer_repository] = UnavailableRepository
+        try:
+            with TestClient(app) as client:
+                response = client.get("/ready")
+        finally:
+            app.dependency_overrides.clear()
+
+        self.assertEqual(503, response.status_code)
+        self.assertEqual({"detail": "database_unavailable"}, response.json())
 
     def test_match_returns_explicit_demo_result(self) -> None:
         with TestClient(app) as client:

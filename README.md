@@ -62,6 +62,7 @@ docker compose up --build
 - Web: <http://localhost:3000>
 - API-Dokumentation: <http://localhost:8000/docs>
 - API-Status: <http://localhost:8000/health>
+- API-Bereitschaft inklusive Datenbank: <http://localhost:8000/ready>
 
 Alternativ können Web und API einzeln gestartet werden:
 
@@ -89,18 +90,27 @@ cd apps/api
 python -m unittest discover -s tests
 ```
 
-## Auf einer einzelnen VM starten
+## Auf einer einzelnen VM mit Managed PostgreSQL starten
 
 Für den technischen Prototyp steht eine separate Compose-Datei bereit. Sie
-veröffentlicht nur Caddy auf Port 80 und 443; Web, API und PostgreSQL bleiben
-in internen Docker-Netzen.
+veröffentlicht nur Caddy auf Port 80 und 443. Web und API bleiben in internen
+Docker-Netzen; PostgreSQL läuft als verwalteter Exoscale-Dienst.
 
 ```bash
 cp .env.example .env
-# POSTGRES_PASSWORD und VESTA_SITE_ADDRESS in .env setzen
+# VESTA_SITE_ADDRESS in .env setzen
+install -d -m 700 secrets
+read -rsp "Exoscale PostgreSQL URI: " DATABASE_URI
+printf '%s' "$DATABASE_URI" > secrets/database-url
+unset DATABASE_URI
+chmod 600 secrets/database-url
 sudo docker compose -f compose.prod.yaml up --build -d
 sudo docker compose -f compose.prod.yaml ps
 ```
+
+Die URI muss TLS aktivieren (`sslmode=require` oder stärker). Der Ordner
+`secrets/` wird von Git und vom Docker-Build-Kontext ausgeschlossen. Vor dem
+API-Start führt Compose alle noch offenen Alembic-Migrationen aus.
 
 Für einen ersten Test über eine IP-Adresse wird beispielsweise
 `VESTA_SITE_ADDRESS=http://203.0.113.10` gesetzt. Sobald ein DNS-Name auf die

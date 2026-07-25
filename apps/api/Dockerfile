@@ -10,6 +10,8 @@ COPY apps/api/pyproject.toml /app/apps/api/pyproject.toml
 COPY apps/api/src /app/apps/api/src
 RUN pip install --no-cache-dir /app/apps/api
 
+COPY apps/api/alembic.ini /app/apps/api/alembic.ini
+COPY apps/api/migrations /app/apps/api/migrations
 COPY data /app/data
 
 EXPOSE 8000

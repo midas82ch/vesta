@@ -1,0 +1,95 @@
+import sys
+import tempfile
+import unittest
+from datetime import UTC, datetime
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from vesta_api.config import Settings  # noqa: E402
+from vesta_api.domain.models import Availability, Need  # noqa: E402
+from vesta_api.repositories.database import sqlalchemy_database_url  # noqa: E402
+from vesta_api.repositories.offers import _postgres_row_to_offer  # noqa: E402
+
+
+class DatabaseConfigurationTest(unittest.TestCase):
+    def test_normalizes_standard_postgresql_uri(self) -> None:
+        self.assertEqual(
+            "postgresql+psycopg://user:secret@database.example/vesta"
+            "?sslmode=require",
+            sqlalchemy_database_url(
+                "postgresql://user:secret@database.example/vesta"
+                "?sslmode=require"
+            ),
+        )
+
+    def test_reads_database_url_from_secret_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            secret_file = Path(temporary_directory) / "database-url"
+            secret_file.write_text(
+                "postgresql://user:secret@database.example/vesta"
+                "?sslmode=require\n",
+                encoding="utf-8",
+            )
+            settings = Settings(
+                _env_file=None,
+                VESTA_ENV="production",
+                DATABASE_URL_FILE=secret_file,
+            )
+
+            database_url = settings.get_database_url()
+
+        self.assertEqual(
+            "postgresql://user:secret@database.example/vesta?sslmode=require",
+            database_url,
+        )
+
+    def test_rejects_unencrypted_production_database_url(self) -> None:
+        settings = Settings(
+            _env_file=None,
+            VESTA_ENV="production",
+            DATABASE_URL="postgresql://user:secret@database.example/vesta",
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "sslmode"):
+            settings.get_database_url()
+
+
+class PostgresOfferMappingTest(unittest.TestCase):
+    def test_maps_database_row_to_domain_offer(self) -> None:
+        verified_at = datetime(2026, 7, 25, tzinfo=UTC)
+        expires_at = datetime(2027, 1, 1, tzinfo=UTC)
+
+        offer = _postgres_row_to_offer(
+            {
+                "id": "9c995262-bffd-4c94-8d1e-dc260dd94bea",
+                "name": "Testangebot",
+                "summary": "Nur für den Test.",
+                "needs": ["sleep_tonight"],
+                "languages": ["DE", "fr"],
+                "access_rules": {
+                    "accepts_dogs": True,
+                    "identity_document_required": False,
+                },
+                "contact": {"note": "Vorher anrufen."},
+                "availability": "confirmed",
+                "source_label": "Testquelle",
+                "source_url": "https://example.org/source",
+                "verified_by": "test-team",
+                "verified_at": verified_at,
+                "expires_at": expires_at,
+                "published": True,
+                "is_demo": False,
+            }
+        )
+
+        self.assertEqual((Need.SLEEP_TONIGHT,), offer.needs)
+        self.assertEqual(("de", "fr"), offer.languages)
+        self.assertEqual(Availability.CONFIRMED, offer.availability)
+        self.assertTrue(offer.access.accepts_dogs)
+        self.assertEqual("Vorher anrufen.", offer.contact_note)
+        self.assertEqual(expires_at, offer.source.expires_at)
+
+
+if __name__ == "__main__":
+    unittest.main()
