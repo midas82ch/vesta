@@ -1,74 +1,92 @@
+"use client";
+
+import { useI18n } from "@/components/i18n-provider";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NavigatorForm } from "@/components/navigator-form";
+import { PwaInstallButton } from "@/components/pwa-controls";
+import type { MessageKey } from "@/lib/i18n";
 
 
-const principles = [
+const principles: Array<{
+  number: string;
+  title: MessageKey;
+  text: MessageKey;
+}> = [
   {
     number: "01",
-    title: "Geprüfte Information",
-    text: "Jedes Ergebnis zeigt Quelle, Prüfdatum und bestehende Unsicherheiten.",
+    title: "principle.verified.title",
+    text: "principle.verified.text",
   },
   {
     number: "02",
-    title: "Klare Regeln",
-    text: "Zugangsbedingungen werden nachvollziehbar geprüft – nicht von AI entschieden.",
+    title: "principle.rules.title",
+    text: "principle.rules.text",
   },
   {
     number: "03",
-    title: "Menschliche Übergabe",
-    text: "Bei Gefahr, Unsicherheit oder auf Wunsch übernimmt eine Fachperson.",
+    title: "principle.handoff.title",
+    text: "principle.handoff.text",
   },
 ];
 
 export default function Home() {
+  const { t } = useI18n();
+
   return (
-    <main>
+    <>
+      <a className="skip-link" href="#main-content">
+        {t("a11y.skipToContent")}
+      </a>
       <header className="site-header">
-        <a className="brand" href="#start" aria-label="Vesta Startseite">
+        <a className="brand" href="#start" aria-label={t("brand.homeLabel")}>
           <span className="brand-mark" aria-hidden="true">
             V
           </span>
           <span>Vesta</span>
         </a>
-        <p className="pilot-label">Pilot · Bern</p>
+        <div className="header-actions">
+          <p className="pilot-label">{t("pilot.label")}</p>
+          <PwaInstallButton />
+          <LocaleSwitcher />
+        </div>
       </header>
 
-      <section className="hero" id="start">
-        <div className="hero-copy">
-          <p className="eyebrow">Berner Sozial-Lotse</p>
-          <h1>Was brauchst du gerade?</h1>
-          <p className="lead">
-            Wir helfen dir, ein passendes Angebot zu finden. Einfach,
-            verständlich und mit sichtbaren Quellen.
-          </p>
-          <div className="trust-note">
-            <span className="trust-dot" aria-hidden="true" />
-            <p>Du brauchst kein Konto. Deine Suche wird nicht als Dossier gespeichert.</p>
+      <main id="main-content" tabIndex={-1}>
+        <section className="hero" id="start">
+          <div className="hero-copy">
+            <p className="eyebrow">{t("hero.eyebrow")}</p>
+            <h1>{t("hero.title")}</h1>
+            <p className="lead">{t("hero.lead")}</p>
+            <div className="trust-note">
+              <span className="trust-dot" aria-hidden="true" />
+              <p>{t("hero.trust")}</p>
+            </div>
           </div>
-        </div>
 
-        <NavigatorForm />
-      </section>
+          <NavigatorForm />
+        </section>
 
-      <section className="principles" aria-labelledby="principles-title">
-        <div className="section-heading">
-          <p className="eyebrow">Wie Vesta arbeitet</p>
-          <h2 id="principles-title">Technik, die den Zugang erleichtert.</h2>
-        </div>
-        <div className="principle-grid">
-          {principles.map((principle) => (
-            <article className="principle-card" key={principle.number}>
-              <p className="principle-number">{principle.number}</p>
-              <h3>{principle.title}</h3>
-              <p>{principle.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+        <section className="principles" aria-labelledby="principles-title">
+          <div className="section-heading">
+            <p className="eyebrow">{t("principles.eyebrow")}</p>
+            <h2 id="principles-title">{t("principles.title")}</h2>
+          </div>
+          <div className="principle-grid">
+            {principles.map((principle) => (
+              <article className="principle-card" key={principle.number}>
+                <p className="principle-number">{principle.number}</p>
+                <h3>{t(principle.title)}</h3>
+                <p>{t(principle.text)}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
 
       <footer>
-        <p>Vesta ersetzt keine Notfallhilfe und reserviert keine Plätze.</p>
-        <p>Initialer Prototyp · Angaben noch nicht für den Feldeinsatz freigegeben</p>
+        <p>{t("footer.emergency")}</p>
+        <p>{t("footer.prototype")}</p>
       </footer>
-    </main>
+    </>
   );
 }

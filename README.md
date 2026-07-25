@@ -20,6 +20,25 @@ Der erste Pilot konzentriert sich auf drei Situationen:
 Es werden keine Personendossiers, automatischen Zuteilungen oder medizinischen
 Diagnosen erstellt.
 
+## Web-Oberfläche
+
+Die Oberfläche ist mobile-first aufgebaut und unterstützt Deutsch,
+Französisch, Englisch und Arabisch. Die Sprachwahl bleibt in der URL und – wo
+vom Browser erlaubt – lokal gespeichert. Arabisch wird mit
+Rechts-nach-links-Layout dargestellt; Datumsangaben und Ergebniszahlen werden
+sprachabhängig formatiert.
+
+Vesta ist als installierbare PWA ausgelegt. Der Service Worker speichert nur
+die Anwendungshülle und statische Ressourcen. API-Antworten mit Angeboten
+werden bewusst nicht offline gespeichert, damit keine möglicherweise
+veralteten Sozialangebote angezeigt werden. Ohne Verbindung erscheint
+stattdessen eine mehrsprachige Offline-Seite.
+
+Die Web-Oberfläche zielt auf WCAG 2.2 AA: semantische Formulare, sichtbare
+Tastaturfokusse, Skip-Link, Statusmeldungen für Assistenztechnologien,
+mindestens 44 Pixel grosse Bedienflächen sowie Unterstützung für reduzierte
+Bewegung und erzwungene Kontrastfarben.
+
 ## Repository
 
 ```text
@@ -87,6 +106,8 @@ Unter macOS/Linux lautet der letzte Installationspfad
 
 ```bash
 pnpm lint
+pnpm typecheck
+pnpm build
 cd apps/api
 python -m unittest discover -s tests
 ```
