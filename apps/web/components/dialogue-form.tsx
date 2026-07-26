@@ -75,6 +75,8 @@ type EntryMode = "pick" | "other";
 type Phase = "idle" | "interpreting" | "loading" | "question" | "result" | "error";
 
 const OTHER_NEED_VALUE = "__other__";
+const UNKNOWN_ANSWER_VALUE = "__unknown__";
+const DECLINED_ANSWER_VALUE = "__declined__";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -176,6 +178,29 @@ export function DialogueForm() {
     setPhase("idle");
   }
 
+  function skipOptions(question: RenderedQuestion): ChoiceOption[] {
+    return [
+      { value: UNKNOWN_ANSWER_VALUE, label: question.unknown_label },
+      { value: DECLINED_ANSWER_VALUE, label: question.decline_label },
+    ];
+  }
+
+  function handleAnswerSelect(value: string) {
+    if (value === UNKNOWN_ANSWER_VALUE) {
+      submitAnswer({ unknown: true });
+      return;
+    }
+    if (value === DECLINED_ANSWER_VALUE) {
+      submitAnswer({ declined: true });
+      return;
+    }
+    if (turn?.question?.answer_type === "yes_no_unknown") {
+      submitAnswer({ value: value === "yes" });
+      return;
+    }
+    submitAnswer({ value });
+  }
+
   const needPickerOptions: ChoiceOption[] = [
     ...needs.map((need) => ({
       value: need.value,
@@ -274,62 +299,56 @@ export function DialogueForm() {
           {turn.question.answer_type === "single_choice" && (
             <ChoiceList
               disabled={busy}
-              onSelect={(value) => submitAnswer({ value })}
-              options={turn.question.options.map((option) => ({
-                value: option.value,
-                label: option.label,
-              }))}
+              onSelect={handleAnswerSelect}
+              options={[
+                ...turn.question.options.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                })),
+                ...skipOptions(turn.question),
+              ]}
             />
           )}
 
           {turn.question.answer_type === "yes_no_unknown" && (
             <ChoiceList
               disabled={busy}
-              onSelect={(value) => submitAnswer({ value: value === "yes" })}
+              onSelect={handleAnswerSelect}
               options={[
                 { value: "yes", label: t("dialogue.question.yes") },
                 { value: "no", label: t("dialogue.question.no") },
+                ...skipOptions(turn.question),
               ]}
             />
           )}
 
           {turn.question.answer_type === "number" && (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (numberValue.trim() !== "") {
-                  submitAnswer({ value: Number(numberValue) });
-                }
-              }}
-            >
-              <NumberField
-                id="dialogue-number-answer"
-                label={t("dialogue.question.numberSubmit")}
-                onChange={(event) => setNumberValue(event.target.value)}
-                value={numberValue}
+            <>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (numberValue.trim() !== "") {
+                    submitAnswer({ value: Number(numberValue) });
+                  }
+                }}
+              >
+                <NumberField
+                  id="dialogue-number-answer"
+                  label={t("dialogue.question.numberSubmit")}
+                  onChange={(event) => setNumberValue(event.target.value)}
+                  value={numberValue}
+                />
+                <Button disabled={busy} type="submit">
+                  {t("dialogue.question.numberSubmit")}
+                </Button>
+              </form>
+              <ChoiceList
+                disabled={busy}
+                onSelect={handleAnswerSelect}
+                options={skipOptions(turn.question)}
               />
-              <Button disabled={busy} type="submit">
-                {t("dialogue.question.numberSubmit")}
-              </Button>
-            </form>
+            </>
           )}
-
-          <div className="btn-group">
-            <Button
-              disabled={busy}
-              onClick={() => submitAnswer({ unknown: true })}
-              variant="ghost"
-            >
-              {turn.question.unknown_label}
-            </Button>
-            <Button
-              disabled={busy}
-              onClick={() => submitAnswer({ declined: true })}
-              variant="ghost"
-            >
-              {turn.question.decline_label}
-            </Button>
-          </div>
         </div>
       )}
 
