@@ -181,7 +181,7 @@ const de = {
     "Ohne Internetverbindung zeigen wir bewusst keine möglicherweise veralteten Angebote. Stelle die Verbindung wieder her und versuche es erneut.",
   "offline.retry": "Erneut versuchen",
   "offline.back": "Zur Startseite",
-  "dialogue.eyebrow": "Prototyp: AI-Dialog",
+  "dialogue.eyebrow": "AI-Unterstützung",
   "dialogue.freeText.label": "Beschreibe kurz, was du brauchst",
   "dialogue.freeText.placeholder":
     "z. B. Ich brauche heute einen Schlafplatz mit meinem Hund",
@@ -192,7 +192,7 @@ const de = {
   "dialogue.interpretation.unavailable":
     "Automatische Texterkennung ist gerade nicht aktiv (Vorlagen-Modus). Wähle unten direkt einen Bereich für den AI-Dialog.",
   "dialogue.interpretation.needApplied": "AI-Vorschlag übernommen: {need}",
-  "dialogue.needPicker.legend": "Bereich für den AI-Dialog",
+  "dialogue.needPicker.legend": "Wähle einen Bereich",
   "dialogue.start": "AI-Dialog starten",
   "dialogue.loading": "Wird verarbeitet …",
   "dialogue.error": "Der AI-Dialog ist gerade nicht erreichbar.",
@@ -204,6 +204,10 @@ const de = {
   "dialogue.aiBadge": "AI-Erklärung",
   "dialogue.templateBadge": "Standardtext · AI nicht aktiv",
   "dialogue.restart": "Neu starten",
+  "dialogue.other.title": "Etwas anderes",
+  "dialogue.other.detail": "Beschreibe es mit eigenen Worten",
+  "dialogue.back": "Zurück",
+  "dialogue.interpretation.confirmHint": "Antippen, um fortzufahren",
 } as const;
 
 export type MessageKey = keyof typeof de;
@@ -388,7 +392,7 @@ const fr: Record<MessageKey, string> = {
     "Sans connexion internet, nous n’affichons volontairement aucune offre potentiellement obsolète. Rétablis la connexion et réessaie.",
   "offline.retry": "Réessayer",
   "offline.back": "Retour à l’accueil",
-  "dialogue.eyebrow": "Prototype : dialogue AI",
+  "dialogue.eyebrow": "Assistance AI",
   "dialogue.freeText.label": "Décris brièvement ce dont tu as besoin",
   "dialogue.freeText.placeholder":
     "p. ex. J'ai besoin d'une place pour dormir ce soir avec mon chien",
@@ -399,7 +403,7 @@ const fr: Record<MessageKey, string> = {
   "dialogue.interpretation.unavailable":
     "La reconnaissance automatique de texte n'est pas active actuellement (mode modèle). Choisis un domaine ci-dessous pour le dialogue AI.",
   "dialogue.interpretation.needApplied": "Proposition de l'AI reprise : {need}",
-  "dialogue.needPicker.legend": "Domaine pour le dialogue AI",
+  "dialogue.needPicker.legend": "Choisis un domaine",
   "dialogue.start": "Démarrer le dialogue AI",
   "dialogue.loading": "Traitement en cours …",
   "dialogue.error": "Le dialogue AI n'est pas disponible actuellement.",
@@ -411,6 +415,10 @@ const fr: Record<MessageKey, string> = {
   "dialogue.aiBadge": "Explication AI",
   "dialogue.templateBadge": "Texte standard · AI inactive",
   "dialogue.restart": "Recommencer",
+  "dialogue.other.title": "Autre chose",
+  "dialogue.other.detail": "Décris-le avec tes propres mots",
+  "dialogue.back": "Retour",
+  "dialogue.interpretation.confirmHint": "Toucher pour continuer",
 };
 
 const en: Record<MessageKey, string> = {
@@ -593,7 +601,7 @@ const en: Record<MessageKey, string> = {
     "Without an internet connection, we deliberately do not show services that may be out of date. Reconnect and try again.",
   "offline.retry": "Try again",
   "offline.back": "Back to home",
-  "dialogue.eyebrow": "Prototype: AI dialogue",
+  "dialogue.eyebrow": "AI support",
   "dialogue.freeText.label": "Briefly describe what you need",
   "dialogue.freeText.placeholder": "e.g. I need a place to sleep tonight with my dog",
   "dialogue.freeText.privacy":
@@ -603,7 +611,7 @@ const en: Record<MessageKey, string> = {
   "dialogue.interpretation.unavailable":
     "Automatic text understanding is not active right now (template mode). Choose an area below to start the AI dialogue.",
   "dialogue.interpretation.needApplied": "AI suggestion applied: {need}",
-  "dialogue.needPicker.legend": "Area for the AI dialogue",
+  "dialogue.needPicker.legend": "Choose an area",
   "dialogue.start": "Start AI dialogue",
   "dialogue.loading": "Processing …",
   "dialogue.error": "The AI dialogue is currently unavailable.",
@@ -615,6 +623,10 @@ const en: Record<MessageKey, string> = {
   "dialogue.aiBadge": "AI explanation",
   "dialogue.templateBadge": "Standard text · AI inactive",
   "dialogue.restart": "Start over",
+  "dialogue.other.title": "Something else",
+  "dialogue.other.detail": "Describe it in your own words",
+  "dialogue.back": "Back",
+  "dialogue.interpretation.confirmHint": "Tap to continue",
 };
 
 const ar: Record<MessageKey, string> = {
@@ -795,7 +807,7 @@ const ar: Record<MessageKey, string> = {
     "من دون اتصال بالإنترنت لا نعرض عمداً خدمات قد تكون معلوماتها قديمة. أعد الاتصال وحاول مرة أخرى.",
   "offline.retry": "إعادة المحاولة",
   "offline.back": "العودة إلى الصفحة الرئيسية",
-  "dialogue.eyebrow": "نموذج أولي: حوار الذكاء الاصطناعي",
+  "dialogue.eyebrow": "دعم الذكاء الاصطناعي",
   "dialogue.freeText.label": "صف باختصار ما تحتاجه",
   "dialogue.freeText.placeholder": "مثال: أحتاج مكانًا للنوم الليلة مع كلبي",
   "dialogue.freeText.privacy":
@@ -805,7 +817,7 @@ const ar: Record<MessageKey, string> = {
   "dialogue.interpretation.unavailable":
     "التعرف التلقائي على النص غير مفعل حاليًا (وضع القوالب). اختر مجالاً أدناه لبدء حوار الذكاء الاصطناعي.",
   "dialogue.interpretation.needApplied": "تم تطبيق اقتراح الذكاء الاصطناعي: {need}",
-  "dialogue.needPicker.legend": "المجال لحوار الذكاء الاصطناعي",
+  "dialogue.needPicker.legend": "اختر مجالاً",
   "dialogue.start": "بدء حوار الذكاء الاصطناعي",
   "dialogue.loading": "جارٍ المعالجة…",
   "dialogue.error": "حوار الذكاء الاصطناعي غير متاح حاليًا.",
@@ -817,6 +829,10 @@ const ar: Record<MessageKey, string> = {
   "dialogue.aiBadge": "توضيح الذكاء الاصطناعي",
   "dialogue.templateBadge": "نص قياسي · الذكاء الاصطناعي غير مفعل",
   "dialogue.restart": "البدء من جديد",
+  "dialogue.other.title": "شيء آخر",
+  "dialogue.other.detail": "صفه بكلماتك الخاصة",
+  "dialogue.back": "رجوع",
+  "dialogue.interpretation.confirmHint": "اضغط للمتابعة",
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = {

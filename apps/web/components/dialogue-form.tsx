@@ -3,8 +3,8 @@
 import { type FormEvent, useState } from "react";
 
 import { useI18n } from "@/components/i18n-provider";
-import { needs, type Need } from "@/components/navigator-form";
 import type { MessageKey } from "@/lib/i18n";
+import { needs, type Need } from "@/lib/needs";
 
 type Offer = {
   id: string;
@@ -68,6 +68,7 @@ type InterpretResponse = {
   source: "ai" | "template";
 };
 
+type EntryMode = "pick" | "other";
 type Phase = "idle" | "interpreting" | "loading" | "question" | "result" | "error";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -82,14 +83,35 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return (await response.json()) as T;
 }
 
+function titleFor(needValue: string): MessageKey {
+  return (needs.find((need) => need.value === needValue)?.title ??
+    "need.sleep.title") as MessageKey;
+}
+
 export function DialogueForm() {
   const { locale, t } = useI18n();
+  const [entryMode, setEntryMode] = useState<EntryMode>("pick");
   const [freeText, setFreeText] = useState("");
-  const [selectedNeed, setSelectedNeed] = useState<Need>("sleep_tonight");
   const [interpretation, setInterpretation] = useState<InterpretResponse | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [turn, setTurn] = useState<DialogueTurn | null>(null);
   const [numberValue, setNumberValue] = useState("");
+
+  const busy = phase === "interpreting" || phase === "loading";
+  const onEntryScreen = phase !== "question" && phase !== "result";
+
+  async function startWithNeed(need: Need) {
+    setPhase("loading");
+    try {
+      const result = await postJson<DialogueTurn>("/api/dialogue/start", {
+        need,
+        language: locale,
+      });
+      applyTurn(result);
+    } catch {
+      setPhase("error");
+    }
+  }
 
   async function handleInterpret(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -100,23 +122,7 @@ export function DialogueForm() {
         language: locale,
       });
       setInterpretation(result);
-      if (result.need_key) {
-        setSelectedNeed(result.need_key as Need);
-      }
       setPhase("idle");
-    } catch {
-      setPhase("error");
-    }
-  }
-
-  async function handleStart() {
-    setPhase("loading");
-    try {
-      const result = await postJson<DialogueTurn>("/api/dialogue/start", {
-        need: selectedNeed,
-        language: locale,
-      });
-      applyTurn(result);
     } catch {
       setPhase("error");
     }
@@ -145,21 +151,66 @@ export function DialogueForm() {
     }
   }
 
-  function restart() {
-    setTurn(null);
+  function backToPicker() {
+    setEntryMode("pick");
     setInterpretation(null);
     setFreeText("");
+  }
+
+  function restart() {
+    setTurn(null);
+    backToPicker();
     setPhase("idle");
   }
 
-  const busy = phase === "interpreting" || phase === "loading";
-
   return (
-    <div className="navigator-card dialogue-card">
-      <p className="eyebrow">{t("dialogue.eyebrow")}</p>
+    <div className="navigator-card">
+      {onEntryScreen && entryMode === "pick" && (
+        <fieldset>
+          <legend>{t("dialogue.needPicker.legend")}</legend>
+          <div className="need-options">
+            {needs.map((need) => (
+              <button
+                className="need-option"
+                disabled={busy}
+                key={need.value}
+                onClick={() => startWithNeed(need.value)}
+                type="button"
+              >
+                <span className="need-icon" aria-hidden="true">
+                  {need.icon}
+                </span>
+                <span className="need-copy">
+                  <strong>{t(need.title)}</strong>
+                  <small>{t(need.detail)}</small>
+                </span>
+                <span aria-hidden="true">→</span>
+              </button>
+            ))}
+            <button
+              className="need-option"
+              disabled={busy}
+              onClick={() => setEntryMode("other")}
+              type="button"
+            >
+              <span className="need-icon" aria-hidden="true">
+                ?
+              </span>
+              <span className="need-copy">
+                <strong>{t("dialogue.other.title")}</strong>
+                <small>{t("dialogue.other.detail")}</small>
+              </span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+          {phase === "loading" && <p className="field-hint">{t("dialogue.loading")}</p>}
+        </fieldset>
+      )}
 
-      {phase !== "question" && phase !== "result" && (
+      {onEntryScreen && entryMode === "other" && (
         <>
+          <p className="eyebrow">{t("dialogue.eyebrow")}</p>
+
           <form onSubmit={handleInterpret}>
             <label className="select-label" htmlFor="dialogue-free-text">
               {t("dialogue.freeText.label")}
@@ -177,60 +228,64 @@ export function DialogueForm() {
               {t("dialogue.freeText.privacy")}
             </p>
             <button className="primary-button" disabled={busy} type="submit">
-              {phase === "interpreting" ? t("dialogue.freeText.loading") : t("dialogue.freeText.submit")}
+              {phase === "interpreting"
+                ? t("dialogue.freeText.loading")
+                : t("dialogue.freeText.submit")}
             </button>
           </form>
 
-          {interpretation && interpretation.proposals.length === 0 && (
+          {interpretation && !interpretation.need_key && (
             <p className="field-hint">{t("dialogue.interpretation.unavailable")}</p>
           )}
-          {interpretation?.need_key && (
-            <p className="field-hint">
-              {t("dialogue.interpretation.needApplied", {
-                need: t(
-                  (needs.find((n) => n.value === interpretation.need_key)?.title ??
-                    "need.sleep.title") as MessageKey,
-                ),
-              })}
-            </p>
-          )}
 
-          <fieldset>
-            <legend>{t("dialogue.needPicker.legend")}</legend>
+          {interpretation && (
             <div className="need-options">
-              {needs.map((need) => (
-                <label
-                  className={`need-option ${
-                    selectedNeed === need.value ? "need-option-selected" : ""
-                  }`}
-                  key={need.value}
+              {interpretation.need_key && (
+                <button
+                  className="need-option need-option-selected"
+                  disabled={busy}
+                  onClick={() => startWithNeed(interpretation.need_key as Need)}
+                  type="button"
                 >
                   <span className="need-icon" aria-hidden="true">
-                    {need.icon}
+                    ✓
                   </span>
                   <span className="need-copy">
-                    <strong>{t(need.title)}</strong>
-                    <small>{t(need.detail)}</small>
+                    <strong>
+                      {t("dialogue.interpretation.needApplied", {
+                        need: t(titleFor(interpretation.need_key)),
+                      })}
+                    </strong>
+                    <small>{t("dialogue.interpretation.confirmHint")}</small>
                   </span>
-                  <input
-                    checked={selectedNeed === need.value}
-                    name="dialogue-need"
-                    onChange={() => setSelectedNeed(need.value)}
-                    type="radio"
-                    value={need.value}
-                  />
-                </label>
-              ))}
-            </div>
-          </fieldset>
+                  <span aria-hidden="true">→</span>
+                </button>
+              )}
 
-          <button
-            className="primary-button"
-            disabled={busy}
-            onClick={handleStart}
-            type="button"
-          >
-            {phase === "loading" ? t("dialogue.loading") : t("dialogue.start")}
+              {!interpretation.need_key &&
+                needs.map((need) => (
+                  <button
+                    className="need-option"
+                    disabled={busy}
+                    key={need.value}
+                    onClick={() => startWithNeed(need.value)}
+                    type="button"
+                  >
+                    <span className="need-icon" aria-hidden="true">
+                      {need.icon}
+                    </span>
+                    <span className="need-copy">
+                      <strong>{t(need.title)}</strong>
+                      <small>{t(need.detail)}</small>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                ))}
+            </div>
+          )}
+
+          <button disabled={busy} onClick={backToPicker} type="button">
+            {t("dialogue.back")}
           </button>
         </>
       )}
@@ -243,9 +298,7 @@ export function DialogueForm() {
           <h3>{turn.question.text}</h3>
           {turn.question.help_text && <p>{turn.question.help_text}</p>}
           <p className="field-hint">
-            {turn.ai_mode === "live"
-              ? t("dialogue.aiBadge")
-              : t("dialogue.templateBadge")}
+            {turn.ai_mode === "live" ? t("dialogue.aiBadge") : t("dialogue.templateBadge")}
           </p>
 
           <div className="need-options">
@@ -306,11 +359,7 @@ export function DialogueForm() {
             </button>
           </form>
 
-          <button
-            disabled={busy}
-            onClick={() => submitAnswer({ unknown: true })}
-            type="button"
-          >
+          <button disabled={busy} onClick={() => submitAnswer({ unknown: true })} type="button">
             {turn.question.unknown_label}
           </button>
           <button

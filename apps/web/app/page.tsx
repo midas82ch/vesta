@@ -2,7 +2,6 @@
 
 import { DialogueForm } from "@/components/dialogue-form";
 import { useI18n } from "@/components/i18n-provider";
-import { NavigatorForm } from "@/components/navigator-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -24,10 +23,6 @@ export default function Home() {
             <p className="lead">{t("hero.lead")}</p>
           </div>
 
-          <NavigatorForm />
-        </section>
-
-        <section className="hero" id="dialogue-prototype">
           <DialogueForm />
         </section>
       </main>
