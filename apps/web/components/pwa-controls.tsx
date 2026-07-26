@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n-provider";
+import { Button } from "@/components/ui";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -76,9 +77,8 @@ export function PwaInstallButton() {
   }
 
   return (
-    <button className="install-button" onClick={install} type="button">
-      <span aria-hidden="true">↓</span>
+    <Button icon="↓" iconPosition="start" onClick={install} variant="secondary">
       {t("pwa.install")}
-    </button>
+    </Button>
   );
 }

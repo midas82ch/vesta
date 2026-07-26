@@ -40,7 +40,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -220,20 +221,6 @@ p {
   padding-inline: 2rem 0.6rem;
 }
 
-.install-button {
-  align-items: center;
-  background: var(--green);
-  border: 1px solid var(--green);
-  border-radius: 999px;
-  color: var(--paper);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 0.78rem;
-  font-weight: 800;
-  gap: 0.4rem;
-  padding-inline: 0.85rem;
-}
-
 .hero {
   display: grid;
   gap: 1.5rem;
@@ -307,6 +294,92 @@ h1 {
   width: 14px;
 }
 
+/* ==========================================================================
+   UI kit: buttons
+   One place to change how every button-shaped element looks. `.btn` carries
+   the shared shape/motion; variant classes only carry color and layout.
+   ========================================================================== */
+
+.btn {
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 800;
+  gap: 0.6rem;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.65rem 1.1rem;
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.btn-icon {
+  flex: 0 0 auto;
+}
+
+[dir="rtl"] .btn-icon {
+  transform: scaleX(-1);
+}
+
+.btn-primary {
+  background: var(--orange-button);
+  border-radius: 0.8rem;
+  color: #1f211d;
+  font-weight: 850;
+  justify-content: space-between;
+  margin-block-start: 1.75rem;
+  min-height: 56px;
+  padding: 0.7rem 1.2rem;
+  width: 100%;
+}
+
+.btn-secondary {
+  background: var(--green);
+  border-color: var(--green);
+  border-radius: 999px;
+  color: var(--paper);
+  font-size: 0.78rem;
+  min-height: 40px;
+  padding-inline: 0.85rem;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+  font-size: 0.86rem;
+  padding-inline: 0.9rem;
+}
+
+.offline-actions .btn-primary {
+  margin: 0;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.form-footer {
+  border-block-start: 1px solid var(--line);
+  margin-block-start: 1.5rem;
+  padding-block-start: 1rem;
+}
+
 .navigator-card {
   background: var(--paper);
   border: 1px solid rgb(22 79 71 / 14%);
@@ -330,51 +403,44 @@ legend {
   padding: 0;
 }
 
-.need-options {
+/* ==========================================================================
+   UI kit: choice lists
+   Every "pick one of N" moment (need picker, yes/no, single-choice question,
+   AI-suggested need) shares this one card pattern.
+   ========================================================================== */
+
+.choice-list {
   display: grid;
   gap: 0.65rem;
 }
 
-.need-option {
+.choice-item {
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 1rem;
   cursor: pointer;
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: 40px minmax(0, 1fr) 22px;
+  grid-template-columns: minmax(0, 1fr) 22px;
   min-height: 76px;
   padding: 0.65rem;
+  text-align: start;
   transition:
     background 150ms ease,
     border-color 150ms ease,
     transform 150ms ease;
 }
 
-.need-option-selected {
+.choice-item:has(.choice-icon) {
+  grid-template-columns: 40px minmax(0, 1fr) 22px;
+}
+
+.choice-item-selected {
   background: var(--green-light);
   border-color: var(--green);
 }
 
-.need-option input {
-  accent-color: var(--green);
-  height: 20px;
-  margin: 0;
-  min-height: 20px;
-  min-width: 20px;
-  width: 20px;
-}
-
-.need-option:has(input:focus-visible) {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
-}
-
-.need-option input:focus-visible {
-  outline: 0;
-}
-
-.need-icon {
+.choice-icon {
   align-items: center;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -386,21 +452,21 @@ legend {
   width: 40px;
 }
 
-.need-copy {
+.choice-copy {
   min-width: 0;
 }
 
-.need-copy strong,
-.need-copy small {
+.choice-copy strong,
+.choice-copy small {
   display: block;
 }
 
-.need-copy strong {
+.choice-copy strong {
   font-size: 0.98rem;
   margin-block-end: 0.2rem;
 }
 
-.need-copy small {
+.choice-copy small {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.35;
@@ -414,20 +480,43 @@ legend {
   padding-block-start: 1.5rem;
 }
 
-.select-label {
+/* ==========================================================================
+   UI kit: form fields
+   Label + optional hint + input/textarea, always assembled the same way.
+   ========================================================================== */
+
+.field {
   display: grid;
   font-size: 0.85rem;
   font-weight: 800;
   gap: 0.5rem;
 }
 
-select {
+select,
+.field textarea,
+.field input {
   background-color: var(--paper);
   border: 1px solid var(--line);
   border-radius: 0.65rem;
   color: var(--ink);
   max-width: 100%;
   padding-inline: 0.75rem;
+}
+
+.field textarea {
+  font-weight: 400;
+  min-height: 6rem;
+  padding-block: 0.65rem;
+  resize: vertical;
+}
+
+.field input {
+  font-weight: 400;
+  min-height: 44px;
+}
+
+.field input[type="number"] {
+  max-width: 10rem;
 }
 
 .field-hint {
@@ -466,36 +555,6 @@ select {
   min-height: 22px;
   min-width: 22px;
   width: 22px;
-}
-
-.primary-button {
-  align-items: center;
-  background: var(--orange-button);
-  border: 2px solid transparent;
-  border-radius: 0.8rem;
-  color: #1f211d;
-  cursor: pointer;
-  display: flex;
-  font-weight: 850;
-  gap: 1rem;
-  justify-content: space-between;
-  margin-block-start: 1.75rem;
-  min-height: 56px;
-  padding: 0.7rem 1.2rem;
-  transition:
-    filter 150ms ease,
-    transform 150ms ease;
-  width: 100%;
-}
-
-[dir="rtl"] .primary-button > span:last-child {
-  transform: scaleX(-1);
-}
-
-.primary-button:disabled {
-  cursor: wait;
-  opacity: 0.7;
-  transform: none;
 }
 
 .result-region:empty {
@@ -796,21 +855,6 @@ select {
   margin-block-end: 0;
 }
 
-.back-link {
-  align-items: center;
-  color: var(--green);
-  display: inline-flex;
-  font-weight: 850;
-  gap: 0.65rem;
-  justify-self: start;
-  min-height: 44px;
-  padding-inline: 0.75rem;
-}
-
-[dir="rtl"] .back-link > span {
-  transform: scaleX(-1);
-}
-
 footer {
   align-items: flex-start;
   background: #0e3732;
@@ -883,22 +927,8 @@ footer a {
   gap: 1rem;
 }
 
-.offline-actions .primary-button {
-  margin: 0;
-}
-
-.secondary-link {
-  align-items: center;
-  color: var(--green);
-  display: inline-flex;
-  font-weight: 800;
-  justify-content: center;
-  min-height: 44px;
-  padding-inline: 0.75rem;
-}
-
 @media (hover: hover) {
-  .need-option:hover {
+  .choice-item:hover {
     border-color: var(--green);
     transform: translateY(-1px);
   }
@@ -908,10 +938,15 @@ footer a {
     color: var(--green);
   }
 
-  .primary-button:hover,
-  .install-button:hover {
+  .btn-primary:hover,
+  .btn-secondary:hover {
     filter: brightness(0.94);
     transform: translateY(-1px);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--green);
+    color: var(--green);
   }
 }
 
@@ -929,7 +964,7 @@ footer a {
     flex-direction: row;
   }
 
-  .offline-actions .primary-button {
+  .offline-actions .btn-primary {
     width: auto;
   }
 }
@@ -1061,13 +1096,18 @@ footer a {
 
 @media (forced-colors: active) {
   .brand-mark,
-  .install-button,
+  .btn-secondary,
   .imprint-intro,
   footer {
     border: 1px solid CanvasText;
   }
 
-  .need-option-selected,
+  .btn,
+  .choice-item {
+    border: 1px solid CanvasText;
+  }
+
+  .choice-item-selected,
   .contact-note {
     outline: 2px solid Highlight;
   }

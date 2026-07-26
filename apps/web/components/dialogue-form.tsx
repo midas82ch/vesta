@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 
 import { useI18n } from "@/components/i18n-provider";
+import { Button, ChoiceList, NumberField, TextAreaField, type ChoiceOption } from "@/components/ui";
 import type { MessageKey } from "@/lib/i18n";
 import { needs, type Need } from "@/lib/needs";
 
@@ -73,6 +74,8 @@ type InterpretResponse = {
 type EntryMode = "pick" | "other";
 type Phase = "idle" | "interpreting" | "loading" | "question" | "result" | "error";
 
+const OTHER_NEED_VALUE = "__other__";
+
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
@@ -113,6 +116,14 @@ export function DialogueForm() {
     } catch {
       setPhase("error");
     }
+  }
+
+  function handleNeedPick(value: string) {
+    if (value === OTHER_NEED_VALUE) {
+      setEntryMode("other");
+      return;
+    }
+    startWithNeed(value as Need);
   }
 
   async function handleInterpret(event: FormEvent<HTMLFormElement>) {
@@ -165,46 +176,45 @@ export function DialogueForm() {
     setPhase("idle");
   }
 
+  const needPickerOptions: ChoiceOption[] = [
+    ...needs.map((need) => ({
+      value: need.value,
+      icon: need.icon,
+      label: t(need.title),
+      detail: t(need.detail),
+    })),
+    {
+      value: OTHER_NEED_VALUE,
+      icon: "?",
+      label: t("dialogue.other.title"),
+      detail: t("dialogue.other.detail"),
+    },
+  ];
+
+  const interpretationOptions: ChoiceOption[] = interpretation?.need_key
+    ? [
+        {
+          value: interpretation.need_key,
+          icon: "✓",
+          label: t("dialogue.interpretation.needApplied", {
+            need: t(titleFor(interpretation.need_key)),
+          }),
+          detail: t("dialogue.interpretation.confirmHint"),
+        },
+      ]
+    : needs.map((need) => ({
+        value: need.value,
+        icon: need.icon,
+        label: t(need.title),
+        detail: t(need.detail),
+      }));
+
   return (
     <div className="navigator-card">
       {onEntryScreen && entryMode === "pick" && (
         <fieldset>
           <legend>{t("dialogue.needPicker.legend")}</legend>
-          <div className="need-options">
-            {needs.map((need) => (
-              <button
-                className="need-option"
-                disabled={busy}
-                key={need.value}
-                onClick={() => startWithNeed(need.value)}
-                type="button"
-              >
-                <span className="need-icon" aria-hidden="true">
-                  {need.icon}
-                </span>
-                <span className="need-copy">
-                  <strong>{t(need.title)}</strong>
-                  <small>{t(need.detail)}</small>
-                </span>
-                <span aria-hidden="true">→</span>
-              </button>
-            ))}
-            <button
-              className="need-option"
-              disabled={busy}
-              onClick={() => setEntryMode("other")}
-              type="button"
-            >
-              <span className="need-icon" aria-hidden="true">
-                ?
-              </span>
-              <span className="need-copy">
-                <strong>{t("dialogue.other.title")}</strong>
-                <small>{t("dialogue.other.detail")}</small>
-              </span>
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
+          <ChoiceList disabled={busy} onSelect={handleNeedPick} options={needPickerOptions} />
           {phase === "loading" && <p className="field-hint">{t("dialogue.loading")}</p>}
         </fieldset>
       )}
@@ -214,26 +224,21 @@ export function DialogueForm() {
           <p className="eyebrow">{t("dialogue.eyebrow")}</p>
 
           <form onSubmit={handleInterpret}>
-            <label className="select-label" htmlFor="dialogue-free-text">
-              {t("dialogue.freeText.label")}
-              <textarea
-                aria-describedby="dialogue-free-text-privacy"
-                id="dialogue-free-text"
-                maxLength={2000}
-                placeholder={t("dialogue.freeText.placeholder")}
-                value={freeText}
-                onChange={(event) => setFreeText(event.target.value)}
-                rows={3}
-              />
-            </label>
-            <p className="field-hint" id="dialogue-free-text-privacy">
-              {t("dialogue.freeText.privacy")}
-            </p>
-            <button className="primary-button" disabled={busy} type="submit">
+            <TextAreaField
+              hint={t("dialogue.freeText.privacy")}
+              id="dialogue-free-text"
+              label={t("dialogue.freeText.label")}
+              maxLength={2000}
+              onChange={(event) => setFreeText(event.target.value)}
+              placeholder={t("dialogue.freeText.placeholder")}
+              rows={3}
+              value={freeText}
+            />
+            <Button disabled={busy} type="submit">
               {phase === "interpreting"
                 ? t("dialogue.freeText.loading")
                 : t("dialogue.freeText.submit")}
-            </button>
+            </Button>
           </form>
 
           {interpretation && !interpretation.need_key && (
@@ -241,54 +246,17 @@ export function DialogueForm() {
           )}
 
           {interpretation && (
-            <div className="need-options">
-              {interpretation.need_key && (
-                <button
-                  className="need-option need-option-selected"
-                  disabled={busy}
-                  onClick={() => startWithNeed(interpretation.need_key as Need)}
-                  type="button"
-                >
-                  <span className="need-icon" aria-hidden="true">
-                    ✓
-                  </span>
-                  <span className="need-copy">
-                    <strong>
-                      {t("dialogue.interpretation.needApplied", {
-                        need: t(titleFor(interpretation.need_key)),
-                      })}
-                    </strong>
-                    <small>{t("dialogue.interpretation.confirmHint")}</small>
-                  </span>
-                  <span aria-hidden="true">→</span>
-                </button>
-              )}
-
-              {!interpretation.need_key &&
-                needs.map((need) => (
-                  <button
-                    className="need-option"
-                    disabled={busy}
-                    key={need.value}
-                    onClick={() => startWithNeed(need.value)}
-                    type="button"
-                  >
-                    <span className="need-icon" aria-hidden="true">
-                      {need.icon}
-                    </span>
-                    <span className="need-copy">
-                      <strong>{t(need.title)}</strong>
-                      <small>{t(need.detail)}</small>
-                    </span>
-                    <span aria-hidden="true">→</span>
-                  </button>
-                ))}
-            </div>
+            <ChoiceList
+              disabled={busy}
+              onSelect={(value) => startWithNeed(value as Need)}
+              options={interpretationOptions}
+              selectedValue={interpretation.need_key ?? undefined}
+            />
           )}
 
-          <button disabled={busy} onClick={backToPicker} type="button">
+          <Button disabled={busy} onClick={backToPicker} variant="ghost">
             {t("dialogue.back")}
-          </button>
+          </Button>
         </>
       )}
 
@@ -304,40 +272,25 @@ export function DialogueForm() {
           </p>
 
           {turn.question.answer_type === "single_choice" && (
-            <div className="need-options">
-              {turn.question.options.map((option) => (
-                <button
-                  className="primary-button"
-                  disabled={busy}
-                  key={option.value}
-                  onClick={() => submitAnswer({ value: option.value })}
-                  type="button"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <ChoiceList
+              disabled={busy}
+              onSelect={(value) => submitAnswer({ value })}
+              options={turn.question.options.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+            />
           )}
 
           {turn.question.answer_type === "yes_no_unknown" && (
-            <div className="need-options">
-              <button
-                className="primary-button"
-                disabled={busy}
-                onClick={() => submitAnswer({ value: true })}
-                type="button"
-              >
-                {t("dialogue.question.yes")}
-              </button>
-              <button
-                className="primary-button"
-                disabled={busy}
-                onClick={() => submitAnswer({ value: false })}
-                type="button"
-              >
-                {t("dialogue.question.no")}
-              </button>
-            </div>
+            <ChoiceList
+              disabled={busy}
+              onSelect={(value) => submitAnswer({ value: value === "yes" })}
+              options={[
+                { value: "yes", label: t("dialogue.question.yes") },
+                { value: "no", label: t("dialogue.question.no") },
+              ]}
+            />
           )}
 
           {turn.question.answer_type === "number" && (
@@ -349,32 +302,34 @@ export function DialogueForm() {
                 }
               }}
             >
-              <label className="select-label" htmlFor="dialogue-number-answer">
+              <NumberField
+                id="dialogue-number-answer"
+                label={t("dialogue.question.numberSubmit")}
+                onChange={(event) => setNumberValue(event.target.value)}
+                value={numberValue}
+              />
+              <Button disabled={busy} type="submit">
                 {t("dialogue.question.numberSubmit")}
-                <input
-                  id="dialogue-number-answer"
-                  inputMode="numeric"
-                  onChange={(event) => setNumberValue(event.target.value)}
-                  type="number"
-                  value={numberValue}
-                />
-              </label>
-              <button className="primary-button" disabled={busy} type="submit">
-                {t("dialogue.question.numberSubmit")}
-              </button>
+              </Button>
             </form>
           )}
 
-          <button disabled={busy} onClick={() => submitAnswer({ unknown: true })} type="button">
-            {turn.question.unknown_label}
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => submitAnswer({ declined: true })}
-            type="button"
-          >
-            {turn.question.decline_label}
-          </button>
+          <div className="btn-group">
+            <Button
+              disabled={busy}
+              onClick={() => submitAnswer({ unknown: true })}
+              variant="ghost"
+            >
+              {turn.question.unknown_label}
+            </Button>
+            <Button
+              disabled={busy}
+              onClick={() => submitAnswer({ declined: true })}
+              variant="ghost"
+            >
+              {turn.question.decline_label}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -432,9 +387,11 @@ export function DialogueForm() {
       )}
 
       {(phase === "question" || phase === "result") && (
-        <button onClick={restart} type="button">
-          {t("dialogue.restart")}
-        </button>
+        <div className="form-footer">
+          <Button onClick={restart} variant="ghost">
+            {t("dialogue.restart")}
+          </Button>
+        </div>
       )}
     </div>
   );

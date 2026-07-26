@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useI18n } from "@/components/i18n-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { Button } from "@/components/ui";
 import { VestaMark } from "@/components/vesta-mark";
 
 export default function OfflinePage() {
@@ -26,17 +27,12 @@ export default function OfflinePage() {
         <h1 id="offline-title">{t("offline.title")}</h1>
         <p className="lead">{t("offline.body")}</p>
         <div className="offline-actions">
-          <button
-            className="primary-button"
-            onClick={() => window.location.reload()}
-            type="button"
-          >
-            <span>{t("offline.retry")}</span>
-            <span aria-hidden="true">↻</span>
-          </button>
-          <Link className="secondary-link" href="/">
+          <Button icon="↻" onClick={() => window.location.reload()}>
+            {t("offline.retry")}
+          </Button>
+          <Button href="/" variant="ghost">
             {t("offline.back")}
-          </Link>
+          </Button>
         </div>
       </section>
     </main>

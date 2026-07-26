@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
-
 import { useI18n } from "@/components/i18n-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { Button } from "@/components/ui";
 import type { MessageKey } from "@/lib/i18n";
 
 const sections: Array<{
@@ -130,10 +129,9 @@ export default function PrivacyPage() {
             <p className="imprint-notice">{t("privacy.note")}</p>
           </section>
 
-          <Link className="back-link" href={`/?lang=${locale}`}>
-            <span aria-hidden="true">←</span>
+          <Button href={`/?lang=${locale}`} icon="←" iconPosition="start" variant="ghost">
             {t("about.back")}
-          </Link>
+          </Button>
         </article>
       </main>
 
