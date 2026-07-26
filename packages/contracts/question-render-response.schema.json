@@ -4,8 +4,19 @@
   "title": "QuestionRenderResponse",
   "type": "object",
   "additionalProperties": false,
-  "required": ["text", "help_text", "unknown_label", "decline_label", "options", "source"],
+  "required": [
+    "answer_type",
+    "text",
+    "help_text",
+    "unknown_label",
+    "decline_label",
+    "options",
+    "source"
+  ],
   "properties": {
+    "answer_type": {
+      "enum": ["yes_no_unknown", "single_choice", "number"]
+    },
     "text": { "type": "string", "minLength": 1 },
     "help_text": { "type": ["string", "null"] },
     "unknown_label": { "type": "string" },

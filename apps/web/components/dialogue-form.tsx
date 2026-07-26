@@ -38,10 +38,12 @@ type ExplainedCandidate = {
 };
 
 type QuestionOption = { value: string; label: string };
+type AnswerType = "yes_no_unknown" | "single_choice" | "number";
 
 type RenderedQuestion = {
   question_key: string;
   attribute_key: string;
+  answer_type: AnswerType;
   text: string;
   help_text: string | null;
   unknown_label: string;
@@ -301,63 +303,67 @@ export function DialogueForm() {
             {turn.ai_mode === "live" ? t("dialogue.aiBadge") : t("dialogue.templateBadge")}
           </p>
 
-          <div className="need-options">
-            {turn.question.options.length > 0
-              ? turn.question.options.map((option) => (
-                  <button
-                    className="primary-button"
-                    disabled={busy}
-                    key={option.value}
-                    onClick={() => submitAnswer({ value: option.value })}
-                    type="button"
-                  >
-                    {option.label}
-                  </button>
-                ))
-              : (
-                  <>
-                    <button
-                      className="primary-button"
-                      disabled={busy}
-                      onClick={() => submitAnswer({ value: true })}
-                      type="button"
-                    >
-                      {t("dialogue.question.yes")}
-                    </button>
-                    <button
-                      className="primary-button"
-                      disabled={busy}
-                      onClick={() => submitAnswer({ value: false })}
-                      type="button"
-                    >
-                      {t("dialogue.question.no")}
-                    </button>
-                  </>
-                )}
-          </div>
+          {turn.question.answer_type === "single_choice" && (
+            <div className="need-options">
+              {turn.question.options.map((option) => (
+                <button
+                  className="primary-button"
+                  disabled={busy}
+                  key={option.value}
+                  onClick={() => submitAnswer({ value: option.value })}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (numberValue.trim() !== "") {
-                submitAnswer({ value: Number(numberValue) });
-              }
-            }}
-          >
-            <label className="select-label" htmlFor="dialogue-number-answer">
-              {t("dialogue.question.numberSubmit")}
-              <input
-                id="dialogue-number-answer"
-                inputMode="numeric"
-                onChange={(event) => setNumberValue(event.target.value)}
-                type="number"
-                value={numberValue}
-              />
-            </label>
-            <button className="primary-button" disabled={busy} type="submit">
-              {t("dialogue.question.numberSubmit")}
-            </button>
-          </form>
+          {turn.question.answer_type === "yes_no_unknown" && (
+            <div className="need-options">
+              <button
+                className="primary-button"
+                disabled={busy}
+                onClick={() => submitAnswer({ value: true })}
+                type="button"
+              >
+                {t("dialogue.question.yes")}
+              </button>
+              <button
+                className="primary-button"
+                disabled={busy}
+                onClick={() => submitAnswer({ value: false })}
+                type="button"
+              >
+                {t("dialogue.question.no")}
+              </button>
+            </div>
+          )}
+
+          {turn.question.answer_type === "number" && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (numberValue.trim() !== "") {
+                  submitAnswer({ value: Number(numberValue) });
+                }
+              }}
+            >
+              <label className="select-label" htmlFor="dialogue-number-answer">
+                {t("dialogue.question.numberSubmit")}
+                <input
+                  id="dialogue-number-answer"
+                  inputMode="numeric"
+                  onChange={(event) => setNumberValue(event.target.value)}
+                  type="number"
+                  value={numberValue}
+                />
+              </label>
+              <button className="primary-button" disabled={busy} type="submit">
+                {t("dialogue.question.numberSubmit")}
+              </button>
+            </form>
+          )}
 
           <button disabled={busy} onClick={() => submitAnswer({ unknown: true })} type="button">
             {turn.question.unknown_label}

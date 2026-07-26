@@ -44,6 +44,7 @@ class QuestionOptionResponse(BaseModel):
 class RenderedQuestionResponse(BaseModel):
     question_key: str
     attribute_key: str
+    answer_type: str
     text: str
     help_text: str | None
     unknown_label: str

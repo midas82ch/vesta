@@ -92,6 +92,7 @@ def _render_question(
     return RenderedQuestionResponse(
         question_key=turn.question.key,
         attribute_key=turn.question.attribute_key,
+        answer_type=turn.question.answer_type,
         text=rendered.text,
         help_text=rendered.help_text,
         unknown_label=rendered.unknown_label,

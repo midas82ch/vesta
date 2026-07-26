@@ -35,6 +35,10 @@ class DialogueRoutesTest(unittest.TestCase):
         self.assertEqual("template", payload["ai_mode"])
         assert payload["question"] is not None
         self.assertEqual("person.has_identity_document", payload["question"]["attribute_key"])
+        # Regression: the web UI rendered a stray number-input form on every
+        # question because answer_type was missing from the wire response,
+        # so a yes/no question also showed an empty "confirm a number" field.
+        self.assertEqual("yes_no_unknown", payload["question"]["answer_type"])
         self.assertTrue(payload["question"]["text"])
         self.assertEqual([], payload["candidates"])
 
