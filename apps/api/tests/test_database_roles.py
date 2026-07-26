@@ -37,6 +37,19 @@ class DatabaseRolePrivilegesTest(unittest.TestCase):
         for table in DIALOGUE_CATALOG_TABLES:
             self.assertIn("SELECT", vesta_app.table_privileges[table])
 
+    def test_vesta_app_can_read_admin_users_and_write_the_ai_audit_log(self) -> None:
+        # Same class of regression as above, this time for the 20260727_0005
+        # migration (admin_users, ai_interaction_log).
+        vesta_app = next(role for role in ROLES if role.username == "vesta_app")
+
+        self.assertIn("admin_users", vesta_app.table_privileges)
+        self.assertIn("SELECT", vesta_app.table_privileges["admin_users"])
+
+        self.assertIn("ai_interaction_log", vesta_app.table_privileges)
+        for privilege in ("SELECT", "INSERT"):
+            self.assertIn(privilege, vesta_app.table_privileges["ai_interaction_log"])
+        self.assertNotIn("DELETE", vesta_app.table_privileges["ai_interaction_log"])
+
 
 class DatabaseRoleUrlTest(unittest.TestCase):
     def test_replaces_admin_credentials_and_preserves_tls(self) -> None:

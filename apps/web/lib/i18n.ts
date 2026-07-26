@@ -153,7 +153,7 @@ const de = {
   "privacy.ai.eyebrow": "AI",
   "privacy.ai.title": "AI-Sprachmodell im Testbetrieb",
   "privacy.ai.text":
-    "Freitexte, freigegebene Fragen und begrenzte Angebotsfakten werden zur Interpretation und verständlichen Formulierung an OpenAI übermittelt. Die AI entscheidet weder über den Zugang noch über Plätze. Bitte keine Namen, Adressen oder Kontaktdaten eingeben.",
+    "Freitexte, freigegebene Fragen und begrenzte Angebotsfakten werden zur Interpretation und verständlichen Formulierung an OpenAI übermittelt. Die AI entscheidet weder über den Zugang noch über Plätze. Bitte keine Namen, Adressen oder Kontaktdaten eingeben. Diese Anfragen und Antworten werden zur Nachvollziehbarkeit bis zur manuellen Löschung gespeichert und sind nur für berechtigte Administratorinnen und Administratoren einsehbar.",
   "privacy.hosting.eyebrow": "Hosting",
   "privacy.hosting.title": "Schweizer Infrastruktur vorgesehen",
   "privacy.hosting.text":
@@ -364,7 +364,7 @@ const fr: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "IA",
   "privacy.ai.title": "Modèle d’IA en phase de test",
   "privacy.ai.text":
-    "Les textes libres, les questions validées et des informations limitées sur les offres sont transmis à OpenAI pour interprétation et reformulation. L’IA ne décide ni de l’accès ni de l’attribution de places. Ne saisis aucun nom, adresse ou coordonnée.",
+    "Les textes libres, les questions validées et des informations limitées sur les offres sont transmis à OpenAI pour interprétation et reformulation. L’IA ne décide ni de l’accès ni de l’attribution de places. Ne saisis aucun nom, adresse ou coordonnée. Ces requêtes et réponses sont conservées à des fins de traçabilité jusqu’à leur suppression manuelle et ne sont consultables que par les administratrices et administrateurs autorisés.",
   "privacy.hosting.eyebrow": "Hébergement",
   "privacy.hosting.title": "Infrastructure suisse prévue",
   "privacy.hosting.text":
@@ -574,7 +574,7 @@ const en: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "AI",
   "privacy.ai.title": "AI language model in test operation",
   "privacy.ai.text":
-    "Free text, approved questions and limited service facts are sent to OpenAI for interpretation and plain-language wording. AI does not decide access or allocate places. Do not enter names, addresses or contact details.",
+    "Free text, approved questions and limited service facts are sent to OpenAI for interpretation and plain-language wording. AI does not decide access or allocate places. Do not enter names, addresses or contact details. These requests and responses are stored for traceability until they are manually deleted and are only accessible to authorized administrators.",
   "privacy.hosting.eyebrow": "Hosting",
   "privacy.hosting.title": "Swiss infrastructure planned",
   "privacy.hosting.text":
@@ -782,7 +782,7 @@ const ar: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "الذكاء الاصطناعي",
   "privacy.ai.title": "نموذج الذكاء الاصطناعي في مرحلة الاختبار",
   "privacy.ai.text":
-    "تُرسل النصوص الحرة والأسئلة المعتمدة ومعلومات محدودة عن الخدمات إلى OpenAI للتفسير والصياغة الواضحة. لا يقرر الذكاء الاصطناعي الوصول إلى الخدمات ولا يخصص أماكن. لا تُدخل أسماء أو عناوين أو بيانات اتصال.",
+    "تُرسل النصوص الحرة والأسئلة المعتمدة ومعلومات محدودة عن الخدمات إلى OpenAI للتفسير والصياغة الواضحة. لا يقرر الذكاء الاصطناعي الوصول إلى الخدمات ولا يخصص أماكن. لا تُدخل أسماء أو عناوين أو بيانات اتصال. تُحفظ هذه الطلبات والردود لأغراض التتبع إلى أن تُحذف يدويًا، ولا يمكن الاطلاع عليها إلا من قِبل المسؤولين المخوَّلين.",
   "privacy.hosting.eyebrow": "الاستضافة",
   "privacy.hosting.title": "يُخطَّط لبنية تحتية سويسرية",
   "privacy.hosting.text":

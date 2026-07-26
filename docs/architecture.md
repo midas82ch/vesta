@@ -77,6 +77,12 @@ Aktualität sichtbar machen.
 - Freitext wird im MVP nicht dauerhaft gespeichert.
 - Logs enthalten technische IDs, keine vollständigen Eingaben.
 - Analyseereignisse bilden Bedarf und Ergebnis ab, nicht Personenprofile.
+- Ausnahme: tatsächlich versuchte AI-Gateway-Interaktionen
+  (Freitext-Interpretation, Fragen-Formulierung, Ergebnis-Erklärung) werden
+  im Volltext protokolliert, um den KI-Entscheidungsprozess prüfbar zu
+  machen (ADR 0005). Sie bleiben bis zu einer späteren manuellen Löschung
+  gespeichert und sind ausschliesslich über den per Login geschützten
+  Adminbereich einsehbar.
 
 ## Menschliche Übergabe
 

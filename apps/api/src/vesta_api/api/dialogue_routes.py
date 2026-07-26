@@ -55,6 +55,7 @@ def interpret(
         locale=payload.language,
         needs=catalog.list_needs(),
         attributes=catalog.list_attributes(),
+        session_id=None,
     )
     return InterpretResponse(
         need_key=result.need_key,
@@ -83,12 +84,15 @@ def _render_question(
     gateway: AiGateway,
     catalog: DialogueCatalogRepository,
     locale: str,
+    session_id: str,
 ) -> RenderedQuestionResponse | None:
     if turn.question is None:
         return None
     attribute = catalog.get_attribute(turn.question.attribute_key)
     assert attribute is not None
-    rendered = gateway.render_question(question=turn.question, attribute=attribute, locale=locale)
+    rendered = gateway.render_question(
+        question=turn.question, attribute=attribute, locale=locale, session_id=session_id
+    )
     return RenderedQuestionResponse(
         question_key=turn.question.key,
         attribute_key=turn.question.attribute_key,
@@ -107,13 +111,14 @@ def _explain_candidates(
     *,
     gateway: AiGateway,
     locale: str,
+    session_id: str,
 ) -> list[ExplainedCandidateResponse]:
     if match_result is None:
         return []
     explained: list[ExplainedCandidateResponse] = []
     for candidate in match_result.candidates:
         bundle = build_grounding_bundle(candidate)
-        explanation = gateway.explain(bundle=bundle, locale=locale)
+        explanation = gateway.explain(bundle=bundle, locale=locale, session_id=session_id)
         explained.append(
             ExplainedCandidateResponse(
                 candidate=candidate_to_response(candidate),
@@ -149,8 +154,19 @@ def _turn_response(
     return DialogueTurnResponse(
         session_id=turn.state.session_id,
         ai_mode=gateway.mode,
-        question=_render_question(turn, gateway=gateway, catalog=catalog, locale=locale),
-        candidates=_explain_candidates(turn.match_result, gateway=gateway, locale=locale),
+        question=_render_question(
+            turn,
+            gateway=gateway,
+            catalog=catalog,
+            locale=locale,
+            session_id=turn.state.session_id,
+        ),
+        candidates=_explain_candidates(
+            turn.match_result,
+            gateway=gateway,
+            locale=locale,
+            session_id=turn.state.session_id,
+        ),
         human_handoff_required=(
             turn.match_result.human_handoff_required if turn.match_result else False
         ),

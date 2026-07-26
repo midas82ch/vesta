@@ -53,6 +53,17 @@ class Settings(BaseSettings):
     openai_api_key_file: Path | None = Field(
         default=None, validation_alias="OPENAI_API_KEY_FILE"
     )
+    # Dev-only convenience: seeds a single admin user into the in-memory
+    # repository when no DATABASE_URL is configured, so the admin area is
+    # locally testable without Postgres. Never used in production - there,
+    # DATABASE_URL is required and admins are created via
+    # `vesta_api.cli.create_admin_user`.
+    dev_admin_username: str | None = Field(
+        default=None, validation_alias="VESTA_DEV_ADMIN_USERNAME"
+    )
+    dev_admin_password: str | None = Field(
+        default=None, validation_alias="VESTA_DEV_ADMIN_PASSWORD"
+    )
 
     @staticmethod
     def _get_optional_secret(

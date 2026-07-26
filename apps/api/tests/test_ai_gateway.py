@@ -50,6 +50,12 @@ class ValidLive:
         )
 
 
+class FailingAuditLog:
+    def record(self, entry: object) -> None:
+        del entry
+        raise RuntimeError("audit_database_unavailable")
+
+
 class AiGatewayTest(unittest.TestCase):
     def test_disabled_gateway_uses_template_even_with_live_configured(self) -> None:
         gateway = AiGateway(enabled=False, live=ValidLive())
@@ -78,6 +84,45 @@ class AiGatewayTest(unittest.TestCase):
         self.assertEqual("live", gateway.mode)
         result = gateway.explain(bundle=_bundle(), locale="de")
         self.assertEqual("ai", result.source)
+
+    def test_audit_failure_does_not_replace_valid_live_result(self) -> None:
+        gateway = AiGateway(
+            enabled=True,
+            live=ValidLive(),
+            provider="openai",
+            model="test-model",
+            audit_log=FailingAuditLog(),  # type: ignore[arg-type]
+        )
+
+        result = gateway.explain(bundle=_bundle(), locale="de")
+
+        self.assertEqual("ai", result.source)
+
+    def test_audit_failure_does_not_break_validation_fallback(self) -> None:
+        gateway = AiGateway(
+            enabled=True,
+            live=InvalidLive(),
+            provider="openai",
+            model="test-model",
+            audit_log=FailingAuditLog(),  # type: ignore[arg-type]
+        )
+
+        result = gateway.explain(bundle=_bundle(), locale="de")
+
+        self.assertEqual("template", result.source)
+
+    def test_audit_failure_does_not_break_error_fallback(self) -> None:
+        gateway = AiGateway(
+            enabled=True,
+            live=RaisingLive(),
+            provider="openai",
+            model="test-model",
+            audit_log=FailingAuditLog(),  # type: ignore[arg-type]
+        )
+
+        result = gateway.explain(bundle=_bundle(), locale="de")
+
+        self.assertEqual("template", result.source)
 
 
 if __name__ == "__main__":

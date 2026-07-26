@@ -1,6 +1,11 @@
+import json
 import sys
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import ContextVar
 from pathlib import Path
+from threading import Barrier
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -12,7 +17,9 @@ from vesta_api.ai.live_gateway import (  # noqa: E402
     _bundle_payload,
     _describe_catalog,
 )
+from vesta_api.ai.openai_gateway import OpenAiGateway  # noqa: E402
 from vesta_api.domain.ai_models import GroundingBundle, GroundingFact  # noqa: E402
+from vesta_api.domain.audit_models import AiExchange  # noqa: E402
 from vesta_api.domain.dialogue_catalog import (  # noqa: E402
     AttributeDefinition,
     AttributeOption,
@@ -75,6 +82,61 @@ class InterpretationPromptTest(unittest.TestCase):
         self.assertIn("need_key gehoert nie in requires_confirmation", _INTERPRETATION_SYSTEM)
         self.assertIn("exakt die Schluessel aus proposals", _INTERPRETATION_SYSTEM)
         self.assertIn("ausdruecklich genannt", _INTERPRETATION_SYSTEM)
+
+
+class _ConcurrentFakeCompletions:
+    def __init__(self, barrier: Barrier) -> None:
+        self._barrier = barrier
+
+    def create(self, **kwargs: object) -> SimpleNamespace:
+        messages = kwargs["messages"]
+        assert isinstance(messages, list)
+        user_text = messages[1]["content"]
+        self._barrier.wait()
+        response_text = json.dumps({"user": user_text})
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=response_text))]
+        )
+
+
+class OpenAiExchangeContextTest(unittest.TestCase):
+    def test_parallel_calls_keep_request_and_response_in_their_own_context(self) -> None:
+        gateway = object.__new__(OpenAiGateway)
+        gateway._client = SimpleNamespace(  # type: ignore[attr-defined]
+            chat=SimpleNamespace(completions=_ConcurrentFakeCompletions(Barrier(2)))
+        )
+        gateway._model = "test-model"  # type: ignore[attr-defined]
+        gateway._last_exchange = ContextVar(  # type: ignore[attr-defined]
+            "test_openai_last_exchange",
+            default=None,
+        )
+
+        def call(label: str) -> AiExchange:
+            gateway._create(  # type: ignore[attr-defined]
+                system="system",
+                user=label,
+                schema_name="test",
+                schema={"type": "object"},
+            )
+            exchange = gateway.last_exchange
+            assert exchange is not None
+            return exchange
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(call, "alpha")
+            second = executor.submit(call, "beta")
+            exchanges = (first.result(), second.result())
+
+        by_label = {
+            "alpha": next(
+                exchange for exchange in exchanges if "[user]\nalpha" in exchange.request
+            ),
+            "beta": next(exchange for exchange in exchanges if "[user]\nbeta" in exchange.request),
+        }
+        self.assertIn("alpha", by_label["alpha"].response or "")
+        self.assertNotIn("beta", by_label["alpha"].response or "")
+        self.assertIn("beta", by_label["beta"].response or "")
+        self.assertNotIn("alpha", by_label["beta"].response or "")
 
 
 if __name__ == "__main__":

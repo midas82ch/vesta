@@ -390,6 +390,97 @@ form + .choice-list {
   padding: 1.25rem;
 }
 
+.admin-login-shell,
+.admin-shell {
+  margin-inline: auto;
+  padding: 1.5rem 1rem;
+  width: 100%;
+}
+
+.admin-login-shell {
+  max-width: 26rem;
+}
+
+.admin-shell {
+  max-width: 68rem;
+}
+
+.admin-heading {
+  display: grid;
+  gap: 0.75rem;
+  margin-block-end: 1.5rem;
+}
+
+.admin-heading .btn {
+  justify-self: start;
+}
+
+.admin-table-scroll {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table-scroll:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+
+.admin-table {
+  border-collapse: collapse;
+  min-width: 52rem;
+  width: 100%;
+}
+
+.admin-table th,
+.admin-table td {
+  border-block-end: 1px solid var(--line);
+  padding: 0.75rem;
+  text-align: start;
+  vertical-align: middle;
+}
+
+.admin-table th {
+  background: var(--green-light);
+  font-size: 0.78rem;
+}
+
+.admin-table td {
+  font-size: 0.84rem;
+}
+
+.admin-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.admin-table .btn {
+  min-height: 44px;
+}
+
+.navigator-card.admin-detail {
+  margin-block-start: 1.5rem;
+  max-width: none;
+}
+
+.admin-detail h2:focus {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+
+.admin-audit-text {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 fieldset {
   border: 0;
   margin: 0 0 1.75rem;
@@ -952,6 +1043,25 @@ footer a {
 }
 
 @media (min-width: 30rem) {
+  .admin-login-shell,
+  .admin-shell {
+    padding-inline: 1.25rem;
+  }
+
+  .admin-login-shell {
+    padding-block-start: 4rem;
+  }
+
+  .admin-heading {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .admin-heading .btn {
+    justify-self: auto;
+  }
+
   .pilot-label {
     display: block;
   }

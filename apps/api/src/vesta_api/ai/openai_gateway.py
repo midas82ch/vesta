@@ -1,4 +1,5 @@
 import json
+from contextvars import ContextVar
 
 from vesta_api.ai.live_gateway import (
     _EXPLANATION_SCHEMA,
@@ -19,6 +20,7 @@ from vesta_api.domain.ai_models import (
     QuestionOption,
     RenderedQuestion,
 )
+from vesta_api.domain.audit_models import AiExchange
 from vesta_api.domain.dialogue_catalog import (
     AttributeDefinition,
     NeedDefinition,
@@ -46,8 +48,18 @@ class OpenAiGateway:
 
         self._client = openai.OpenAI(api_key=api_key)
         self._model = model
+        self._last_exchange: ContextVar[AiExchange | None] = ContextVar(
+            f"openai_last_exchange_{id(self)}",
+            default=None,
+        )
+
+    @property
+    def last_exchange(self) -> AiExchange | None:
+        return self._last_exchange.get()
 
     def _create(self, *, system: str, user: str, schema_name: str, schema: dict) -> dict:
+        request_text = f"[system]\n{system}\n\n[user]\n{user}"
+        self._last_exchange.set(AiExchange(request=request_text))
         response = self._client.chat.completions.create(
             model=self._model,
             messages=[
@@ -56,7 +68,9 @@ class OpenAiGateway:
             ],
             response_format=_json_schema_format(schema_name, schema),
         )
-        return json.loads(response.choices[0].message.content)
+        response_text = response.choices[0].message.content
+        self._last_exchange.set(AiExchange(request=request_text, response=response_text))
+        return json.loads(response_text)
 
     def interpret(
         self,

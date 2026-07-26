@@ -1,5 +1,6 @@
 import json
 import logging
+from contextvars import ContextVar
 
 from vesta_api.domain.ai_models import (
     AttributeProposal,
@@ -10,6 +11,7 @@ from vesta_api.domain.ai_models import (
     QuestionOption,
     RenderedQuestion,
 )
+from vesta_api.domain.audit_models import AiExchange
 from vesta_api.domain.dialogue_catalog import (
     AttributeDefinition,
     NeedDefinition,
@@ -158,6 +160,14 @@ class AnthropicGateway:
 
         self._client = anthropic.Anthropic(api_key=api_key)
         self._model = model
+        self._last_exchange: ContextVar[AiExchange | None] = ContextVar(
+            f"anthropic_last_exchange_{id(self)}",
+            default=None,
+        )
+
+    @property
+    def last_exchange(self) -> AiExchange | None:
+        return self._last_exchange.get()
 
     def interpret(
         self,
@@ -167,6 +177,13 @@ class AnthropicGateway:
         needs: tuple[NeedDefinition, ...],
         attributes: tuple[AttributeDefinition, ...],
     ) -> InterpretationResult:
+        user_content = (
+            f"Sprache: {locale}\n\n"
+            f"{_describe_catalog(needs, attributes)}\n\n"
+            f"Freitext der Person: {free_text}"
+        )
+        request_text = f"[system]\n{_INTERPRETATION_SYSTEM}\n\n[user]\n{user_content}"
+        self._last_exchange.set(AiExchange(request=request_text))
         response = self._client.messages.create(
             model=self._model,
             max_tokens=1024,
@@ -174,18 +191,11 @@ class AnthropicGateway:
             output_config={
                 "format": {"type": "json_schema", "schema": _INTERPRETATION_SCHEMA}
             },
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Sprache: {locale}\n\n"
-                        f"{_describe_catalog(needs, attributes)}\n\n"
-                        f"Freitext der Person: {free_text}"
-                    ),
-                }
-            ],
+            messages=[{"role": "user", "content": user_content}],
         )
-        payload = json.loads(response.content[0].text)
+        response_text = response.content[0].text
+        self._last_exchange.set(AiExchange(request=request_text, response=response_text))
+        payload = json.loads(response_text)
         return InterpretationResult(
             need_key=payload["need_key"],
             proposals=tuple(
@@ -210,25 +220,25 @@ class AnthropicGateway:
             if attribute.options
             else "ja / nein / weiss nicht"
         )
+        user_content = (
+            f"Sprache: {locale}\n"
+            f"Kanonischer Text: {canonical['canonical_text']}\n"
+            f"Hilfetext: {canonical.get('help_text', '')}\n"
+            f"Erlaubte Antwortoptionen: {allowed_values}\n\n"
+            "Formuliere nur die Frage verstaendlicher."
+        )
+        request_text = f"[system]\n{_QUESTION_SYSTEM}\n\n[user]\n{user_content}"
+        self._last_exchange.set(AiExchange(request=request_text))
         response = self._client.messages.create(
             model=self._model,
             max_tokens=512,
             system=_QUESTION_SYSTEM,
             output_config={"format": {"type": "json_schema", "schema": _QUESTION_SCHEMA}},
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Sprache: {locale}\n"
-                        f"Kanonischer Text: {canonical['canonical_text']}\n"
-                        f"Hilfetext: {canonical.get('help_text', '')}\n"
-                        f"Erlaubte Antwortoptionen: {allowed_values}\n\n"
-                        "Formuliere nur die Frage verstaendlicher."
-                    ),
-                }
-            ],
+            messages=[{"role": "user", "content": user_content}],
         )
-        payload = json.loads(response.content[0].text)
+        response_text = response.content[0].text
+        self._last_exchange.set(AiExchange(request=request_text, response=response_text))
+        payload = json.loads(response_text)
         return RenderedQuestion(
             text=payload["text"],
             help_text=payload["help_text"],
@@ -241,22 +251,22 @@ class AnthropicGateway:
         )
 
     def explain(self, *, bundle: GroundingBundle, locale: str) -> ExplanationResult:
+        user_content = (
+            f"Sprache: {locale}\n\n"
+            f"Faktenpaket:\n{json.dumps(_bundle_payload(bundle), ensure_ascii=False)}"
+        )
+        request_text = f"[system]\n{_EXPLANATION_SYSTEM}\n\n[user]\n{user_content}"
+        self._last_exchange.set(AiExchange(request=request_text))
         response = self._client.messages.create(
             model=self._model,
             max_tokens=768,
             system=_EXPLANATION_SYSTEM,
             output_config={"format": {"type": "json_schema", "schema": _EXPLANATION_SCHEMA}},
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Sprache: {locale}\n\n"
-                        f"Faktenpaket:\n{json.dumps(_bundle_payload(bundle), ensure_ascii=False)}"
-                    ),
-                }
-            ],
+            messages=[{"role": "user", "content": user_content}],
         )
-        payload = json.loads(response.content[0].text)
+        response_text = response.content[0].text
+        self._last_exchange.set(AiExchange(request=request_text, response=response_text))
+        payload = json.loads(response_text)
         clarification_payload = payload["clarification"]
         clarification = (
             ExplanationReason(
