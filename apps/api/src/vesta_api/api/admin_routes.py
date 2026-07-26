@@ -8,12 +8,17 @@ from vesta_api.api.admin_schemas import (
     AiAuditEntryDetailResponse,
     AiAuditEntrySummaryResponse,
     AiAuditLogListResponse,
+    WorkflowAuditDetailResponse,
+    WorkflowAuditListResponse,
+    WorkflowAuditStepResponse,
+    WorkflowAuditSummaryResponse,
 )
 from vesta_api.config import settings
 from vesta_api.domain.admin_models import AdminUser
 from vesta_api.domain.audit_models import AiOutcome, AiPort
 from vesta_api.repositories.admin_users import AdminUserRepository
 from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
+from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.security import (
     SESSION_COOKIE_NAME,
     SESSION_TTL,
@@ -41,6 +46,10 @@ def admin_login_attempt_store(request: Request) -> AdminLoginAttemptStore:
 
 def ai_audit_log_repository(request: Request) -> AiAuditLogRepository:
     return request.app.state.ai_audit_log
+
+
+def workflow_audit_log_repository(request: Request) -> WorkflowAuditLogRepository:
+    return request.app.state.workflow_audit_log
 
 
 def require_admin_session(
@@ -175,4 +184,159 @@ def get_ai_audit_log_entry(
         request_text=entry.request_text,
         response_text=entry.response_text,
         created_at=entry.created_at,
+    )
+
+
+_AI_STEP_LABELS = {
+    "interpret": "AI · Eingabe verstehen",
+    "render_question": "AI · Frage formulieren",
+    "explain": "AI · Ergebnis erklären",
+}
+
+_WORKFLOW_STAGE_LABELS = {
+    "input": "Eingabe",
+    "system": "Systemlogik",
+    "output": "Antwort",
+}
+
+
+@router.get("/ai-audit-workflows", response_model=WorkflowAuditListResponse)
+def list_ai_audit_workflows(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    workflow_log: Annotated[
+        WorkflowAuditLogRepository, Depends(workflow_audit_log_repository)
+    ],
+    audit_log: Annotated[AiAuditLogRepository, Depends(ai_audit_log_repository)],
+    limit: Annotated[int, Query(ge=1, le=MAX_LIST_LIMIT)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> WorkflowAuditListResponse:
+    workflows = workflow_log.list_workflows(limit=MAX_LIST_LIMIT, offset=0)
+    workflow_map = {workflow.workflow_id: workflow for workflow in workflows}
+    ai_groups: dict[str, list[AiAuditEntrySummaryResponse]] = {}
+    for entry in audit_log.list_entries(
+        limit=MAX_LIST_LIMIT,
+        offset=0,
+    ):
+        workflow_id = entry.session_id or f"legacy__{entry.id}"
+        ai_groups.setdefault(workflow_id, []).append(
+            AiAuditEntrySummaryResponse(
+                id=entry.id,
+                session_id=entry.session_id,
+                port=entry.port,
+                provider=entry.provider,
+                model=entry.model,
+                outcome=entry.outcome,
+                created_at=entry.created_at,
+            )
+        )
+
+    responses: list[WorkflowAuditSummaryResponse] = []
+    for workflow_id in workflow_map.keys() | ai_groups.keys():
+        workflow = workflow_map.get(workflow_id)
+        ai_entries = ai_groups.get(workflow_id, [])
+        timestamps = [entry.created_at for entry in ai_entries]
+        if workflow is not None:
+            timestamps.extend((workflow.started_at, workflow.updated_at))
+        assert timestamps
+        responses.append(
+            WorkflowAuditSummaryResponse(
+                workflow_id=workflow_id,
+                started_at=min(timestamps),
+                updated_at=max(timestamps),
+                input_preview=(
+                    workflow.input_preview
+                    if workflow is not None
+                    else (
+                        "Historische AI-Interpretation ohne vollständige Workflow-Spur"
+                        if workflow_id.startswith("legacy__")
+                        else "Historischer Dialog ohne erfasste Eingabe"
+                    )
+                ),
+                event_count=workflow.event_count if workflow is not None else 0,
+                ai_call_count=len(ai_entries),
+                complete=(
+                    workflow is not None
+                    and workflow.has_input
+                    and workflow.has_system
+                    and workflow.has_output
+                ),
+                has_fallback=any(entry.outcome != "ai" for entry in ai_entries),
+            )
+        )
+    responses.sort(key=lambda workflow: workflow.updated_at, reverse=True)
+    return WorkflowAuditListResponse(workflows=responses[offset : offset + limit])
+
+
+@router.get(
+    "/ai-audit-workflows/{workflow_id}",
+    response_model=WorkflowAuditDetailResponse,
+)
+def get_ai_audit_workflow(
+    workflow_id: str,
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    workflow_log: Annotated[
+        WorkflowAuditLogRepository, Depends(workflow_audit_log_repository)
+    ],
+    audit_log: Annotated[AiAuditLogRepository, Depends(ai_audit_log_repository)],
+) -> WorkflowAuditDetailResponse:
+    if workflow_id.startswith("legacy__"):
+        legacy_entry_id = workflow_id.removeprefix("legacy__")
+        legacy_entry = audit_log.get_entry(legacy_entry_id)
+        events = ()
+        ai_summaries = (legacy_entry,) if legacy_entry is not None else ()
+    else:
+        events = workflow_log.list_events(workflow_id)
+        ai_summaries = audit_log.list_entries(
+            limit=MAX_LIST_LIMIT,
+            offset=0,
+            session_id=workflow_id,
+        )
+    if not events and not ai_summaries:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+
+    steps = [
+        WorkflowAuditStepResponse(
+            id=event.id,
+            kind=event.stage,
+            event_type=event.event_type,
+            label=_WORKFLOW_STAGE_LABELS[event.stage],
+            summary=event.summary,
+            created_at=event.created_at,
+            details=event.payload,
+        )
+        for event in events
+    ]
+    for summary in ai_summaries:
+        detail = audit_log.get_entry(summary.id)
+        if detail is None:
+            continue
+        steps.append(
+            WorkflowAuditStepResponse(
+                id=detail.id,
+                kind="ai",
+                event_type=detail.port,
+                label=_AI_STEP_LABELS[detail.port],
+                summary=(
+                    f"{detail.provider}/{detail.model} · Ergebnis: {detail.outcome}"
+                ),
+                created_at=detail.created_at,
+                provider=detail.provider,
+                model=detail.model,
+                outcome=detail.outcome,
+                details={
+                    "request_text": detail.request_text,
+                    "response_text": detail.response_text,
+                    "violations": list(detail.violations),
+                    "error_detail": detail.error_detail,
+                },
+            )
+        )
+    steps.sort(key=lambda step: (step.created_at, step.id))
+    kinds = {step.kind for step in steps}
+    return WorkflowAuditDetailResponse(
+        workflow_id=workflow_id,
+        started_at=steps[0].created_at,
+        updated_at=steps[-1].created_at,
+        complete={"input", "system", "output"}.issubset(kinds),
+        steps=steps,
     )

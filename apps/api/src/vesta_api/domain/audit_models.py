@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
+from vesta_api.domain.audit_clock import monotonic_audit_time
+
 AiPort = Literal["interpret", "render_question", "explain"]
 AiOutcome = Literal["ai", "fallback_validation", "fallback_error"]
 
@@ -27,6 +29,7 @@ class NewAiAuditEntry:
     response_text: str | None = None
     violations: tuple[str, ...] = field(default_factory=tuple)
     error_detail: str | None = None
+    created_at: datetime = field(default_factory=monotonic_audit_time)
 
 
 @dataclass(frozen=True)

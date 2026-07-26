@@ -80,9 +80,12 @@ Aktualität sichtbar machen.
 - Ausnahme: tatsächlich versuchte AI-Gateway-Interaktionen
   (Freitext-Interpretation, Fragen-Formulierung, Ergebnis-Erklärung) werden
   im Volltext protokolliert, um den KI-Entscheidungsprozess prüfbar zu
-  machen (ADR 0005). Sie bleiben bis zu einer späteren manuellen Löschung
-  gespeichert und sind ausschliesslich über den per Login geschützten
-  Adminbereich einsehbar.
+  machen (ADR 0005). Zusätzlich verbindet eine Workflow-Spur Eingaben,
+  deterministische Frageauswahl und Matching-Logik, AI-Aufrufe und die
+  öffentliche Antwort über dieselbe technische Workflow-ID (ADR 0006).
+  Diese Daten bleiben bis zu einer späteren manuellen Löschung gespeichert
+  und sind ausschliesslich über den per Login geschützten Adminbereich
+  einsehbar.
 
 ## Menschliche Übergabe
 

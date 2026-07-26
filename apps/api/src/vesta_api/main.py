@@ -30,6 +30,11 @@ from vesta_api.repositories.offers import (
     OfferRepository,
     PostgresOfferRepository,
 )
+from vesta_api.repositories.workflow_audit_log import (
+    InMemoryWorkflowAuditLogRepository,
+    PostgresWorkflowAuditLogRepository,
+    WorkflowAuditLogRepository,
+)
 from vesta_api.security import AdminLoginAttemptStore, AdminSessionStore
 from vesta_api.services.dialogue_orchestrator import DialogueOrchestrator, DialogueSessionStore
 from vesta_api.services.matching import MatchingService
@@ -84,6 +89,15 @@ def create_ai_audit_log_repository() -> AiAuditLogRepository:
     if settings.environment.lower() == "production":
         raise RuntimeError("DATABASE_URL is required when VESTA_ENV=production")
     return InMemoryAiAuditLogRepository()
+
+
+def create_workflow_audit_log_repository() -> WorkflowAuditLogRepository:
+    database_url = settings.get_database_url()
+    if database_url is not None:
+        return PostgresWorkflowAuditLogRepository(database_url)
+    if settings.environment.lower() == "production":
+        raise RuntimeError("DATABASE_URL is required when VESTA_ENV=production")
+    return InMemoryWorkflowAuditLogRepository()
 
 
 def create_ai_gateway(audit_log: AiAuditLogRepository) -> AiGateway:
@@ -158,6 +172,11 @@ async def lifespan(app: FastAPI):
     ai_audit_log.healthcheck()
     app.state.ai_audit_log = ai_audit_log
     app.state.ai_gateway = create_ai_gateway(ai_audit_log)
+
+    workflow_audit_log = create_workflow_audit_log_repository()
+    workflow_audit_log.healthcheck()
+    app.state.workflow_audit_log = workflow_audit_log
+
     app.state.dialogue_orchestrator = DialogueOrchestrator(
         matching_service=app.state.matching_service,
         catalog=catalog,
@@ -170,6 +189,7 @@ async def lifespan(app: FastAPI):
         catalog.close()
         admin_users.close()
         ai_audit_log.close()
+        workflow_audit_log.close()
 
 
 app = FastAPI(

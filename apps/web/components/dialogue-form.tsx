@@ -64,6 +64,7 @@ type DialogueTurn = {
 };
 
 type InterpretResponse = {
+  workflow_id: string;
   need_key: string | null;
   proposals: { key: string; value: unknown; confidence: string }[];
   requires_confirmation: string[];
@@ -107,12 +108,13 @@ export function DialogueForm() {
   const busy = phase === "interpreting" || phase === "loading";
   const onEntryScreen = phase !== "question" && phase !== "result";
 
-  async function startWithNeed(need: Need) {
+  async function startWithNeed(need: Need, workflowId?: string) {
     setPhase("loading");
     try {
       const result = await postJson<DialogueTurn>("/api/dialogue/start", {
         need,
         language: locale,
+        workflow_id: workflowId,
       });
       applyTurn(result);
     } catch {
@@ -273,7 +275,9 @@ export function DialogueForm() {
           {interpretation && (
             <ChoiceList
               disabled={busy}
-              onSelect={(value) => startWithNeed(value as Need)}
+              onSelect={(value) =>
+                startWithNeed(value as Need, interpretation.workflow_id)
+              }
               options={interpretationOptions}
               selectedValue={interpretation.need_key ?? undefined}
             />

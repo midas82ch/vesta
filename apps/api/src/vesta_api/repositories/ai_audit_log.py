@@ -1,6 +1,5 @@
 import json
 from collections.abc import Mapping
-from datetime import UTC, datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
@@ -57,7 +56,6 @@ class InMemoryAiAuditLogRepository:
         self._entries: dict[str, AiAuditEntryDetail] = {}
 
     def record(self, entry: NewAiAuditEntry) -> None:
-        now = datetime.now(UTC)
         entry_id = str(uuid4())
         self._entries[entry_id] = AiAuditEntryDetail(
             id=entry_id,
@@ -70,7 +68,7 @@ class InMemoryAiAuditLogRepository:
             error_detail=entry.error_detail,
             request_text=entry.request_text,
             response_text=entry.response_text,
-            created_at=now,
+            created_at=entry.created_at,
         )
 
     def list_entries(
@@ -116,11 +114,12 @@ _RECORD = text(
     """
     INSERT INTO ai_interaction_log (
         id, session_id, port, provider, model, outcome,
-        violations, error_detail, request_text, response_text
+        violations, error_detail, request_text, response_text, created_at
     )
     VALUES (
         :id, :session_id, :port, :provider, :model, :outcome,
-        CAST(:violations AS jsonb), :error_detail, :request_text, :response_text
+        CAST(:violations AS jsonb), :error_detail, :request_text, :response_text,
+        :created_at
     )
     """
 )
@@ -189,6 +188,7 @@ class PostgresAiAuditLogRepository:
                     "error_detail": entry.error_detail,
                     "request_text": entry.request_text,
                     "response_text": entry.response_text,
+                    "created_at": entry.created_at,
                 },
             )
 

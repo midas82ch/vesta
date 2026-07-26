@@ -8,6 +8,8 @@
   --green-light: #dce8df;
   --orange: #a93f1b;
   --orange-button: #ee774d;
+  --blue: #205493;
+  --rust: #7c2d12;
   --focus: #075ec9;
   --danger-background: #fff0e7;
   --danger-ink: #783a25;
@@ -413,6 +415,150 @@ form + .choice-list {
 
 .admin-heading .btn {
   justify-self: start;
+}
+
+.admin-intro {
+  max-width: 48rem;
+}
+
+.workflow-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 1.5rem 0;
+  padding: 0;
+}
+
+.workflow-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.workflow-card-heading,
+.workflow-detail-heading,
+.workflow-step-heading {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.workflow-card time,
+.workflow-step time {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.workflow-preview {
+  font-weight: 750;
+  margin-block: 0.35rem 0;
+  overflow-wrap: anywhere;
+}
+
+.workflow-status {
+  align-items: center;
+  align-self: start;
+  border: 1px solid var(--orange);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 800;
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  width: fit-content;
+}
+
+.workflow-status--complete {
+  border-color: var(--green);
+}
+
+.navigator-card.workflow-detail {
+  margin-block-start: 1.5rem;
+  max-width: none;
+}
+
+.workflow-detail h2:focus {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+
+.workflow-detail code {
+  overflow-wrap: anywhere;
+}
+
+.workflow-timeline {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 1.5rem 0;
+  padding: 0;
+}
+
+.workflow-step {
+  align-items: start;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+}
+
+.workflow-step > article {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-inline-start: 0.35rem solid var(--green);
+  border-radius: 0.75rem;
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.workflow-step--input > article {
+  border-inline-start-color: var(--orange);
+}
+
+.workflow-step--ai > article {
+  border-inline-start-color: var(--blue);
+}
+
+.workflow-step--output > article {
+  border-inline-start-color: var(--rust);
+}
+
+.workflow-step-number {
+  align-items: center;
+  background: var(--ink);
+  border-radius: 999px;
+  color: var(--paper);
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 850;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.workflow-step h3,
+.workflow-step p {
+  margin-block-start: 0;
+}
+
+.workflow-technical-details {
+  border-block-start: 1px solid var(--line);
+  margin-block-start: 0.75rem;
+  padding-block-start: 0.5rem;
+}
+
+.workflow-technical-details summary {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 750;
+  min-height: 44px;
+}
+
+.workflow-technical-details summary:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
 }
 
 .admin-table-scroll {
@@ -1060,6 +1206,28 @@ footer a {
 
   .admin-heading .btn {
     justify-self: auto;
+  }
+
+  .workflow-card-heading,
+  .workflow-detail-heading,
+  .workflow-step-heading {
+    align-items: start;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .workflow-card {
+    padding: 1.25rem;
+  }
+
+  .workflow-step {
+    gap: 1rem;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .workflow-step-number {
+    height: 2.5rem;
+    width: 2.5rem;
   }
 
   .pilot-label {

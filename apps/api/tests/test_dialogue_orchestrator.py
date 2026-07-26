@@ -157,6 +157,14 @@ class DialogueOrchestratorTest(unittest.TestCase):
 
 
 class DialogueSessionStoreTest(unittest.TestCase):
+    def test_can_continue_with_a_server_generated_workflow_id(self) -> None:
+        store = DialogueSessionStore()
+
+        state = store.create(locale="de", now=NOW, session_id="workflow-123")
+
+        self.assertEqual("workflow-123", state.session_id)
+        self.assertIs(state, store.get("workflow-123", now=NOW))
+
     def test_expired_session_is_not_returned_and_is_swept(self) -> None:
         store = DialogueSessionStore(ttl=timedelta(minutes=-1))
         state = store.create(locale="de", now=NOW)

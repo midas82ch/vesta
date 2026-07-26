@@ -26,15 +26,21 @@ class DialogueSessionStore:
         self._sessions: dict[str, DialogueState] = {}
         self._ttl = ttl
 
-    def create(self, locale: str, now: datetime) -> DialogueState:
-        session_id = secrets.token_urlsafe(18)
+    def create(
+        self,
+        locale: str,
+        now: datetime,
+        *,
+        session_id: str | None = None,
+    ) -> DialogueState:
+        resolved_session_id = session_id or secrets.token_urlsafe(18)
         state = DialogueState(
-            session_id=session_id,
+            session_id=resolved_session_id,
             locale=locale,
             created_at=now,
             expires_at=now + self._ttl,
         )
-        self._sessions[session_id] = state
+        self._sessions[resolved_session_id] = state
         return state
 
     def get(self, session_id: str, now: datetime) -> DialogueState | None:
@@ -98,8 +104,15 @@ class DialogueOrchestrator:
         self._session_store = session_store
         self._next_question_policy = NextQuestionPolicy(catalog.list_questions())
 
-    def start(self, locale: str, need: Need, now: datetime) -> DialogueTurnResult:
-        created = self._session_store.create(locale, now)
+    def start(
+        self,
+        locale: str,
+        need: Need,
+        now: datetime,
+        *,
+        session_id: str | None = None,
+    ) -> DialogueTurnResult:
+        created = self._session_store.create(locale, now, session_id=session_id)
         state = DialogueState(
             session_id=created.session_id,
             locale=locale,

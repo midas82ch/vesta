@@ -4,21 +4,36 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui";
 
-type AuditSummary = {
-  id: string;
-  session_id: string | null;
-  port: string;
-  provider: string;
-  model: string;
-  outcome: string;
-  created_at: string;
+type WorkflowSummary = {
+  workflow_id: string;
+  started_at: string;
+  updated_at: string;
+  input_preview: string;
+  event_count: number;
+  ai_call_count: number;
+  complete: boolean;
+  has_fallback: boolean;
 };
 
-type AuditDetail = AuditSummary & {
-  violations: string[];
-  error_detail: string | null;
-  request_text: string;
-  response_text: string | null;
+type WorkflowStep = {
+  id: string;
+  kind: "input" | "ai" | "system" | "output";
+  event_type: string;
+  label: string;
+  summary: string;
+  created_at: string;
+  provider: string | null;
+  model: string | null;
+  outcome: string | null;
+  details: Record<string, unknown>;
+};
+
+type WorkflowDetail = {
+  workflow_id: string;
+  started_at: string;
+  updated_at: string;
+  complete: boolean;
+  steps: WorkflowStep[];
 };
 
 class RequestError extends Error {
@@ -35,10 +50,18 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+function formatTime(value: string): string {
+  return new Date(value).toLocaleString("de-CH");
+}
+
+function formatDetails(details: Record<string, unknown>): string {
+  return JSON.stringify(details, null, 2);
+}
+
 export default function AiAuditPage() {
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
-  const [entries, setEntries] = useState<AuditSummary[]>([]);
-  const [selected, setSelected] = useState<AuditDetail | null>(null);
+  const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
+  const [selected, setSelected] = useState<WorkflowDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,10 +74,10 @@ export default function AiAuditPage() {
   }, []);
 
   useEffect(() => {
-    fetchJson<{ entries: AuditSummary[] }>("/api/admin/ai-audit-log")
-      .then((data) => setEntries(data.entries))
+    fetchJson<{ workflows: WorkflowSummary[] }>("/api/admin/ai-audit-workflows")
+      .then((data) => setWorkflows(data.workflows))
       .catch((requestError: unknown) =>
-        handleRequestError(requestError, "Liste konnte nicht geladen werden."),
+        handleRequestError(requestError, "Workflows konnten nicht geladen werden."),
       )
       .finally(() => setLoading(false));
   }, [handleRequestError]);
@@ -65,13 +88,15 @@ export default function AiAuditPage() {
     }
   }, [selected]);
 
-  async function openEntry(id: string) {
+  async function openWorkflow(workflowId: string) {
     setError(null);
     try {
-      const detail = await fetchJson<AuditDetail>(`/api/admin/ai-audit-log/${id}`);
+      const detail = await fetchJson<WorkflowDetail>(
+        `/api/admin/ai-audit-workflows/${encodeURIComponent(workflowId)}`,
+      );
       setSelected(detail);
     } catch (requestError) {
-      handleRequestError(requestError, "Eintrag konnte nicht geladen werden.");
+      handleRequestError(requestError, "Workflow konnte nicht geladen werden.");
     }
   }
 
@@ -87,11 +112,19 @@ export default function AiAuditPage() {
   return (
     <main className="admin-shell">
       <div className="admin-heading">
-        <h1>AI-Audit-Log</h1>
+        <div>
+          <p className="eyebrow">Admin-Audit</p>
+          <h1>Dialog-Workflows</h1>
+        </div>
         <Button onClick={logout} variant="ghost">
           Abmelden
         </Button>
       </div>
+
+      <p className="admin-intro">
+        Jeder Workflow zeigt die nachvollziehbare Kette von der Eingabe über AI und
+        deterministische Vesta-Logik bis zur sichtbaren Antwort.
+      </p>
 
       {error && (
         <p className="error-message" role="alert">
@@ -100,87 +133,105 @@ export default function AiAuditPage() {
       )}
       {loading && (
         <p aria-live="polite" className="field-hint" role="status">
-          Wird geladen …
+          Workflows werden geladen …
         </p>
       )}
 
-      {!loading && entries.length === 0 && (
+      {!loading && workflows.length === 0 && (
         <p aria-live="polite" className="field-hint" role="status">
-          Noch keine KI-Interaktionen protokolliert.
+          Noch keine vollständigen Dialog-Workflows protokolliert.
         </p>
       )}
 
-      {entries.length > 0 && (
-        <div
-          aria-label="AI-Audit-Einträge, horizontal scrollbar"
-          className="admin-table-scroll"
-          role="region"
-          tabIndex={0}
-        >
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th scope="col">Zeitpunkt</th>
-                <th scope="col">Port</th>
-                <th scope="col">Provider/Modell</th>
-                <th scope="col">Ergebnis</th>
-                <th scope="col">Session</th>
-                <th scope="col">
-                  <span className="visually-hidden">Aktion</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => {
-                const createdAt = new Date(entry.created_at).toLocaleString("de-CH");
-                return (
-                  <tr key={entry.id}>
-                    <td>{createdAt}</td>
-                    <td>{entry.port}</td>
-                    <td>
-                      {entry.provider} / {entry.model}
-                    </td>
-                    <td>{entry.outcome}</td>
-                    <td>{entry.session_id ?? "–"}</td>
-                    <td>
-                      <Button
-                        aria-label={`Details für Audit-Eintrag vom ${createdAt} anzeigen`}
-                        onClick={() => openEntry(entry.id)}
-                        variant="secondary"
-                      >
-                        Details
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {workflows.length > 0 && (
+        <ul aria-label="Protokollierte Dialog-Workflows" className="workflow-list">
+          {workflows.map((workflow) => {
+            const updatedAt = formatTime(workflow.updated_at);
+            return (
+              <li className="workflow-card" key={workflow.workflow_id}>
+                <div className="workflow-card-heading">
+                  <div>
+                    <time dateTime={workflow.updated_at}>{updatedAt}</time>
+                    <p className="workflow-preview">{workflow.input_preview}</p>
+                  </div>
+                  <span
+                    className={`workflow-status ${
+                      workflow.complete ? "workflow-status--complete" : ""
+                    }`}
+                  >
+                    {workflow.complete ? "Vollständige Spur" : "Teilspur"}
+                  </span>
+                </div>
+                <p className="field-hint">
+                  {workflow.event_count} Prozessschritte · {workflow.ai_call_count} AI-Aufrufe
+                  {workflow.has_fallback ? " · mit Fallback" : ""}
+                </p>
+                <Button
+                  aria-label={`Workflow vom ${updatedAt} öffnen`}
+                  onClick={() => openWorkflow(workflow.workflow_id)}
+                  variant="secondary"
+                >
+                  Workflow öffnen
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {selected && (
-        <section aria-labelledby="audit-detail-heading" className="navigator-card admin-detail">
+        <section
+          aria-labelledby="workflow-detail-heading"
+          className="navigator-card workflow-detail"
+        >
+          <div className="workflow-detail-heading">
+            <div>
+              <p className="eyebrow">Ablauf</p>
+              <h2 id="workflow-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
+                Workflow-Details
+              </h2>
+            </div>
+            <span
+              className={`workflow-status ${
+                selected.complete ? "workflow-status--complete" : ""
+              }`}
+            >
+              {selected.complete ? "Vollständige Spur" : "Historische Teilspur"}
+            </span>
+          </div>
           <p className="field-hint">
-            {selected.port} · {selected.provider}/{selected.model} · {selected.outcome}
+            Workflow-ID: <code>{selected.workflow_id}</code>
           </p>
-          <h2 id="audit-detail-heading" ref={detailHeadingRef} tabIndex={-1}>
-            Audit-Details
-          </h2>
-          {selected.violations.length > 0 && (
-            <p className="field-hint">Verstösse: {selected.violations.join(", ")}</p>
-          )}
-          {selected.error_detail && (
-            <p className="error-message" role="alert">
-              {selected.error_detail}
-            </p>
-          )}
-          <h3>Anfrage</h3>
-          <pre className="admin-audit-text">{selected.request_text}</pre>
-          <h3>Antwort</h3>
-          <pre className="admin-audit-text">
-            {selected.response_text ?? "(keine Antwort erhalten)"}
-          </pre>
+
+          <ol aria-label="Chronologischer Ablauf des Dialogs" className="workflow-timeline">
+            {selected.steps.map((step, index) => (
+              <li
+                className={`workflow-step workflow-step--${step.kind}`}
+                key={step.id}
+              >
+                <div aria-hidden="true" className="workflow-step-number">
+                  {index + 1}
+                </div>
+                <article>
+                  <div className="workflow-step-heading">
+                    <h3>{step.label}</h3>
+                    <time dateTime={step.created_at}>{formatTime(step.created_at)}</time>
+                  </div>
+                  <p>{step.summary}</p>
+                  {step.kind === "ai" && (
+                    <p className="field-hint">
+                      {step.provider}/{step.model} · {step.outcome}
+                    </p>
+                  )}
+                  <details className="workflow-technical-details">
+                    <summary>Technische Details anzeigen</summary>
+                    <pre className="admin-audit-text">{formatDetails(step.details)}</pre>
+                  </details>
+                </article>
+              </li>
+            ))}
+          </ol>
+
           <Button onClick={() => setSelected(null)} variant="ghost">
             Schliessen
           </Button>

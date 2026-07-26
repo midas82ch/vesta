@@ -52,6 +52,12 @@ class DatabaseRolePrivilegesTest(unittest.TestCase):
             self.assertIn(privilege, vesta_app.table_privileges["ai_interaction_log"])
         self.assertNotIn("DELETE", vesta_app.table_privileges["ai_interaction_log"])
 
+        self.assertIn("dialogue_workflow_log", vesta_app.table_privileges)
+        self.assertEqual(
+            ("SELECT", "INSERT"),
+            vesta_app.table_privileges["dialogue_workflow_log"],
+        )
+
 
 class DatabaseRoleUrlTest(unittest.TestCase):
     def test_replaces_admin_credentials_and_preserves_tls(self) -> None:

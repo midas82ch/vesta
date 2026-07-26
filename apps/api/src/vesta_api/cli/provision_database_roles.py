@@ -33,6 +33,7 @@ ROLES = (
             "question_localizations": ("SELECT",),
             "admin_users": ("SELECT",),
             "ai_interaction_log": ("SELECT", "INSERT"),
+            "dialogue_workflow_log": ("SELECT", "INSERT"),
         },
     ),
     DatabaseRole(

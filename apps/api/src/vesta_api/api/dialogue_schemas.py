@@ -16,6 +16,7 @@ class AttributeProposalResponse(BaseModel):
 
 
 class InterpretResponse(BaseModel):
+    workflow_id: str
     need_key: str | None
     proposals: list[AttributeProposalResponse]
     requires_confirmation: list[str]
@@ -26,6 +27,7 @@ class InterpretResponse(BaseModel):
 class StartDialogueRequest(BaseModel):
     need: Need
     language: str = Field(default="de", min_length=2, max_length=12)
+    workflow_id: str | None = Field(default=None, min_length=8, max_length=200)
 
 
 class AnswerRequest(BaseModel):

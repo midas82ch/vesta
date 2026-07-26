@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -34,3 +35,39 @@ class AiAuditEntryDetailResponse(BaseModel):
     request_text: str
     response_text: str | None
     created_at: datetime
+
+
+class WorkflowAuditSummaryResponse(BaseModel):
+    workflow_id: str
+    started_at: datetime
+    updated_at: datetime
+    input_preview: str
+    event_count: int
+    ai_call_count: int
+    complete: bool
+    has_fallback: bool
+
+
+class WorkflowAuditListResponse(BaseModel):
+    workflows: list[WorkflowAuditSummaryResponse]
+
+
+class WorkflowAuditStepResponse(BaseModel):
+    id: str
+    kind: str
+    event_type: str
+    label: str
+    summary: str
+    created_at: datetime
+    provider: str | None = None
+    model: str | None = None
+    outcome: str | None = None
+    details: dict[str, Any]
+
+
+class WorkflowAuditDetailResponse(BaseModel):
+    workflow_id: str
+    started_at: datetime
+    updated_at: datetime
+    complete: bool
+    steps: list[WorkflowAuditStepResponse]

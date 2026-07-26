@@ -13,12 +13,19 @@ from vesta_api.api.admin_routes import (  # noqa: E402
     admin_session_store,
     admin_user_repository,
     ai_audit_log_repository,
+    workflow_audit_log_repository,
 )
 from vesta_api.config import settings  # noqa: E402
 from vesta_api.domain.audit_models import NewAiAuditEntry  # noqa: E402
+from vesta_api.domain.workflow_audit_models import (  # noqa: E402
+    NewWorkflowAuditEvent,
+)
 from vesta_api.main import app  # noqa: E402
 from vesta_api.repositories.admin_users import InMemoryAdminUserRepository  # noqa: E402
 from vesta_api.repositories.ai_audit_log import InMemoryAiAuditLogRepository  # noqa: E402
+from vesta_api.repositories.workflow_audit_log import (  # noqa: E402
+    InMemoryWorkflowAuditLogRepository,
+)
 from vesta_api.security import (  # noqa: E402
     AdminLoginAttemptStore,
     AdminSessionStore,
@@ -34,6 +41,7 @@ class AdminRoutesTest(unittest.TestCase):
         self.users = InMemoryAdminUserRepository()
         self.users.create(username=TEST_USERNAME, password_hash=hash_password(TEST_PASSWORD))
         self.audit_log = InMemoryAiAuditLogRepository()
+        self.workflow_log = InMemoryWorkflowAuditLogRepository()
         self.sessions = AdminSessionStore()
         self.attempts = AdminLoginAttemptStore()
 
@@ -41,6 +49,9 @@ class AdminRoutesTest(unittest.TestCase):
         app.dependency_overrides[admin_session_store] = lambda: self.sessions
         app.dependency_overrides[admin_login_attempt_store] = lambda: self.attempts
         app.dependency_overrides[ai_audit_log_repository] = lambda: self.audit_log
+        app.dependency_overrides[workflow_audit_log_repository] = (
+            lambda: self.workflow_log
+        )
 
     def tearDown(self) -> None:
         app.dependency_overrides.clear()
@@ -119,6 +130,119 @@ class AdminRoutesTest(unittest.TestCase):
             response = client.get("/v1/admin/ai-audit-log/does-not-exist")
 
         self.assertEqual(404, response.status_code)
+
+    def test_login_then_list_and_open_workflow(self) -> None:
+        for stage in ("input", "system", "output"):
+            self.workflow_log.record(
+                NewWorkflowAuditEvent(
+                    workflow_id="workflow-1",
+                    stage=stage,
+                    event_type=f"{stage}_event",
+                    summary=f"{stage} summary",
+                    payload={"stage": stage},
+                )
+            )
+        self.audit_log.record(
+            NewAiAuditEntry(
+                port="interpret",
+                provider="openai",
+                model="gpt-5.4-mini",
+                outcome="ai",
+                request_text="the prompt",
+                response_text="the answer",
+                session_id="workflow-1",
+            )
+        )
+
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            listing = client.get("/v1/admin/ai-audit-workflows")
+            workflow_id = listing.json()["workflows"][0]["workflow_id"]
+            detail = client.get(f"/v1/admin/ai-audit-workflows/{workflow_id}")
+
+        self.assertEqual(200, listing.status_code)
+        summary = listing.json()["workflows"][0]
+        self.assertEqual("workflow-1", summary["workflow_id"])
+        self.assertTrue(summary["complete"])
+        self.assertEqual(1, summary["ai_call_count"])
+        self.assertEqual(200, detail.status_code)
+        self.assertEqual(
+            ("input", "system", "output", "ai"),
+            tuple(step["kind"] for step in detail.json()["steps"]),
+        )
+        ai_step = next(
+            step for step in detail.json()["steps"] if step["kind"] == "ai"
+        )
+        self.assertEqual("AI · Eingabe verstehen", ai_step["label"])
+        self.assertEqual("the prompt", ai_step["details"]["request_text"])
+
+    def test_historical_ai_entry_is_available_as_partial_workflow(self) -> None:
+        self.audit_log.record(
+            NewAiAuditEntry(
+                port="explain",
+                provider="openai",
+                model="gpt-5.4-mini",
+                outcome="ai",
+                request_text="historical prompt",
+                response_text="historical answer",
+                session_id=None,
+            )
+        )
+        entry = self.audit_log.list_entries(limit=1, offset=0)[0]
+
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            listing = client.get("/v1/admin/ai-audit-workflows")
+            workflow = listing.json()["workflows"][0]
+            detail = client.get(
+                f"/v1/admin/ai-audit-workflows/{workflow['workflow_id']}"
+            )
+
+        self.assertEqual(200, listing.status_code)
+        self.assertEqual(f"legacy__{entry.id}", workflow["workflow_id"])
+        self.assertFalse(workflow["complete"])
+        self.assertEqual(200, detail.status_code)
+        self.assertEqual(("ai",), tuple(step["kind"] for step in detail.json()["steps"]))
+        self.assertEqual(
+            "historical answer",
+            detail.json()["steps"][0]["details"]["response_text"],
+        )
+
+    def test_workflow_endpoints_require_a_session(self) -> None:
+        with TestClient(app) as client:
+            listing = client.get("/v1/admin/ai-audit-workflows")
+            detail = client.get("/v1/admin/ai-audit-workflows/workflow-1")
+
+        self.assertEqual(401, listing.status_code)
+        self.assertEqual(401, detail.status_code)
+
+    def test_unknown_workflow_returns_404(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.get("/v1/admin/ai-audit-workflows/does-not-exist")
+
+        self.assertEqual(404, response.status_code)
+
+    def test_workflow_list_rejects_invalid_pagination(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+
+            for query in ("limit=0", "limit=201", "offset=-1"):
+                with self.subTest(query=query):
+                    response = client.get(f"/v1/admin/ai-audit-workflows?{query}")
+                    self.assertEqual(422, response.status_code)
 
     def test_logout_revokes_the_session(self) -> None:
         with TestClient(app) as client:
