@@ -1,12 +1,14 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 from urllib.parse import unquote, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from vesta_api.cli.provision_database_roles import (  # noqa: E402
     ROLES,
+    _ensure_login_role,
     database_url_for_user,
 )
 
@@ -69,6 +71,63 @@ class DatabaseRoleUrlTest(unittest.TestCase):
         self.assertEqual("sslmode=require", parsed.query)
         self.assertNotIn("avnadmin", database_url)
         self.assertNotIn("admin-secret", database_url)
+
+
+class DatabaseRoleProvisioningTest(unittest.TestCase):
+    @patch("vesta_api.cli.provision_database_roles._role_exists", return_value=True)
+    def test_existing_role_without_password_rotation_is_not_altered(
+        self,
+        _role_exists: Mock,
+    ) -> None:
+        connection = Mock()
+
+        _ensure_login_role(
+            connection,
+            "vesta_app",
+            "existing-password",
+            reset_password=False,
+        )
+
+        connection.execute.assert_not_called()
+
+    @patch("vesta_api.cli.provision_database_roles._role_exists", return_value=True)
+    def test_existing_role_password_rotation_avoids_superuser_attributes(
+        self,
+        _role_exists: Mock,
+    ) -> None:
+        connection = Mock()
+
+        _ensure_login_role(
+            connection,
+            "vesta_app",
+            "new-password",
+            reset_password=True,
+        )
+
+        query = repr(connection.execute.call_args.args[0])
+        self.assertIn("ALTER ROLE", query)
+        self.assertIn("LOGIN PASSWORD", query)
+        self.assertNotIn("NOSUPERUSER", query)
+        self.assertNotIn("NOREPLICATION", query)
+
+    @patch("vesta_api.cli.provision_database_roles._role_exists", return_value=False)
+    def test_new_role_receives_all_restrictive_attributes(
+        self,
+        _role_exists: Mock,
+    ) -> None:
+        connection = Mock()
+
+        _ensure_login_role(
+            connection,
+            "vesta_app",
+            "new-password",
+            reset_password=True,
+        )
+
+        query = repr(connection.execute.call_args.args[0])
+        self.assertIn("CREATE ROLE", query)
+        self.assertIn("NOSUPERUSER", query)
+        self.assertIn("NOREPLICATION", query)
 
 
 if __name__ == "__main__":

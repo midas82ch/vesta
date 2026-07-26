@@ -94,19 +94,17 @@ def _ensure_login_role(
     if _role_exists(connection, username):
         if reset_password:
             connection.execute(
-                sql.SQL("ALTER ROLE {} WITH {} PASSWORD {}").format(
+                sql.SQL("ALTER ROLE {} WITH LOGIN PASSWORD {}").format(
                     role_identifier,
-                    role_options,
                     password_literal,
                 )
             )
-        else:
-            connection.execute(
-                sql.SQL("ALTER ROLE {} WITH {}").format(
-                    role_identifier,
-                    role_options,
-                )
-            )
+        # Managed PostgreSQL services commonly grant CREATEROLE without
+        # SUPERUSER. Reapplying NOSUPERUSER/NOREPLICATION to an existing
+        # role is then rejected even when those attributes are already
+        # false. The restrictive attributes are therefore set at creation;
+        # an existing role only needs a password rotation when requested.
+        return
     else:
         connection.execute(
             sql.SQL("CREATE ROLE {} WITH {} PASSWORD {}").format(
