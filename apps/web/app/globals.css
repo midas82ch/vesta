@@ -303,7 +303,7 @@ h1 {
 .btn {
   align-items: center;
   border: 2px solid transparent;
-  border-radius: 0.8rem;
+  border-radius: 1rem;
   cursor: pointer;
   display: inline-flex;
   font-weight: 800;
@@ -336,7 +336,6 @@ h1 {
 
 .btn-primary {
   background: var(--orange-button);
-  border-radius: 0.8rem;
   color: #1f211d;
   font-weight: 850;
   justify-content: space-between;
@@ -416,7 +415,7 @@ legend {
   display: grid;
   gap: 0.5rem;
   grid-template-columns: minmax(0, 1fr) 22px;
-  min-height: 76px;
+  min-height: 56px;
   padding: 0.65rem;
   text-align: start;
   transition:

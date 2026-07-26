@@ -334,7 +334,7 @@ export function DialogueForm() {
               >
                 <NumberField
                   id="dialogue-number-answer"
-                  label={t("dialogue.question.numberSubmit")}
+                  label={t("dialogue.question.numberLabel")}
                   onChange={(event) => setNumberValue(event.target.value)}
                   value={numberValue}
                 />
