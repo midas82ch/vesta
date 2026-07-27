@@ -1,8 +1,15 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import {
+  type FormEvent,
+  type Ref,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { useI18n } from "@/components/i18n-provider";
+import { NeedSymbol } from "@/components/need-symbol";
 import { Button, ChoiceList, NumberField, TextAreaField, type ChoiceOption } from "@/components/ui";
 import type { MessageKey } from "@/lib/i18n";
 import { needs, type Need } from "@/lib/needs";
@@ -74,6 +81,11 @@ type InterpretResponse = {
 
 type EntryMode = "pick" | "other";
 type Phase = "idle" | "interpreting" | "loading" | "question" | "result" | "error";
+type ConversationMessage = {
+  id: string;
+  speaker: "person" | "vesta";
+  text: string;
+};
 
 const OTHER_NEED_VALUE = "__other__";
 const UNKNOWN_ANSWER_VALUE = "__unknown__";
@@ -96,19 +108,190 @@ function titleFor(needValue: string): MessageKey {
     "need.sleep.title") as MessageKey;
 }
 
+function symbolFor(needValue: string) {
+  return needs.find((need) => need.value === needValue)?.icon ?? "other";
+}
+
+function DialogueProgress({ currentStage }: { currentStage: number }) {
+  const { t } = useI18n();
+  const steps: MessageKey[] = [
+    "dialogue.progress.need",
+    "dialogue.progress.questions",
+    "dialogue.progress.results",
+  ];
+
+  return (
+    <nav aria-label={t("dialogue.progress.label")} className="dialogue-progress">
+      <ol>
+        {steps.map((label, index) => {
+          const current = index === currentStage;
+          const complete = index < currentStage;
+          return (
+            <li
+              aria-current={current ? "step" : undefined}
+              className={
+                current
+                  ? "dialogue-progress-step dialogue-progress-step--current"
+                  : complete
+                    ? "dialogue-progress-step dialogue-progress-step--complete"
+                    : "dialogue-progress-step"
+              }
+              key={label}
+            >
+              <span aria-hidden="true" className="dialogue-progress-number">
+                {complete ? "✓" : index + 1}
+              </span>
+              <span>{t(label)}</span>
+              <span className="visually-hidden">
+                {current
+                  ? `, ${t("dialogue.progress.current")}`
+                  : complete
+                    ? `, ${t("dialogue.progress.complete")}`
+                    : ""}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+function ConversationThread({
+  activeQuestionId,
+  headingRef,
+  messages,
+}: {
+  activeQuestionId?: string | null;
+  headingRef?: Ref<HTMLHeadingElement>;
+  messages: ConversationMessage[];
+}) {
+  const { t } = useI18n();
+
+  return (
+    <div
+      aria-label={t("dialogue.conversation.label")}
+      className="dialogue-conversation"
+    >
+      {messages.map((message) => {
+        const activeQuestion =
+          message.speaker === "vesta" && message.id === activeQuestionId;
+        return (
+          <article
+            className={`dialogue-message dialogue-message--${message.speaker}`}
+            key={message.id}
+          >
+            <p className="dialogue-speaker">
+              {message.speaker === "person"
+                ? t("dialogue.conversation.you")
+                : t("dialogue.conversation.vesta")}
+            </p>
+            {activeQuestion ? (
+              <h3 ref={headingRef} tabIndex={-1}>
+                {message.text}
+              </h3>
+            ) : (
+              <p>{message.text}</p>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function BusyDialogue({
+  body,
+  messages,
+  title,
+}: {
+  body: string;
+  messages: ConversationMessage[];
+  title: string;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <section className="dialogue-busy">
+      <ConversationThread messages={messages} />
+      <article
+        aria-atomic="true"
+        aria-live="polite"
+        className="dialogue-message dialogue-message--vesta dialogue-message--pending"
+        role="status"
+      >
+        <div aria-hidden="true" className="dialogue-thinking">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div>
+          <p className="dialogue-speaker">{t("dialogue.conversation.vesta")}</p>
+          <h3>{title}</h3>
+          <p>{body}</p>
+        </div>
+      </article>
+    </section>
+  );
+}
+
 export function DialogueForm() {
   const { locale, t } = useI18n();
+  const messageCounter = useRef(0);
+  const responseHeadingRef = useRef<HTMLHeadingElement>(null);
   const [entryMode, setEntryMode] = useState<EntryMode>("pick");
   const [freeText, setFreeText] = useState("");
   const [interpretation, setInterpretation] = useState<InterpretResponse | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [turn, setTurn] = useState<DialogueTurn | null>(null);
   const [numberValue, setNumberValue] = useState("");
+  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
   const busy = phase === "interpreting" || phase === "loading";
-  const onEntryScreen = phase !== "question" && phase !== "result";
+  const onEntryScreen = phase === "idle";
+  const currentStage =
+    phase === "result"
+      ? 2
+      : phase === "question" || phase === "loading" || (phase === "error" && turn)
+        ? 1
+        : 0;
+
+  useEffect(() => {
+    if (phase === "question" || phase === "result" || phase === "error") {
+      responseHeadingRef.current?.focus();
+    }
+  }, [phase]);
+
+  function createMessage(
+    speaker: ConversationMessage["speaker"],
+    text: string,
+  ): ConversationMessage {
+    messageCounter.current += 1;
+    return {
+      id: `dialogue-message-${messageCounter.current}`,
+      speaker,
+      text,
+    };
+  }
+
+  function appendMessage(
+    speaker: ConversationMessage["speaker"],
+    text: string,
+  ) {
+    const message = createMessage(speaker, text);
+    setConversation((current) => [...current, message]);
+    return message;
+  }
 
   async function startWithNeed(need: Need, workflowId?: string) {
+    appendMessage(
+      "person",
+      t("dialogue.conversation.selectedNeed", {
+        need: t(titleFor(need)),
+      }),
+    );
+    setActiveQuestionId(null);
     setPhase("loading");
     try {
       const result = await postJson<DialogueTurn>("/api/dialogue/start", {
@@ -132,13 +315,26 @@ export function DialogueForm() {
 
   async function handleInterpret(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submittedText = freeText.trim();
+    if (!submittedText) return;
+    setInterpretation(null);
+    setConversation([createMessage("person", submittedText)]);
+    setActiveQuestionId(null);
     setPhase("interpreting");
     try {
       const result = await postJson<InterpretResponse>("/api/dialogue/interpret", {
-        free_text: freeText,
+        free_text: submittedText,
         language: locale,
       });
       setInterpretation(result);
+      appendMessage(
+        "vesta",
+        result.need_key
+          ? t("dialogue.conversation.interpreted", {
+              need: t(titleFor(result.need_key)),
+            })
+          : t("dialogue.interpretation.unavailable"),
+      );
       setPhase("idle");
     } catch {
       setPhase("error");
@@ -148,13 +344,24 @@ export function DialogueForm() {
   function applyTurn(result: DialogueTurn) {
     setTurn(result);
     setNumberValue("");
+    const responseMessage = appendMessage(
+      "vesta",
+      result.question?.text ?? t("dialogue.conversation.resultsReady"),
+    );
+    setActiveQuestionId(result.question ? responseMessage.id : null);
     setPhase(result.question ? "question" : "result");
   }
 
   async function submitAnswer(
     body: { value?: unknown; unknown?: boolean; declined?: boolean },
+    visibleAnswer: string,
   ) {
     if (!turn?.question) return;
+    appendMessage(
+      "person",
+      t("dialogue.conversation.answer", { answer: visibleAnswer }),
+    );
+    setActiveQuestionId(null);
     setPhase("loading");
     try {
       const result = await postJson<DialogueTurn>("/api/dialogue/answer", {
@@ -172,6 +379,8 @@ export function DialogueForm() {
     setEntryMode("pick");
     setInterpretation(null);
     setFreeText("");
+    setConversation([]);
+    setActiveQuestionId(null);
   }
 
   function restart() {
@@ -189,30 +398,38 @@ export function DialogueForm() {
 
   function handleAnswerSelect(value: string) {
     if (value === UNKNOWN_ANSWER_VALUE) {
-      submitAnswer({ unknown: true });
+      submitAnswer({ unknown: true }, turn?.question?.unknown_label ?? value);
       return;
     }
     if (value === DECLINED_ANSWER_VALUE) {
-      submitAnswer({ declined: true });
+      submitAnswer({ declined: true }, turn?.question?.decline_label ?? value);
       return;
     }
     if (turn?.question?.answer_type === "yes_no_unknown") {
-      submitAnswer({ value: value === "yes" });
+      submitAnswer(
+        { value: value === "yes" },
+        value === "yes"
+          ? t("dialogue.question.yes")
+          : t("dialogue.question.no"),
+      );
       return;
     }
-    submitAnswer({ value });
+    const selectedOption = turn?.question?.options.find(
+      (option) => option.value === value,
+    );
+    submitAnswer({ value }, selectedOption?.label ?? value);
   }
 
   const needPickerOptions: ChoiceOption[] = [
     ...needs.map((need) => ({
       value: need.value,
-      icon: need.icon,
+      icon: <NeedSymbol name={need.icon} />,
       label: t(need.title),
       detail: t(need.detail),
     })),
     {
       value: OTHER_NEED_VALUE,
-      icon: "?",
+      icon: <NeedSymbol name="other" />,
       label: t("dialogue.other.title"),
       detail: t("dialogue.other.detail"),
     },
@@ -222,144 +439,214 @@ export function DialogueForm() {
     ? [
         {
           value: interpretation.need_key,
-          icon: "✓",
-          label: t("dialogue.interpretation.needApplied", {
-            need: t(titleFor(interpretation.need_key)),
-          }),
+          icon: <NeedSymbol name={symbolFor(interpretation.need_key)} />,
+          label: t(titleFor(interpretation.need_key)),
           detail: t("dialogue.interpretation.confirmHint"),
         },
       ]
     : needs.map((need) => ({
         value: need.value,
-        icon: need.icon,
+        icon: <NeedSymbol name={need.icon} />,
         label: t(need.title),
         detail: t(need.detail),
       }));
 
+  const busyTitle =
+    phase === "interpreting"
+      ? t("dialogue.busy.interpreting.title")
+      : turn
+        ? t("dialogue.busy.answer.title")
+        : t("dialogue.busy.starting.title");
+  const busyBody =
+    phase === "interpreting"
+      ? t("dialogue.busy.interpreting.text")
+      : turn
+        ? t("dialogue.busy.answer.text")
+        : t("dialogue.busy.starting.text");
+
   return (
-    <div className="navigator-card">
-      {onEntryScreen && entryMode === "pick" && (
-        <fieldset>
+    <div aria-busy={busy} className="navigator-card">
+      {conversation.length > 0 && <DialogueProgress currentStage={currentStage} />}
+
+      {busy && (
+        <BusyDialogue
+          body={busyBody}
+          messages={conversation}
+          title={busyTitle}
+        />
+      )}
+
+      {!busy && onEntryScreen && entryMode === "pick" && (
+        <fieldset className="need-picker">
           <legend>{t("dialogue.needPicker.legend")}</legend>
-          <ChoiceList disabled={busy} onSelect={handleNeedPick} options={needPickerOptions} />
-          {phase === "loading" && <p className="field-hint">{t("dialogue.loading")}</p>}
+          <ChoiceList
+            onSelect={handleNeedPick}
+            options={needPickerOptions}
+          />
         </fieldset>
       )}
 
-      {onEntryScreen && entryMode === "other" && (
+      {!busy && onEntryScreen && entryMode === "other" && (
         <>
-          <p className="eyebrow">{t("dialogue.eyebrow")}</p>
-
-          <form onSubmit={handleInterpret}>
-            <TextAreaField
-              hint={t("dialogue.freeText.privacy")}
-              id="dialogue-free-text"
-              label={t("dialogue.freeText.label")}
-              maxLength={2000}
-              onChange={(event) => setFreeText(event.target.value)}
-              placeholder={t("dialogue.freeText.placeholder")}
-              rows={3}
-              value={freeText}
-            />
-            <Button disabled={busy} type="submit">
-              {phase === "interpreting"
-                ? t("dialogue.freeText.loading")
-                : t("dialogue.freeText.submit")}
-            </Button>
-          </form>
-
-          {interpretation && !interpretation.need_key && (
-            <p className="field-hint">{t("dialogue.interpretation.unavailable")}</p>
+          {!interpretation ? (
+            <>
+              <p className="eyebrow">{t("dialogue.eyebrow")}</p>
+              <form onSubmit={handleInterpret}>
+                <TextAreaField
+                  hint={t("dialogue.freeText.privacy")}
+                  id="dialogue-free-text"
+                  label={t("dialogue.freeText.label")}
+                  maxLength={2000}
+                  onChange={(event) => setFreeText(event.target.value)}
+                  placeholder={t("dialogue.freeText.placeholder")}
+                  required
+                  rows={3}
+                  value={freeText}
+                />
+                <Button type="submit">{t("dialogue.freeText.submit")}</Button>
+              </form>
+            </>
+          ) : (
+            <section
+              aria-labelledby="dialogue-confirmation-heading"
+              className="dialogue-confirmation"
+            >
+              <ConversationThread messages={conversation} />
+              <fieldset>
+                <legend id="dialogue-confirmation-heading">
+                  {t("dialogue.interpretation.confirmLegend")}
+                </legend>
+                <ChoiceList
+                  onSelect={(value) =>
+                    startWithNeed(value as Need, interpretation.workflow_id)
+                  }
+                  options={interpretationOptions}
+                  selectedValue={interpretation.need_key ?? undefined}
+                />
+              </fieldset>
+            </section>
           )}
 
-          {interpretation && (
-            <ChoiceList
-              disabled={busy}
-              onSelect={(value) =>
-                startWithNeed(value as Need, interpretation.workflow_id)
-              }
-              options={interpretationOptions}
-              selectedValue={interpretation.need_key ?? undefined}
-            />
-          )}
-
-          <Button disabled={busy} onClick={backToPicker} variant="ghost">
+          <Button onClick={backToPicker} variant="ghost">
             {t("dialogue.back")}
           </Button>
         </>
       )}
 
-      {phase === "error" && <p className="error-message">{t("dialogue.error")}</p>}
-
-      {phase === "question" && turn?.question && (
-        <div className="results">
-          <p className="eyebrow">{t("dialogue.question.eyebrow")}</p>
-          <h3>{turn.question.text}</h3>
-          {turn.question.help_text && <p>{turn.question.help_text}</p>}
-          <p className="field-hint">
-            {turn.ai_mode === "live" ? t("dialogue.aiBadge") : t("dialogue.templateBadge")}
+      {!busy && phase === "error" && (
+        <section
+          aria-labelledby="dialogue-error-heading"
+          className="dialogue-error"
+        >
+          {conversation.length > 0 && (
+            <ConversationThread messages={conversation} />
+          )}
+          <h2
+            id="dialogue-error-heading"
+            ref={responseHeadingRef}
+            tabIndex={-1}
+          >
+            {t("dialogue.error.title")}
+          </h2>
+          <p className="error-message" role="alert">
+            {t("dialogue.error")}
           </p>
-
-          {turn.question.answer_type === "single_choice" && (
-            <ChoiceList
-              disabled={busy}
-              onSelect={handleAnswerSelect}
-              options={[
-                ...turn.question.options.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                })),
-                ...skipOptions(turn.question),
-              ]}
-            />
-          )}
-
-          {turn.question.answer_type === "yes_no_unknown" && (
-            <ChoiceList
-              disabled={busy}
-              onSelect={handleAnswerSelect}
-              options={[
-                { value: "yes", label: t("dialogue.question.yes") },
-                { value: "no", label: t("dialogue.question.no") },
-                ...skipOptions(turn.question),
-              ]}
-            />
-          )}
-
-          {turn.question.answer_type === "number" && (
-            <>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (numberValue.trim() !== "") {
-                    submitAnswer({ value: Number(numberValue) });
-                  }
-                }}
-              >
-                <NumberField
-                  id="dialogue-number-answer"
-                  label={t("dialogue.question.numberLabel")}
-                  onChange={(event) => setNumberValue(event.target.value)}
-                  value={numberValue}
-                />
-                <Button disabled={busy} type="submit">
-                  {t("dialogue.question.numberSubmit")}
-                </Button>
-              </form>
-              <ChoiceList
-                disabled={busy}
-                onSelect={handleAnswerSelect}
-                options={skipOptions(turn.question)}
-              />
-            </>
-          )}
-        </div>
+        </section>
       )}
 
-      {phase === "result" && turn && (
-        <div className="results">
+      {!busy && phase === "question" && turn?.question && (
+        <section
+          aria-label={t("dialogue.question.eyebrow")}
+          className="results dialogue-question"
+        >
+          <ConversationThread
+            activeQuestionId={activeQuestionId}
+            headingRef={responseHeadingRef}
+            messages={conversation}
+          />
+          {turn.question.help_text && (
+            <p className="dialogue-question-help">{turn.question.help_text}</p>
+          )}
+          <p className="field-hint">
+            {turn.ai_mode === "live"
+              ? t("dialogue.aiBadge")
+              : t("dialogue.templateBadge")}
+          </p>
+
+          <fieldset className="dialogue-answer">
+            <legend>{t("dialogue.question.answerLegend")}</legend>
+            {turn.question.answer_type === "single_choice" && (
+              <ChoiceList
+                onSelect={handleAnswerSelect}
+                options={[
+                  ...turn.question.options.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  })),
+                  ...skipOptions(turn.question),
+                ]}
+              />
+            )}
+
+            {turn.question.answer_type === "yes_no_unknown" && (
+              <ChoiceList
+                onSelect={handleAnswerSelect}
+                options={[
+                  { value: "yes", label: t("dialogue.question.yes") },
+                  { value: "no", label: t("dialogue.question.no") },
+                  ...skipOptions(turn.question),
+                ]}
+              />
+            )}
+
+            {turn.question.answer_type === "number" && (
+              <>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (numberValue.trim() !== "") {
+                      submitAnswer(
+                        { value: Number(numberValue) },
+                        numberValue.trim(),
+                      );
+                    }
+                  }}
+                >
+                  <NumberField
+                    id="dialogue-number-answer"
+                    label={t("dialogue.question.numberLabel")}
+                    onChange={(event) => setNumberValue(event.target.value)}
+                    value={numberValue}
+                  />
+                  <Button type="submit">
+                    {t("dialogue.question.numberSubmit")}
+                  </Button>
+                </form>
+                <ChoiceList
+                  onSelect={handleAnswerSelect}
+                  options={skipOptions(turn.question)}
+                />
+              </>
+            )}
+          </fieldset>
+        </section>
+      )}
+
+      {!busy && phase === "result" && turn && (
+        <section
+          aria-labelledby="dialogue-result-heading"
+          className="results"
+        >
+          <ConversationThread messages={conversation} />
           <div className="result-heading">
             <p className="eyebrow">{t("dialogue.result.eyebrow")}</p>
+            <h2
+              id="dialogue-result-heading"
+              ref={responseHeadingRef}
+              tabIndex={-1}
+            >
+              {t("dialogue.result.title")}
+            </h2>
           </div>
 
           {turn.candidates.map(({ candidate, explanation }) => (
@@ -386,7 +673,9 @@ export function DialogueForm() {
                     ))}
                   </ul>
                   {explanation.clarification && (
-                    <p className="uncertainty">{explanation.clarification.text}</p>
+                    <p className="uncertainty">
+                      {explanation.clarification.text}
+                    </p>
                   )}
                 </>
               ) : (
@@ -406,10 +695,10 @@ export function DialogueForm() {
             <p className="handoff-message">{t("results.handoff")}</p>
           )}
           <p className="disclaimer">{turn.disclaimer}</p>
-        </div>
+        </section>
       )}
 
-      {(phase === "question" || phase === "result") && (
+      {(phase === "question" || phase === "result" || phase === "error") && (
         <div className="form-footer">
           <Button onClick={restart} variant="ghost">
             {t("dialogue.restart")}
