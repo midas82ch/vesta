@@ -6,7 +6,7 @@
       "organization_key": "heilsarmee-schweiz",
       "organization_name": "Stiftung Heilsarmee Schweiz",
       "name": "Passantenheim Bern",
-      "summary": "Plausibler Testdatensatz auf Basis der öffentlichen Heilsarmee-Seite: vorübergehende Notunterkunft für Erwachsene.",
+      "summary": "Vorübergehende Notunterkunft für Erwachsene.",
       "needs": ["sleep_tonight"],
       "languages": ["de"],
       "access": {
@@ -17,7 +17,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – keine Reservation. Platz bitte vor Ort an der Muristrasse 6 oder telefonisch unter 031 351 80 27 abklären.",
+      "contact_note": "Keine Reservation möglich. Platz bitte vor Ort an der Muristrasse 6 oder telefonisch unter 031 351 80 27 abklären.",
       "location": {
         "address": "Muristrasse 6, 3006 Bern",
         "latitude": 46.944359,
@@ -39,7 +39,7 @@
       "organization_key": "heilsarmee-schweiz",
       "organization_name": "Stiftung Heilsarmee Schweiz",
       "name": "Frauen-/FINTA-Notschlafstelle Bern",
-      "summary": "Plausibler Testdatensatz auf Basis der öffentlichen Heilsarmee-Seite: geschützte Übernachtungsmöglichkeit für FINTA-Personen in akuten Notsituationen.",
+      "summary": "Geschützte Übernachtungsmöglichkeit für FINTA-Personen in akuten Notsituationen.",
       "needs": ["sleep_tonight"],
       "languages": ["de"],
       "access": {
@@ -50,7 +50,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – keine Reservation. Zugang und Platz telefonisch unter 076 326 97 75 abklären; Zielgruppe Frauen/FINTA.",
+      "contact_note": "Keine Reservation möglich. Zugang und Platz telefonisch unter 076 326 97 75 abklären; Zielgruppe Frauen/FINTA.",
       "location": {
         "address": "Frohbergweg 4, 3012 Bern",
         "latitude": 46.95491,
@@ -72,7 +72,7 @@
       "organization_key": "contact-suchthilfe",
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT Anlaufstelle Bern",
-      "summary": "Plausibler Testdatensatz für Grundversorgung und niederschwellige Suchthilfe auf Basis der öffentlichen CONTACT-Seiten.",
+      "summary": "Grundversorgung und niederschwellige Suchthilfe.",
       "needs": ["basic_needs", "counselling"],
       "languages": ["de"],
       "access": {
@@ -83,7 +83,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – Zutritt laut Quelle für Erwachsene aus dem Kanton Bern mit Ausweis und Niederlassung. Vorher unter 031 310 06 50 abklären.",
+      "contact_note": "Zutritt laut Quelle für Erwachsene aus dem Kanton Bern mit Ausweis und Niederlassung. Vorher unter 031 310 06 50 abklären.",
       "location": {
         "address": "Hodlerstrasse 22, 3011 Bern",
         "latitude": 46.951809,
@@ -105,7 +105,7 @@
       "organization_key": "contact-suchthilfe",
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT La Gare",
-      "summary": "Plausibler Testdatensatz: Aufenthaltsraum, einfache Mahlzeiten, Beratung und Weitervermittlung für alkoholabhängige Menschen.",
+      "summary": "Aufenthaltsraum, einfache Mahlzeiten, Beratung und Weitervermittlung für alkoholabhängige Menschen.",
       "needs": ["basic_needs", "counselling"],
       "languages": ["de"],
       "access": {
@@ -116,7 +116,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – Treffpunkt am Bollwerk 4. Öffnung und Zugang bitte unter 031 311 81 06 bestätigen.",
+      "contact_note": "Treffpunkt am Bollwerk 4. Öffnung und Zugang bitte unter 031 311 81 06 bestätigen.",
       "location": {
         "address": "Bollwerk 4, 3011 Bern",
         "latitude": 46.949615,
@@ -138,7 +138,7 @@
       "organization_key": "stadt-bern-heilsarmee",
       "organization_name": "Stadt Bern und Stiftung Heilsarmee Schweiz",
       "name": "Wohnberatung Bern",
-      "summary": "Plausibler Testdatensatz für Beratung bei Wohnungssuche, Wohnungserhalt und möglichen Mietzinssicherheiten.",
+      "summary": "Beratung bei Wohnungssuche, Wohnungserhalt und möglichen Mietzinssicherheiten.",
       "needs": ["counselling"],
       "languages": ["de"],
       "access": {
@@ -149,7 +149,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – Beratung am Frohbergweg 4. Das Angebot richtet sich an Personen mit Lebensmittelpunkt in der Stadt Bern; Bedingungen direkt abklären.",
+      "contact_note": "Beratung am Frohbergweg 4. Das Angebot richtet sich an Personen mit Lebensmittelpunkt in der Stadt Bern; Bedingungen direkt abklären.",
       "location": {
         "address": "Frohbergweg 4, 3012 Bern",
         "latitude": 46.95491,
@@ -171,7 +171,7 @@
       "organization_key": "hope-point-bern",
       "organization_name": "HOPE POINT Bern",
       "name": "HOPE POINT Bern",
-      "summary": "Plausibler Testdatensatz für Nothilfe, Auskunft, Sozialberatung und Begleitung in schwierigen Lebenssituationen.",
+      "summary": "Nothilfe, Auskunft, Sozialberatung und Begleitung in schwierigen Lebenssituationen.",
       "needs": ["basic_needs", "counselling"],
       "languages": ["de"],
       "access": {
@@ -182,7 +182,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – Öffnung und passende Unterstützung bei der Kirchlichen Passantenhilfe unter 031 380 75 40 abklären.",
+      "contact_note": "Öffnung und passende Unterstützung bei der Kirchlichen Passantenhilfe unter 031 380 75 40 abklären.",
       "location": {
         "address": "Laupenstrasse 5, 3008 Bern",
         "latitude": 46.947102,
@@ -205,7 +205,7 @@
       "organization_key": "contact-suchthilfe",
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT Suchtbehandlung Bern",
-      "summary": "Plausibler Testdatensatz für ambulante Suchtbehandlung sowie psychosoziale Beratung und Begleitung.",
+      "summary": "Ambulante Suchtbehandlung sowie psychosoziale Beratung und Begleitung.",
       "needs": ["counselling"],
       "languages": ["de"],
       "access": {
@@ -216,7 +216,7 @@
         "maximum_age": null
       },
       "availability": "call_to_confirm",
-      "contact_note": "Testdaten – keine medizinische Empfehlung. Indikation, Kosten und Anmeldung direkt mit CONTACT unter 031 380 84 84 klären.",
+      "contact_note": "Keine medizinische Empfehlung. Indikation, Kosten und Anmeldung direkt mit CONTACT unter 031 380 84 84 klären.",
       "location": {
         "address": "Zieglerstrasse 30, 3007 Bern",
         "latitude": 46.944862,
