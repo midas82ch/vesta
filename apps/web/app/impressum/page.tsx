@@ -123,6 +123,10 @@ export default function ImprintPage() {
               <div>
                 <dt>{t("imprint.contact.label")}</dt>
                 <dd>
+                  <a href="mailto:info@vesta-app.ch">
+                    info@vesta-app.ch
+                  </a>
+                  <br />
                   <a
                     href="https://github.com/midas82ch/vesta"
                     rel="noreferrer"

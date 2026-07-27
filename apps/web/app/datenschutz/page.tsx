@@ -120,6 +120,11 @@ export default function PrivacyPage() {
             <p className="eyebrow">{t("imprint.eyebrow")}</p>
             <h2 id="privacy-contact-title">{t("privacy.contact.label")}</h2>
             <p>
+              <a href="mailto:info@vesta-app.ch">
+                info@vesta-app.ch
+              </a>
+            </p>
+            <p>
               <a
                 href="https://github.com/midas82ch/vesta"
                 rel="noreferrer"
