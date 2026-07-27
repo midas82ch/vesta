@@ -189,7 +189,6 @@ const de = {
     "Ohne Internetverbindung zeigen wir bewusst keine möglicherweise veralteten Angebote. Stelle die Verbindung wieder her und versuche es erneut.",
   "offline.retry": "Erneut versuchen",
   "offline.back": "Zur Startseite",
-  "dialogue.eyebrow": "AI-Unterstützung",
   "dialogue.freeText.label": "Beschreibe kurz, was du brauchst",
   "dialogue.freeText.placeholder":
     "z. B. Ich brauche heute einen Schlafplatz mit meinem Hund",
@@ -447,7 +446,6 @@ const fr: Record<MessageKey, string> = {
     "Sans connexion internet, nous n’affichons volontairement aucune offre potentiellement obsolète. Rétablis la connexion et réessaie.",
   "offline.retry": "Réessayer",
   "offline.back": "Retour à l’accueil",
-  "dialogue.eyebrow": "Assistance AI",
   "dialogue.freeText.label": "Décris brièvement ce dont tu as besoin",
   "dialogue.freeText.placeholder":
     "p. ex. J'ai besoin d'une place pour dormir ce soir avec mon chien",
@@ -704,7 +702,6 @@ const en: Record<MessageKey, string> = {
     "Without an internet connection, we deliberately do not show services that may be out of date. Reconnect and try again.",
   "offline.retry": "Try again",
   "offline.back": "Back to home",
-  "dialogue.eyebrow": "AI support",
   "dialogue.freeText.label": "Briefly describe what you need",
   "dialogue.freeText.placeholder": "e.g. I need a place to sleep tonight with my dog",
   "dialogue.freeText.privacy":
@@ -958,7 +955,6 @@ const ar: Record<MessageKey, string> = {
     "من دون اتصال بالإنترنت لا نعرض عمداً خدمات قد تكون معلوماتها قديمة. أعد الاتصال وحاول مرة أخرى.",
   "offline.retry": "إعادة المحاولة",
   "offline.back": "العودة إلى الصفحة الرئيسية",
-  "dialogue.eyebrow": "دعم الذكاء الاصطناعي",
   "dialogue.freeText.label": "صف باختصار ما تحتاجه",
   "dialogue.freeText.placeholder": "مثال: أحتاج مكانًا للنوم الليلة مع كلبي",
   "dialogue.freeText.privacy":

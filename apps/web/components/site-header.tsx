@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { MouseEvent } from "react";
 
 import { useI18n } from "@/components/i18n-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -17,9 +18,30 @@ export function SiteHeader({ currentPage }: Readonly<SiteHeaderProps>) {
   const imprintHref = `/impressum?lang=${locale}`;
   const privacyHref = `/datenschutz?lang=${locale}`;
 
+  function reloadHome(event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    window.location.assign(homeHref);
+  }
+
   return (
     <header className="site-header">
-      <Link className="brand" href={homeHref} aria-label={t("brand.homeLabel")}>
+      <Link
+        className="brand"
+        href={homeHref}
+        aria-label={t("brand.homeLabel")}
+        onClick={reloadHome}
+      >
         <span className="brand-mark" aria-hidden="true">
           <VestaMark />
         </span>
@@ -30,6 +52,7 @@ export function SiteHeader({ currentPage }: Readonly<SiteHeaderProps>) {
         <Link
           aria-current={currentPage === "home" ? "page" : undefined}
           href={homeHref}
+          onClick={reloadHome}
         >
           {t("nav.home")}
         </Link>

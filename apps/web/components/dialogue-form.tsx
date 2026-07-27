@@ -643,7 +643,6 @@ export function DialogueForm() {
         <>
           {!interpretation ? (
             <>
-              <p className="eyebrow">{t("dialogue.eyebrow")}</p>
               <form onSubmit={handleInterpret}>
                 <TextAreaField
                   hint={t("dialogue.freeText.privacy")}
