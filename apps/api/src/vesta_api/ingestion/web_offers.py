@@ -17,6 +17,9 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from sqlalchemy import Engine, text
 
 USER_AGENT = "VestaPrototypeOfferVerifier/0.2 (+https://www.vesta-app.ch)"
+# Immutable UUID namespace used by already imported records. This is an
+# identifier only and is never requested or exposed as the public site URL.
+LEGACY_ID_NAMESPACE = "https://vesta.vielzuwenig.ch"
 MAX_PAGE_BYTES = 2_000_000
 VERIFICATION_TTL = timedelta(days=7)
 
@@ -351,16 +354,16 @@ def _store_offer(
 ) -> None:
     organization_id = uuid5(
         NAMESPACE_URL,
-        f"https://www.vesta-app.ch/organizations/{offer.organization_key}",
+        f"{LEGACY_ID_NAMESPACE}/organizations/{offer.organization_key}",
     )
     offer_id = uuid5(
         NAMESPACE_URL,
-        f"https://www.vesta-app.ch/offers/{offer.slug}",
+        f"{LEGACY_ID_NAMESPACE}/offers/{offer.slug}",
     )
     verification_id = uuid5(
         NAMESPACE_URL,
         (
-            "https://www.vesta-app.ch/verifications/"
+            f"{LEGACY_ID_NAMESPACE}/verifications/"
             f"{offer.slug}/{page.content_sha256}"
         ),
     )
@@ -417,7 +420,7 @@ def _store_offer(
                 "verified_at": checked_at,
                 "expires_at": checked_at + VERIFICATION_TTL,
                 "notes": (
-                    "Automatisch als Testdatensatz geprüft; "
+                    "Automatisch anhand der öffentlichen Quelle geprüft; "
                     f"content_sha256={page.content_sha256}"
                 ),
             },
