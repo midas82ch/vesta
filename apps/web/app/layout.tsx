@@ -7,7 +7,7 @@ import { ServiceWorkerRegistration } from "@/components/pwa-controls";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://vesta.vielzuwenig.ch"),
+  metadataBase: new URL("https://www.vesta-app.ch"),
   title: "Vesta – Weniger Systemreibung. Mehr Zugang zu Hilfe.",
   description:
     "Der verifizierte, mehrsprachige Sozial-Lotse für Bern: passende Hilfe finden, Fachpersonen entlasten und Systemlücken sichtbar machen.",

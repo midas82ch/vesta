@@ -16,7 +16,7 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from sqlalchemy import Engine, text
 
-USER_AGENT = "VestaPrototypeOfferVerifier/0.2 (+https://vesta.vielzuwenig.ch)"
+USER_AGENT = "VestaPrototypeOfferVerifier/0.2 (+https://www.vesta-app.ch)"
 MAX_PAGE_BYTES = 2_000_000
 VERIFICATION_TTL = timedelta(days=7)
 
@@ -351,16 +351,16 @@ def _store_offer(
 ) -> None:
     organization_id = uuid5(
         NAMESPACE_URL,
-        f"https://vesta.vielzuwenig.ch/organizations/{offer.organization_key}",
+        f"https://www.vesta-app.ch/organizations/{offer.organization_key}",
     )
     offer_id = uuid5(
         NAMESPACE_URL,
-        f"https://vesta.vielzuwenig.ch/offers/{offer.slug}",
+        f"https://www.vesta-app.ch/offers/{offer.slug}",
     )
     verification_id = uuid5(
         NAMESPACE_URL,
         (
-            "https://vesta.vielzuwenig.ch/verifications/"
+            "https://www.vesta-app.ch/verifications/"
             f"{offer.slug}/{page.content_sha256}"
         ),
     )
