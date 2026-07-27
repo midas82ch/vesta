@@ -22,7 +22,11 @@ from vesta_api.api.dialogue_schemas import (
 )
 from vesta_api.api.schemas import candidate_to_response
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
-from vesta_api.domain.models import MatchResult
+from vesta_api.domain.models import (
+    MAXIMUM_PERSON_AGE,
+    MINIMUM_PERSON_AGE,
+    MatchResult,
+)
 from vesta_api.domain.workflow_audit_models import (
     NewWorkflowAuditEvent,
     WorkflowStage,
@@ -39,6 +43,33 @@ DISCLAIMER = (
     "Angebote werden nicht automatisch reserviert. "
     "Aktualität und Kontaktangaben vor Ort bestätigen."
 )
+
+
+def _validated_answer_value(
+    question: QuestionDefinition,
+    payload: AnswerRequest,
+) -> object | None:
+    if payload.declined or payload.unknown:
+        return None
+
+    value = payload.value
+    if question.attribute_key != "person.age":
+        return value
+
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="age_must_be_an_integer",
+        )
+    if not MINIMUM_PERSON_AGE <= value <= MAXIMUM_PERSON_AGE:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=(
+                f"age_must_be_between_{MINIMUM_PERSON_AGE}_and_"
+                f"{MAXIMUM_PERSON_AGE}"
+            ),
+        )
+    return value
 
 
 def dialogue_orchestrator(request: Request) -> DialogueOrchestrator:
@@ -442,6 +473,7 @@ def answer(
     workflow_log: Annotated[WorkflowAuditLogRepository, Depends(workflow_audit_log)],
 ) -> DialogueTurnResponse:
     question = _find_question(catalog, payload.question_key)
+    validated_value = _validated_answer_value(question, payload)
     now = datetime.now(UTC)
 
     try:
@@ -457,11 +489,10 @@ def answer(
                 ),
             )
         else:
-            value = None if payload.unknown else payload.value
             turn = orchestrator.confirm_attribute(
                 session_id=payload.session_id,
                 key=question.attribute_key,
-                value=value,
+                value=validated_value,
                 now=now,
                 user_location=(
                     payload.user_location.to_domain()

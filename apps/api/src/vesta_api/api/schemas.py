@@ -3,7 +3,15 @@ from urllib.parse import urlencode
 
 from pydantic import BaseModel, Field, field_validator
 
-from vesta_api.domain.models import Availability, Candidate, GeoPoint, Need, RiskFlag
+from vesta_api.domain.models import (
+    MAXIMUM_PERSON_AGE,
+    MINIMUM_PERSON_AGE,
+    Availability,
+    Candidate,
+    GeoPoint,
+    Need,
+    RiskFlag,
+)
 
 
 class UserLocationInput(BaseModel):
@@ -25,7 +33,11 @@ class MatchRequest(BaseModel):
     dog: bool | None = None
     has_identity_document: bool | None = None
     gender: str | None = Field(default=None, max_length=40)
-    age: int | None = Field(default=None, ge=0, le=120)
+    age: int | None = Field(
+        default=None,
+        ge=MINIMUM_PERSON_AGE,
+        le=MAXIMUM_PERSON_AGE,
+    )
     user_location: UserLocationInput | None = None
     risk_flags: list[RiskFlag] = Field(default_factory=list)
 

@@ -79,6 +79,34 @@ class RoutesTest(unittest.TestCase):
 
         self.assertEqual(422, response.status_code)
 
+    def test_rejects_age_below_six(self) -> None:
+        with TestClient(app) as client:
+            for age in (-1, 0, 5):
+                with self.subTest(age=age):
+                    response = client.post(
+                        "/v1/matches",
+                        json={
+                            "need": "sleep_tonight",
+                            "language": "de",
+                            "age": age,
+                        },
+                    )
+
+                    self.assertEqual(422, response.status_code)
+
+    def test_accepts_age_six(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/matches",
+                json={
+                    "need": "sleep_tonight",
+                    "language": "de",
+                    "age": 6,
+                },
+            )
+
+        self.assertEqual(200, response.status_code)
+
     def test_reduces_location_precision_before_matching(self) -> None:
         location = UserLocationInput(
             latitude=46.948123,

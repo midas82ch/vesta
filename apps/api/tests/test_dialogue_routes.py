@@ -135,6 +135,56 @@ class DialogueRoutesTest(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    def test_age_answer_must_be_an_integer_between_six_and_120(self) -> None:
+        with TestClient(app) as client:
+            payload = client.post(
+                "/v1/dialogue/start",
+                json={"need": "sleep_tonight", "language": "de"},
+            ).json()
+            session_id = payload["session_id"]
+
+            for _ in range(10):
+                question = payload["question"]
+                assert question is not None
+                if question["attribute_key"] == "person.age":
+                    break
+                response = client.post(
+                    "/v1/dialogue/answer",
+                    json={
+                        "session_id": session_id,
+                        "question_key": question["question_key"],
+                        "declined": True,
+                    },
+                )
+                self.assertEqual(200, response.status_code)
+                payload = response.json()
+
+            age_question = payload["question"]
+            assert age_question is not None
+            self.assertEqual("person.age", age_question["attribute_key"])
+
+            for invalid_age in (-1, 5, True, 6.5):
+                with self.subTest(age=invalid_age):
+                    response = client.post(
+                        "/v1/dialogue/answer",
+                        json={
+                            "session_id": session_id,
+                            "question_key": age_question["question_key"],
+                            "value": invalid_age,
+                        },
+                    )
+                    self.assertEqual(422, response.status_code)
+
+            response = client.post(
+                "/v1/dialogue/answer",
+                json={
+                    "session_id": session_id,
+                    "question_key": age_question["question_key"],
+                    "value": 6,
+                },
+            )
+            self.assertEqual(200, response.status_code)
+
     def test_location_is_accepted_but_not_retained_in_workflow_audit(self) -> None:
         location = {"latitude": 46.948123, "longitude": 7.447456}
         with TestClient(app) as client:

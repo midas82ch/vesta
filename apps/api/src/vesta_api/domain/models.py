@@ -2,6 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
+MINIMUM_PERSON_AGE = 6
+MAXIMUM_PERSON_AGE = 120
+
 
 class Need(StrEnum):
     SLEEP_TONIGHT = "sleep_tonight"
@@ -77,6 +80,16 @@ class MatchQuery:
     age: int | None = None
     user_location: GeoPoint | None = None
     risk_flags: tuple[RiskFlag, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.age is None:
+            return
+        if isinstance(self.age, bool) or not isinstance(self.age, int):
+            raise ValueError("age must be an integer")
+        if not MINIMUM_PERSON_AGE <= self.age <= MAXIMUM_PERSON_AGE:
+            raise ValueError(
+                f"age must be between {MINIMUM_PERSON_AGE} and {MAXIMUM_PERSON_AGE}"
+            )
 
 
 @dataclass(frozen=True)

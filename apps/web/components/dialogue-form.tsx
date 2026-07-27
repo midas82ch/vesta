@@ -105,6 +105,8 @@ type ConversationMessage = {
 const OTHER_NEED_VALUE = "__other__";
 const UNKNOWN_ANSWER_VALUE = "__unknown__";
 const DECLINED_ANSWER_VALUE = "__declined__";
+const MINIMUM_PERSON_AGE = 6;
+const MAXIMUM_PERSON_AGE = 120;
 const ADULT_AGE_THRESHOLD = 18;
 
 function formatDistance(
@@ -857,7 +859,10 @@ export function DialogueForm() {
                   <NumberField
                     id="dialogue-number-answer"
                     label={t("dialogue.question.numberLabel")}
+                    max={MAXIMUM_PERSON_AGE}
+                    min={MINIMUM_PERSON_AGE}
                     onChange={(event) => setNumberValue(event.target.value)}
+                    required
                     value={numberValue}
                   />
                   <Button type="submit">
