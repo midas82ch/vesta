@@ -71,3 +71,19 @@ class WorkflowAuditDetailResponse(BaseModel):
     updated_at: datetime
     complete: bool
     steps: list[WorkflowAuditStepResponse]
+
+
+class IngestionRunResponse(BaseModel):
+    id: str
+    offer_slug: str
+    source_url: str
+    status: str
+    http_status: int | None
+    content_sha256: str | None
+    missing_evidence: list[str]
+    error: str | None
+    checked_at: datetime
+
+
+class IngestionRunListResponse(BaseModel):
+    runs: list[IngestionRunResponse]

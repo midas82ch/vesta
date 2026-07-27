@@ -34,6 +34,7 @@ ROLES = (
             "admin_users": ("SELECT",),
             "ai_interaction_log": ("SELECT", "INSERT"),
             "dialogue_workflow_log": ("SELECT", "INSERT"),
+            "offer_ingestion_runs": ("SELECT",),
         },
     ),
     DatabaseRole(

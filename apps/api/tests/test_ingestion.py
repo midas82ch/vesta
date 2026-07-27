@@ -17,16 +17,13 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class OfferCatalogTest(unittest.TestCase):
-    def test_catalog_contains_only_explicit_test_offers(self) -> None:
+    def test_catalog_contains_unique_verified_offers(self) -> None:
         catalog = load_catalog(
             REPOSITORY_ROOT / "data" / "sources" / "bern_offers.json"
         )
 
         self.assertEqual(7, len(catalog.offers))
         self.assertEqual(7, len({offer.slug for offer in catalog.offers}))
-        self.assertTrue(
-            all(offer.name.startswith("Testangebot:") for offer in catalog.offers)
-        )
         self.assertTrue(
             all(str(offer.source.url).startswith("https://") for offer in catalog.offers)
         )

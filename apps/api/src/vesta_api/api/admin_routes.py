@@ -8,6 +8,8 @@ from vesta_api.api.admin_schemas import (
     AiAuditEntryDetailResponse,
     AiAuditEntrySummaryResponse,
     AiAuditLogListResponse,
+    IngestionRunListResponse,
+    IngestionRunResponse,
     WorkflowAuditDetailResponse,
     WorkflowAuditListResponse,
     WorkflowAuditStepResponse,
@@ -16,8 +18,10 @@ from vesta_api.api.admin_schemas import (
 from vesta_api.config import settings
 from vesta_api.domain.admin_models import AdminUser
 from vesta_api.domain.audit_models import AiOutcome, AiPort
+from vesta_api.domain.ingestion_models import IngestionStatus
 from vesta_api.repositories.admin_users import AdminUserRepository
 from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
+from vesta_api.repositories.ingestion_runs import IngestionRunRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.security import (
     SESSION_COOKIE_NAME,
@@ -50,6 +54,10 @@ def ai_audit_log_repository(request: Request) -> AiAuditLogRepository:
 
 def workflow_audit_log_repository(request: Request) -> WorkflowAuditLogRepository:
     return request.app.state.workflow_audit_log
+
+
+def ingestion_run_repository(request: Request) -> IngestionRunRepository:
+    return request.app.state.ingestion_runs
 
 
 def require_admin_session(
@@ -339,4 +347,30 @@ def get_ai_audit_workflow(
         updated_at=steps[-1].created_at,
         complete={"input", "system", "output"}.issubset(kinds),
         steps=steps,
+    )
+
+
+@router.get("/ingestion-runs", response_model=IngestionRunListResponse)
+def list_ingestion_runs(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    runs: Annotated[IngestionRunRepository, Depends(ingestion_run_repository)],
+    limit: Annotated[int, Query(ge=1, le=MAX_LIST_LIMIT)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    status_filter: Annotated[IngestionStatus | None, Query(alias="status")] = None,
+) -> IngestionRunListResponse:
+    return IngestionRunListResponse(
+        runs=[
+            IngestionRunResponse(
+                id=run.id,
+                offer_slug=run.offer_slug,
+                source_url=run.source_url,
+                status=run.status,
+                http_status=run.http_status,
+                content_sha256=run.content_sha256,
+                missing_evidence=list(run.missing_evidence),
+                error=run.error,
+                checked_at=run.checked_at,
+            )
+            for run in runs.list_runs(limit=limit, offset=offset, status=status_filter)
+        ]
     )

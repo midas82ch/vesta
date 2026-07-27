@@ -67,6 +67,14 @@ machen. Das initiale Dateirepository erlaubt Entwicklung und Tests ohne
 Datenbank. Es enthält nur klar markierte Beispieldaten. Angebotsstandorte sind
 öffentliche, quellengeprüfte Katalogdaten.
 
+Die über `data/sources/bern_offers.json` automatisiert eingelesenen Angebote
+sind seit dem 27.07.2026 einzeln verifiziert (nicht mehr pauschal als
+Testdaten markiert, `is_demo = false`). Ein täglicher systemd-Timer
+(`infra/systemd/vesta-offer-ingest.timer`) prüft die hinterlegten
+Bestätigungssätze auf den Quell-Webseiten erneut und hält die Datenbank
+aktuell; die Lauf-Historie ist im Adminbereich unter „Angebots-Prüfung"
+einsehbar.
+
 ### AI-Adapter
 
 Ein Sprachmodell wird erst hinter einer schmalen Schnittstelle ergänzt. Seine

@@ -58,6 +58,17 @@ class DatabaseRolePrivilegesTest(unittest.TestCase):
             vesta_app.table_privileges["dialogue_workflow_log"],
         )
 
+    def test_vesta_app_can_read_offer_ingestion_runs(self) -> None:
+        # Same class of regression as above: the admin area needs to read
+        # offer_ingestion_runs (20260725_0002), but only vesta_ingest ever
+        # got granted access to it.
+        vesta_app = next(role for role in ROLES if role.username == "vesta_app")
+
+        self.assertIn("offer_ingestion_runs", vesta_app.table_privileges)
+        self.assertEqual(
+            ("SELECT",), vesta_app.table_privileges["offer_ingestion_runs"]
+        )
+
 
 class DatabaseRoleUrlTest(unittest.TestCase):
     def test_replaces_admin_credentials_and_preserves_tls(self) -> None:

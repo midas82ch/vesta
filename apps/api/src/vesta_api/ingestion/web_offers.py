@@ -134,8 +134,6 @@ def load_catalog(path: Path) -> OfferCatalog:
     slugs = [offer.slug for offer in catalog.offers]
     if len(slugs) != len(set(slugs)):
         raise ValueError("Offer catalog contains duplicate slugs")
-    if any(not offer.name.startswith("Testangebot:") for offer in catalog.offers):
-        raise ValueError("Every automatically imported offer must be marked as a test")
     return catalog
 
 
@@ -230,7 +228,7 @@ _UPSERT_OFFER = text(
         END,
         CAST(:availability AS offer_availability),
         true,
-        true,
+        false,
         now()
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -244,7 +242,7 @@ _UPSERT_OFFER = text(
         location = EXCLUDED.location,
         availability = EXCLUDED.availability,
         published = true,
-        is_demo = true,
+        is_demo = false,
         updated_at = now()
     """
 )

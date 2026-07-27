@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AdminNav } from "@/components/admin-nav";
 import { Button } from "@/components/ui";
 
 type WorkflowSummary = {
@@ -111,6 +112,7 @@ export default function AiAuditPage() {
 
   return (
     <main className="admin-shell">
+      <AdminNav />
       <div className="admin-heading">
         <div>
           <p className="eyebrow">Admin-Audit</p>

@@ -1,6 +1,7 @@
 import sys
 import unittest
 from dataclasses import replace
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -13,16 +14,21 @@ from vesta_api.api.admin_routes import (  # noqa: E402
     admin_session_store,
     admin_user_repository,
     ai_audit_log_repository,
+    ingestion_run_repository,
     workflow_audit_log_repository,
 )
 from vesta_api.config import settings  # noqa: E402
 from vesta_api.domain.audit_models import NewAiAuditEntry  # noqa: E402
+from vesta_api.domain.ingestion_models import IngestionRun  # noqa: E402
 from vesta_api.domain.workflow_audit_models import (  # noqa: E402
     NewWorkflowAuditEvent,
 )
 from vesta_api.main import app  # noqa: E402
 from vesta_api.repositories.admin_users import InMemoryAdminUserRepository  # noqa: E402
 from vesta_api.repositories.ai_audit_log import InMemoryAiAuditLogRepository  # noqa: E402
+from vesta_api.repositories.ingestion_runs import (  # noqa: E402
+    InMemoryIngestionRunRepository,
+)
 from vesta_api.repositories.workflow_audit_log import (  # noqa: E402
     InMemoryWorkflowAuditLogRepository,
 )
@@ -42,6 +48,7 @@ class AdminRoutesTest(unittest.TestCase):
         self.users.create(username=TEST_USERNAME, password_hash=hash_password(TEST_PASSWORD))
         self.audit_log = InMemoryAiAuditLogRepository()
         self.workflow_log = InMemoryWorkflowAuditLogRepository()
+        self.ingestion_runs = InMemoryIngestionRunRepository()
         self.sessions = AdminSessionStore()
         self.attempts = AdminLoginAttemptStore()
 
@@ -52,6 +59,7 @@ class AdminRoutesTest(unittest.TestCase):
         app.dependency_overrides[workflow_audit_log_repository] = (
             lambda: self.workflow_log
         )
+        app.dependency_overrides[ingestion_run_repository] = lambda: self.ingestion_runs
 
     def tearDown(self) -> None:
         app.dependency_overrides.clear()
@@ -323,6 +331,108 @@ class AdminRoutesTest(unittest.TestCase):
             ):
                 with self.subTest(query=query):
                     response = client.get(f"/v1/admin/ai-audit-log?{query}")
+                    self.assertEqual(422, response.status_code)
+
+    def test_ingestion_runs_requires_a_session(self) -> None:
+        with TestClient(app) as client:
+            response = client.get("/v1/admin/ingestion-runs")
+
+        self.assertEqual(401, response.status_code)
+
+    def test_login_then_list_ingestion_runs(self) -> None:
+        self.ingestion_runs.add(
+            IngestionRun(
+                id="run-1",
+                offer_slug="test-passantenheim-bern",
+                source_url="https://example.org/passantenheim",
+                status="imported",
+                http_status=200,
+                content_sha256="abc123",
+                missing_evidence=(),
+                error=None,
+                checked_at=datetime(2026, 7, 27, 5, 33, tzinfo=UTC),
+            )
+        )
+        self.ingestion_runs.add(
+            IngestionRun(
+                id="run-2",
+                offer_slug="test-wohnberatung-bern",
+                source_url="https://example.org/wohnberatung",
+                status="evidence_missing",
+                http_status=200,
+                content_sha256="def456",
+                missing_evidence=("Öffnungszeiten",),
+                error=None,
+                checked_at=datetime(2026, 7, 26, 5, 33, tzinfo=UTC),
+            )
+        )
+
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.get("/v1/admin/ingestion-runs")
+
+        self.assertEqual(200, response.status_code)
+        runs = response.json()["runs"]
+        self.assertEqual(2, len(runs))
+        # Newest first.
+        self.assertEqual("run-1", runs[0]["id"])
+        self.assertEqual("imported", runs[0]["status"])
+        self.assertEqual(["Öffnungszeiten"], runs[1]["missing_evidence"])
+
+    def test_ingestion_runs_filters_by_status(self) -> None:
+        self.ingestion_runs.add(
+            IngestionRun(
+                id="run-1",
+                offer_slug="test-a",
+                source_url="https://example.org/a",
+                status="imported",
+                http_status=200,
+                content_sha256=None,
+                missing_evidence=(),
+                error=None,
+                checked_at=datetime(2026, 7, 27, 5, 33, tzinfo=UTC),
+            )
+        )
+        self.ingestion_runs.add(
+            IngestionRun(
+                id="run-2",
+                offer_slug="test-b",
+                source_url="https://example.org/b",
+                status="fetch_failed",
+                http_status=None,
+                content_sha256=None,
+                missing_evidence=(),
+                error="ConnectionError: timed out",
+                checked_at=datetime(2026, 7, 27, 5, 34, tzinfo=UTC),
+            )
+        )
+
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.get("/v1/admin/ingestion-runs?status=fetch_failed")
+
+        self.assertEqual(200, response.status_code)
+        runs = response.json()["runs"]
+        self.assertEqual(1, len(runs))
+        self.assertEqual("run-2", runs[0]["id"])
+        self.assertEqual("ConnectionError: timed out", runs[0]["error"])
+
+    def test_ingestion_runs_rejects_invalid_pagination_and_status(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+
+            for query in ("limit=0", "limit=201", "offset=-1", "status=unknown"):
+                with self.subTest(query=query):
+                    response = client.get(f"/v1/admin/ingestion-runs?{query}")
                     self.assertEqual(422, response.status_code)
 
 

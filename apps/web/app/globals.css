@@ -659,6 +659,32 @@ form + .choice-list {
   max-width: 48rem;
 }
 
+.admin-nav {
+  border-block-end: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-block-end: 1.5rem;
+  padding-block-end: 0.75rem;
+}
+
+.admin-nav-link {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-nav-link:hover {
+  color: var(--green);
+}
+
+.admin-nav-link-active {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
 .workflow-list {
   display: grid;
   gap: 1rem;
@@ -710,6 +736,28 @@ form + .choice-list {
 
 .workflow-status--complete {
   border-color: var(--green);
+}
+
+.ingestion-status {
+  align-items: center;
+  border: 1px solid var(--orange);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 800;
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  width: fit-content;
+}
+
+.ingestion-status--imported {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.ingestion-status--fetch_failed {
+  border-color: var(--danger-ink);
+  color: var(--danger-ink);
 }
 
 .navigator-card.workflow-detail {

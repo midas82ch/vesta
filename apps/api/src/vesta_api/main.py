@@ -25,6 +25,11 @@ from vesta_api.repositories.dialogue_catalog import (
     JsonDialogueCatalogRepository,
     PostgresDialogueCatalogRepository,
 )
+from vesta_api.repositories.ingestion_runs import (
+    IngestionRunRepository,
+    InMemoryIngestionRunRepository,
+    PostgresIngestionRunRepository,
+)
 from vesta_api.repositories.offers import (
     JsonOfferRepository,
     OfferRepository,
@@ -98,6 +103,15 @@ def create_workflow_audit_log_repository() -> WorkflowAuditLogRepository:
     if settings.environment.lower() == "production":
         raise RuntimeError("DATABASE_URL is required when VESTA_ENV=production")
     return InMemoryWorkflowAuditLogRepository()
+
+
+def create_ingestion_run_repository() -> IngestionRunRepository:
+    database_url = settings.get_database_url()
+    if database_url is not None:
+        return PostgresIngestionRunRepository(database_url)
+    if settings.environment.lower() == "production":
+        raise RuntimeError("DATABASE_URL is required when VESTA_ENV=production")
+    return InMemoryIngestionRunRepository()
 
 
 def create_ai_gateway(audit_log: AiAuditLogRepository) -> AiGateway:
@@ -177,6 +191,10 @@ async def lifespan(app: FastAPI):
     workflow_audit_log.healthcheck()
     app.state.workflow_audit_log = workflow_audit_log
 
+    ingestion_runs = create_ingestion_run_repository()
+    ingestion_runs.healthcheck()
+    app.state.ingestion_runs = ingestion_runs
+
     app.state.dialogue_orchestrator = DialogueOrchestrator(
         matching_service=app.state.matching_service,
         catalog=catalog,
@@ -190,6 +208,7 @@ async def lifespan(app: FastAPI):
         admin_users.close()
         ai_audit_log.close()
         workflow_audit_log.close()
+        ingestion_runs.close()
 
 
 app = FastAPI(
