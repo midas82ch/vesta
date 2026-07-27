@@ -1,8 +1,22 @@
 from datetime import datetime
+from urllib.parse import urlencode
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from vesta_api.domain.models import Availability, Candidate, Need, RiskFlag
+from vesta_api.domain.models import Availability, Candidate, GeoPoint, Need, RiskFlag
+
+
+class UserLocationInput(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+    @field_validator("latitude", "longitude")
+    @classmethod
+    def reduce_precision(cls, value: float) -> float:
+        return round(value, 3)
+
+    def to_domain(self) -> GeoPoint:
+        return GeoPoint(latitude=self.latitude, longitude=self.longitude)
 
 
 class MatchRequest(BaseModel):
@@ -12,6 +26,7 @@ class MatchRequest(BaseModel):
     has_identity_document: bool | None = None
     gender: str | None = Field(default=None, max_length=40)
     age: int | None = Field(default=None, ge=0, le=120)
+    user_location: UserLocationInput | None = None
     risk_flags: list[RiskFlag] = Field(default_factory=list)
 
 
@@ -30,6 +45,8 @@ class OfferResponse(BaseModel):
     languages: list[str]
     availability: Availability
     contact_note: str
+    address: str | None
+    directions_url: str | None
     source: OfferSourceResponse
     is_demo: bool
 
@@ -38,6 +55,7 @@ class CandidateResponse(BaseModel):
     offer: OfferResponse
     reasons: list[str]
     uncertainties: list[str]
+    distance_meters: int | None
 
 
 class MatchResponse(BaseModel):
@@ -48,6 +66,23 @@ class MatchResponse(BaseModel):
 
 
 def candidate_to_response(candidate: Candidate) -> CandidateResponse:
+    directions_url = None
+    if candidate.offer.location is not None:
+        destination = (
+            f"{candidate.offer.location.latitude:.6f},"
+            f"{candidate.offer.location.longitude:.6f}"
+        )
+        directions_url = (
+            "https://www.google.com/maps/dir/?"
+            + urlencode(
+                {
+                    "api": "1",
+                    "destination": destination,
+                    "travelmode": "walking",
+                }
+            )
+        )
+
     return CandidateResponse(
         offer=OfferResponse(
             id=candidate.offer.id,
@@ -56,6 +91,12 @@ def candidate_to_response(candidate: Candidate) -> CandidateResponse:
             languages=list(candidate.offer.languages),
             availability=candidate.offer.availability,
             contact_note=candidate.offer.contact_note,
+            address=(
+                candidate.offer.location.address
+                if candidate.offer.location is not None
+                else None
+            ),
+            directions_url=directions_url,
             source=OfferSourceResponse(
                 label=candidate.offer.source.label,
                 url=candidate.offer.source.url,
@@ -67,4 +108,5 @@ def candidate_to_response(candidate: Candidate) -> CandidateResponse:
         ),
         reasons=list(candidate.reasons),
         uncertainties=list(candidate.uncertainties),
+        distance_meters=candidate.distance_meters,
     )

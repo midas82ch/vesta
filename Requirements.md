@@ -13,6 +13,11 @@ Der bestehende klickfähige Prototyp wird in zwei Bereichen weiterentwickelt:
 - Inhalt, visuelle Hierarchie, Abstände und Typografie werden vereinheitlicht.
 - Der Dialog ist auf Mobilgeräten ebenso verständlich und bedienbar wie auf Desktop.
 - Lade-, Fehler-, Leer- und Erfolgszustände sind klar erkennbar.
+- Eine freiwillige Standortfreigabe sortiert gleich geeignete Angebote nach
+  ungefährer Luftliniendistanz; ohne Freigabe bleibt die Suche vollständig
+  nutzbar.
+- Angebote mit verifiziertem Standort zeigen Distanz, Adresse und einen
+  externen Link zur Wegbeschreibung.
 - Barrierefreiheit, Mehrsprachigkeit und PWA-Funktion bleiben erhalten.
 - Erklärende Inhalte bleiben in separaten Bereichen wie Impressum und Datenschutz.
 
@@ -62,3 +67,8 @@ Nur berechtigte Admins dürfen Quellen, Importe, Mappings und Veröffentlichunge
 - Ein geprüftes Angebot kann veröffentlicht werden und erscheint anschließend im öffentlichen Matching.
 - Importlauf, Mapping und Freigabe sind in der Historie nachvollziehbar.
 - Die öffentliche Oberfläche funktioniert responsiv, barrierearm und in allen unterstützten Sprachen.
+- Der Browser fragt den Standort nur nach einem ausdrücklichen Klick ab.
+- Standort und konkrete Distanzen werden weder dauerhaft gespeichert noch an
+  das AI-Modell oder den Audit-Log übermittelt.
+- Fachliche Eignung bleibt vor Nähe priorisiert; Angebote ohne Standort werden
+  nicht ausgeblendet.

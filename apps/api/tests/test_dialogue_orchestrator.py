@@ -9,6 +9,7 @@ from vesta_api.domain.dialogue_catalog import QuestionDefinition  # noqa: E402
 from vesta_api.domain.models import (  # noqa: E402
     AccessRules,
     Availability,
+    GeoPoint,
     Need,
     Offer,
     Source,
@@ -57,7 +58,11 @@ class FakeDialogueCatalogRepository:
         return self._questions
 
 
-def _offer(*, accepts_dogs: bool | None = False) -> Offer:
+def _offer(
+    *,
+    accepts_dogs: bool | None = False,
+    location: GeoPoint | None = None,
+) -> Offer:
     return Offer(
         id="test-offer",
         name="Testangebot",
@@ -74,6 +79,7 @@ def _offer(*, accepts_dogs: bool | None = False) -> Offer:
             expires_at=NOW + timedelta(days=1),
             verified_by="automated-test",
         ),
+        location=location,
         published=True,
         is_demo=True,
     )
@@ -154,6 +160,36 @@ class DialogueOrchestratorTest(unittest.TestCase):
             orchestrator.confirm_attribute(
                 session_id="does-not-exist", key="person.has_dog", value=True, now=NOW
             )
+
+    def test_location_is_used_for_turn_but_not_persisted_in_session(self) -> None:
+        session_store = DialogueSessionStore()
+        orchestrator = DialogueOrchestrator(
+            matching_service=MatchingService(
+                InMemoryOfferRepository(
+                    (
+                        _offer(
+                            accepts_dogs=True,
+                            location=GeoPoint(latitude=46.95, longitude=7.44),
+                        ),
+                    )
+                )
+            ),
+            catalog=FakeDialogueCatalogRepository(()),
+            session_store=session_store,
+        )
+
+        result = orchestrator.start(
+            locale="de",
+            need=Need.SLEEP_TONIGHT,
+            now=NOW,
+            user_location=GeoPoint(latitude=46.948, longitude=7.447),
+        )
+
+        assert result.match_result is not None
+        self.assertIsNotNone(result.match_result.candidates[0].distance_meters)
+        stored = session_store.get(result.state.session_id, now=NOW)
+        assert stored is not None
+        self.assertFalse(hasattr(stored, "user_location"))
 
 
 class DialogueSessionStoreTest(unittest.TestCase):

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
 from vesta_api.domain.dialogue_models import AttributeState, DialogueState
-from vesta_api.domain.models import MatchQuery, MatchResult, Need
+from vesta_api.domain.models import GeoPoint, MatchQuery, MatchResult, Need
 from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
 from vesta_api.services.matching import MatchingService
 from vesta_api.services.next_question import NextQuestionPolicy
@@ -71,7 +71,11 @@ class DialogueTurnResult:
     match_result: MatchResult | None
 
 
-def _build_match_query(state: DialogueState, at: datetime) -> MatchQuery:
+def _build_match_query(
+    state: DialogueState,
+    at: datetime,
+    user_location: GeoPoint | None = None,
+) -> MatchQuery:
     assert state.need is not None
     values = state.confirmed_values()
     return MatchQuery(
@@ -82,6 +86,7 @@ def _build_match_query(state: DialogueState, at: datetime) -> MatchQuery:
         has_identity_document=values.get("person.has_identity_document"),
         gender=values.get("person.gender"),
         age=values.get("person.age"),
+        user_location=user_location,
     )
 
 
@@ -111,6 +116,7 @@ class DialogueOrchestrator:
         now: datetime,
         *,
         session_id: str | None = None,
+        user_location: GeoPoint | None = None,
     ) -> DialogueTurnResult:
         created = self._session_store.create(locale, now, session_id=session_id)
         state = DialogueState(
@@ -121,7 +127,7 @@ class DialogueOrchestrator:
             need=need,
         )
         self._session_store.save(state)
-        return self._advance(state, now)
+        return self._advance(state, now, user_location)
 
     def flag_safety_handoff(self, session_id: str, now: datetime) -> DialogueTurnResult:
         state = self._require_state(session_id, now)
@@ -140,24 +146,35 @@ class DialogueOrchestrator:
         return self._advance(state, now)
 
     def confirm_attribute(
-        self, session_id: str, key: str, value: object | None, now: datetime
+        self,
+        session_id: str,
+        key: str,
+        value: object | None,
+        now: datetime,
+        *,
+        user_location: GeoPoint | None = None,
     ) -> DialogueTurnResult:
         state = self._require_state(session_id, now)
         state = state.with_attribute(
             AttributeState(key=key, value=value, status="confirmed", source="user")
         )
         self._session_store.save(state)
-        return self._advance(state, now)
+        return self._advance(state, now, user_location)
 
     def decline_attribute(
-        self, session_id: str, key: str, now: datetime
+        self,
+        session_id: str,
+        key: str,
+        now: datetime,
+        *,
+        user_location: GeoPoint | None = None,
     ) -> DialogueTurnResult:
         state = self._require_state(session_id, now)
         state = state.with_attribute(
             AttributeState(key=key, value=None, status="declined", source="user")
         )
         self._session_store.save(state)
-        return self._advance(state, now)
+        return self._advance(state, now, user_location)
 
     def _require_state(self, session_id: str, now: datetime) -> DialogueState:
         state = self._session_store.get(session_id, now)
@@ -165,7 +182,12 @@ class DialogueOrchestrator:
             raise KeyError("dialogue_session_not_found_or_expired")
         return state
 
-    def _advance(self, state: DialogueState, now: datetime) -> DialogueTurnResult:
+    def _advance(
+        self,
+        state: DialogueState,
+        now: datetime,
+        user_location: GeoPoint | None = None,
+    ) -> DialogueTurnResult:
         if state.safety_status == "handoff":
             return DialogueTurnResult(
                 state=state,
@@ -180,7 +202,9 @@ class DialogueOrchestrator:
         if state.need is None:
             return DialogueTurnResult(state=state, question=None, match_result=None)
 
-        match_result = self._matching_service.match(_build_match_query(state, now))
+        match_result = self._matching_service.match(
+            _build_match_query(state, now, user_location)
+        )
 
         if not match_result.candidates:
             return DialogueTurnResult(

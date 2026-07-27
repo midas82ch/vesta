@@ -11,7 +11,7 @@ import {
 import { useI18n } from "@/components/i18n-provider";
 import { NeedSymbol } from "@/components/need-symbol";
 import { Button, ChoiceList, NumberField, TextAreaField, type ChoiceOption } from "@/components/ui";
-import type { MessageKey } from "@/lib/i18n";
+import { localeTags, type Locale, type MessageKey } from "@/lib/i18n";
 import { needs, type Need } from "@/lib/needs";
 
 type Offer = {
@@ -20,6 +20,8 @@ type Offer = {
   summary: string;
   availability: "confirmed" | "call_to_confirm" | "unknown";
   contact_note: string;
+  address: string | null;
+  directions_url: string | null;
   is_demo: boolean;
   source: {
     label: string;
@@ -41,7 +43,12 @@ type Explanation = {
 };
 
 type ExplainedCandidate = {
-  candidate: { offer: Offer; reasons: string[]; uncertainties: string[] };
+  candidate: {
+    offer: Offer;
+    reasons: string[];
+    uncertainties: string[];
+    distance_meters: number | null;
+  };
   explanation: Explanation | null;
 };
 
@@ -81,6 +88,14 @@ type InterpretResponse = {
 
 type EntryMode = "pick" | "other";
 type Phase = "idle" | "interpreting" | "loading" | "question" | "result" | "error";
+type UserLocation = { latitude: number; longitude: number };
+type LocationStatus =
+  | "idle"
+  | "locating"
+  | "active"
+  | "denied"
+  | "timeout"
+  | "unavailable";
 type ConversationMessage = {
   id: string;
   speaker: "person" | "vesta";
@@ -90,6 +105,27 @@ type ConversationMessage = {
 const OTHER_NEED_VALUE = "__other__";
 const UNKNOWN_ANSWER_VALUE = "__unknown__";
 const DECLINED_ANSWER_VALUE = "__declined__";
+
+function formatDistance(
+  meters: number,
+  locale: Locale,
+  t: (key: MessageKey, values?: Record<string, string | number>) => string,
+) {
+  if (meters < 1_000) {
+    const roundedMeters = Math.max(50, Math.round(meters / 50) * 50);
+    return t("results.distance.meters", {
+      distance: new Intl.NumberFormat(localeTags[locale]).format(roundedMeters),
+    });
+  }
+
+  const kilometers = meters / 1_000;
+  return t("results.distance.kilometers", {
+    distance: new Intl.NumberFormat(localeTags[locale], {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(kilometers),
+  });
+}
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -235,6 +271,69 @@ function BusyDialogue({
   );
 }
 
+function LocationControl({
+  onRemove,
+  onUse,
+  status,
+}: {
+  onRemove: () => void;
+  onUse: () => void;
+  status: LocationStatus;
+}) {
+  const { t } = useI18n();
+  const statusKey: MessageKey | null =
+    status === "locating"
+      ? "dialogue.location.locating"
+      : status === "active"
+        ? "dialogue.location.active"
+        : status === "denied"
+          ? "dialogue.location.denied"
+          : status === "timeout"
+            ? "dialogue.location.timeout"
+            : status === "unavailable"
+              ? "dialogue.location.unavailable"
+              : null;
+
+  return (
+    <section
+      aria-labelledby="dialogue-location-title"
+      className="dialogue-location"
+    >
+      <div>
+        <h2 id="dialogue-location-title">{t("dialogue.location.title")}</h2>
+        <p>{t("dialogue.location.text")}</p>
+      </div>
+      <div className="dialogue-location-actions">
+        {status === "active" ? (
+          <Button onClick={onRemove} variant="ghost">
+            {t("dialogue.location.remove")}
+          </Button>
+        ) : (
+          <Button
+            disabled={status === "locating"}
+            onClick={onUse}
+            variant="secondary"
+          >
+            {status === "locating"
+              ? t("dialogue.location.locating")
+              : t("dialogue.location.use")}
+          </Button>
+        )}
+      </div>
+      {statusKey && (
+        <p
+          aria-atomic="true"
+          aria-live="polite"
+          className={`dialogue-location-status dialogue-location-status--${status}`}
+          role="status"
+        >
+          {t(statusKey)}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function DialogueForm() {
   const { locale, t } = useI18n();
   const messageCounter = useRef(0);
@@ -247,8 +346,12 @@ export function DialogueForm() {
   const [numberValue, setNumberValue] = useState("");
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationStatus, setLocationStatus] =
+    useState<LocationStatus>("idle");
 
   const busy = phase === "interpreting" || phase === "loading";
+  const locationBusy = locationStatus === "locating";
   const onEntryScreen = phase === "idle";
   const currentStage =
     phase === "result"
@@ -284,6 +387,45 @@ export function DialogueForm() {
     return message;
   }
 
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      setUserLocation(null);
+      setLocationStatus("unavailable");
+      return;
+    }
+
+    setLocationStatus("locating");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: Number(position.coords.latitude.toFixed(3)),
+          longitude: Number(position.coords.longitude.toFixed(3)),
+        });
+        setLocationStatus("active");
+      },
+      (error) => {
+        setUserLocation(null);
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationStatus("denied");
+        } else if (error.code === error.TIMEOUT) {
+          setLocationStatus("timeout");
+        } else {
+          setLocationStatus("unavailable");
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 300_000,
+        timeout: 8_000,
+      },
+    );
+  }
+
+  function removeLocation() {
+    setUserLocation(null);
+    setLocationStatus("idle");
+  }
+
   async function startWithNeed(need: Need, workflowId?: string) {
     appendMessage(
       "person",
@@ -298,6 +440,7 @@ export function DialogueForm() {
         need,
         language: locale,
         workflow_id: workflowId,
+        ...(userLocation ? { user_location: userLocation } : {}),
       });
       applyTurn(result);
     } catch {
@@ -367,6 +510,7 @@ export function DialogueForm() {
       const result = await postJson<DialogueTurn>("/api/dialogue/answer", {
         session_id: turn.session_id,
         question_key: turn.question.question_key,
+        ...(userLocation ? { user_location: userLocation } : {}),
         ...body,
       });
       applyTurn(result);
@@ -465,8 +609,16 @@ export function DialogueForm() {
         : t("dialogue.busy.starting.text");
 
   return (
-    <div aria-busy={busy} className="navigator-card">
+    <div aria-busy={busy || locationBusy} className="navigator-card">
       {conversation.length > 0 && <DialogueProgress currentStage={currentStage} />}
+
+      {!busy && onEntryScreen && (
+        <LocationControl
+          onRemove={removeLocation}
+          onUse={requestLocation}
+          status={locationStatus}
+        />
+      )}
 
       {busy && (
         <BusyDialogue
@@ -477,9 +629,10 @@ export function DialogueForm() {
       )}
 
       {!busy && onEntryScreen && entryMode === "pick" && (
-        <fieldset className="need-picker">
+        <fieldset className="need-picker" disabled={locationBusy}>
           <legend>{t("dialogue.needPicker.legend")}</legend>
           <ChoiceList
+            disabled={locationBusy}
             onSelect={handleNeedPick}
             options={needPickerOptions}
           />
@@ -497,13 +650,16 @@ export function DialogueForm() {
                   id="dialogue-free-text"
                   label={t("dialogue.freeText.label")}
                   maxLength={2000}
+                  disabled={locationBusy}
                   onChange={(event) => setFreeText(event.target.value)}
                   placeholder={t("dialogue.freeText.placeholder")}
                   required
                   rows={3}
                   value={freeText}
                 />
-                <Button type="submit">{t("dialogue.freeText.submit")}</Button>
+                <Button disabled={locationBusy} type="submit">
+                  {t("dialogue.freeText.submit")}
+                </Button>
               </form>
             </>
           ) : (
@@ -517,6 +673,7 @@ export function DialogueForm() {
                   {t("dialogue.interpretation.confirmLegend")}
                 </legend>
                 <ChoiceList
+                  disabled={locationBusy}
                   onSelect={(value) =>
                     startWithNeed(value as Need, interpretation.workflow_id)
                   }
@@ -527,7 +684,7 @@ export function DialogueForm() {
             </section>
           )}
 
-          <Button onClick={backToPicker} variant="ghost">
+          <Button disabled={locationBusy} onClick={backToPicker} variant="ghost">
             {t("dialogue.back")}
           </Button>
         </>
@@ -657,6 +814,37 @@ export function DialogueForm() {
               <div lang="de">
                 <h3>{candidate.offer.name}</h3>
               </div>
+              {(candidate.distance_meters !== null ||
+                candidate.offer.address ||
+                candidate.offer.directions_url) && (
+                <div className="result-location">
+                  {candidate.distance_meters !== null && (
+                    <p className="result-distance">
+                      {formatDistance(candidate.distance_meters, locale, t)}
+                    </p>
+                  )}
+                  {candidate.offer.address && (
+                    <address lang="de">
+                      <strong>{t("results.address")}:</strong>{" "}
+                      {candidate.offer.address}
+                    </address>
+                  )}
+                  {candidate.offer.directions_url && (
+                    <a
+                      className="directions-link"
+                      href={candidate.offer.directions_url}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {t("results.directions")}
+                      <span className="visually-hidden">
+                        {" "}
+                        ({t("a11y.opensNewTab")})
+                      </span>
+                    </a>
+                  )}
+                </div>
+              )}
               {explanation ? (
                 <>
                   <p className="field-hint">

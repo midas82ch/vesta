@@ -55,6 +55,11 @@ def create_match(
             has_identity_document=payload.has_identity_document,
             gender=payload.gender,
             age=payload.age,
+            user_location=(
+                payload.user_location.to_domain()
+                if payload.user_location is not None
+                else None
+            ),
             at=datetime.now(UTC),
             risk_flags=tuple(payload.risk_flags),
         )

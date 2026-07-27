@@ -5,16 +5,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from vesta_api.api.schemas import candidate_to_response  # noqa: E402
 from vesta_api.domain.models import (  # noqa: E402
     AccessRules,
     Availability,
+    GeoPoint,
     MatchQuery,
     Need,
     Offer,
     RiskFlag,
     Source,
 )
-from vesta_api.services.matching import MatchingService  # noqa: E402
+from vesta_api.services.matching import MatchingService, distance_in_meters  # noqa: E402
 
 NOW = datetime(2026, 7, 25, tzinfo=UTC)
 
@@ -29,14 +31,18 @@ class InMemoryOfferRepository:
 
 def offer(
     *,
+    offer_id: str = "test-offer",
+    name: str = "Testangebot",
     accepts_dogs: bool | None = True,
     requires_id: bool | None = False,
     accepted_genders: tuple[str, ...] = (),
     expires_at: datetime | None = None,
+    availability: Availability = Availability.CALL_TO_CONFIRM,
+    location: GeoPoint | None = None,
 ) -> Offer:
     return Offer(
-        id="test-offer",
-        name="Testangebot",
+        id=offer_id,
+        name=name,
         summary="Nur für automatisierte Tests.",
         needs=(Need.SLEEP_TONIGHT,),
         languages=("de", "fr"),
@@ -45,7 +51,7 @@ def offer(
             identity_document_required=requires_id,
             accepted_genders=accepted_genders,
         ),
-        availability=Availability.CALL_TO_CONFIRM,
+        availability=availability,
         contact_note="Test",
         source=Source(
             label="Testquelle",
@@ -54,6 +60,7 @@ def offer(
             expires_at=expires_at or NOW + timedelta(days=1),
             verified_by="automated-test",
         ),
+        location=location,
         published=True,
         is_demo=True,
     )
@@ -151,6 +158,134 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertEqual((), result.candidates)
         self.assertTrue(result.human_handoff_required)
         self.assertEqual("safety_rule_triggered", result.handoff_reason)
+
+    def test_calculates_great_circle_distance(self) -> None:
+        distance = distance_in_meters(
+            GeoPoint(latitude=46.948, longitude=7.447),
+            GeoPoint(latitude=46.944359, longitude=7.459041),
+        )
+
+        self.assertGreater(distance, 950)
+        self.assertLess(distance, 1_100)
+
+    def test_distance_breaks_tie_after_suitability(self) -> None:
+        repository = InMemoryOfferRepository(
+            (
+                offer(
+                    offer_id="far",
+                    name="Weiter entfernt",
+                    location=GeoPoint(latitude=46.944359, longitude=7.459041),
+                ),
+                offer(
+                    offer_id="near",
+                    name="Näher",
+                    location=GeoPoint(latitude=46.949615, longitude=7.440293),
+                ),
+            )
+        )
+        service = MatchingService(repository)
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                at=NOW,
+                user_location=GeoPoint(latitude=46.95, longitude=7.44),
+            )
+        )
+
+        self.assertEqual(("near", "far"), tuple(c.offer.id for c in result.candidates))
+        self.assertLess(
+            result.candidates[0].distance_meters,
+            result.candidates[1].distance_meters,
+        )
+
+    def test_suitability_remains_more_important_than_distance(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository(
+                (
+                    offer(
+                        offer_id="near",
+                        name="Nah, aber abklären",
+                        location=GeoPoint(latitude=46.95, longitude=7.44),
+                    ),
+                    offer(
+                        offer_id="far",
+                        name="Weiter, aber bestätigt",
+                        availability=Availability.CONFIRMED,
+                        location=GeoPoint(latitude=46.944359, longitude=7.459041),
+                    ),
+                )
+            )
+        )
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                at=NOW,
+                user_location=GeoPoint(latitude=46.95, longitude=7.44),
+            )
+        )
+
+        self.assertEqual(("far", "near"), tuple(c.offer.id for c in result.candidates))
+
+    def test_offer_without_location_remains_visible_after_located_tie(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository(
+                (
+                    offer(offer_id="unknown", name="Ohne Standort"),
+                    offer(
+                        offer_id="located",
+                        name="Mit Standort",
+                        location=GeoPoint(latitude=46.95, longitude=7.44),
+                    ),
+                )
+            )
+        )
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                at=NOW,
+                user_location=GeoPoint(latitude=46.95, longitude=7.44),
+            )
+        )
+
+        self.assertEqual(("located", "unknown"), tuple(c.offer.id for c in result.candidates))
+        self.assertIsNone(result.candidates[1].distance_meters)
+
+    def test_response_has_destination_only_directions_link(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository(
+                (
+                    offer(
+                        location=GeoPoint(
+                            latitude=46.944359,
+                            longitude=7.459041,
+                            address="Muristrasse 6, 3006 Bern",
+                        )
+                    ),
+                )
+            )
+        )
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                at=NOW,
+                user_location=GeoPoint(latitude=46.948, longitude=7.447),
+            )
+        )
+
+        response = candidate_to_response(result.candidates[0])
+
+        self.assertEqual("Muristrasse 6, 3006 Bern", response.offer.address)
+        assert response.offer.directions_url is not None
+        self.assertIn("destination=46.944359%2C7.459041", response.offer.directions_url)
+        self.assertIn("travelmode=walking", response.offer.directions_url)
+        self.assertNotIn("origin=", response.offer.directions_url)
 
 
 if __name__ == "__main__":

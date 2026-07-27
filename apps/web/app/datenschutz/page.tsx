@@ -19,6 +19,12 @@ const sections: Array<{
     text: "privacy.scope.text",
   },
   {
+    id: "location",
+    eyebrow: "privacy.location.eyebrow",
+    title: "privacy.location.title",
+    text: "privacy.location.text",
+  },
+  {
     id: "storage",
     eyebrow: "privacy.storage.eyebrow",
     title: "privacy.storage.title",

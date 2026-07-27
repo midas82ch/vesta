@@ -6,7 +6,14 @@ from typing import Any, Protocol
 
 from sqlalchemy import Engine, text
 
-from vesta_api.domain.models import AccessRules, Availability, Need, Offer, Source
+from vesta_api.domain.models import (
+    AccessRules,
+    Availability,
+    GeoPoint,
+    Need,
+    Offer,
+    Source,
+)
 from vesta_api.repositories.database import create_database_engine
 
 
@@ -40,8 +47,10 @@ class JsonOfferRepository:
     def _to_offer(item: dict[str, object]) -> Offer:
         access = item["access"]
         source = item["source"]
+        location = item.get("location")
         assert isinstance(access, dict)
         assert isinstance(source, dict)
+        assert location is None or isinstance(location, dict)
 
         return Offer(
             id=str(item["id"]),
@@ -65,6 +74,19 @@ class JsonOfferRepository:
                 expires_at=_parse_datetime(str(source["expires_at"])),
                 verified_by=str(source["verified_by"]),
             ),
+            location=(
+                GeoPoint(
+                    latitude=float(location["latitude"]),
+                    longitude=float(location["longitude"]),
+                    address=(
+                        str(location["address"])
+                        if location.get("address")
+                        else None
+                    ),
+                )
+                if location is not None
+                else None
+            ),
             published=bool(item.get("published", False)),
             is_demo=bool(item.get("is_demo", False)),
         )
@@ -79,6 +101,8 @@ _LIST_OFFERS = text(
         offer.languages,
         offer.access_rules,
         offer.contact,
+        ST_Y(offer.location::geometry) AS latitude,
+        ST_X(offer.location::geometry) AS longitude,
         offer.availability::text AS availability,
         offer.published,
         offer.is_demo,
@@ -139,6 +163,19 @@ def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
             verified_at=row["verified_at"],
             expires_at=row["expires_at"],
             verified_by=str(row["verified_by"]),
+        ),
+        location=(
+            GeoPoint(
+                latitude=float(row["latitude"]),
+                longitude=float(row["longitude"]),
+                address=(
+                    str(contact["address"])
+                    if contact.get("address")
+                    else None
+                ),
+            )
+            if row["latitude"] is not None and row["longitude"] is not None
+            else None
         ),
         published=bool(row["published"]),
         is_demo=bool(row["is_demo"]),

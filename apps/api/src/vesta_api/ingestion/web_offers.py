@@ -35,6 +35,12 @@ class CatalogSource(BaseModel):
     evidence: list[str] = Field(min_length=2)
 
 
+class CatalogLocation(BaseModel):
+    address: str = Field(min_length=1)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+
 class CatalogOffer(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
@@ -48,6 +54,7 @@ class CatalogOffer(BaseModel):
     access: CatalogAccessRules
     availability: str
     contact_note: str
+    location: CatalogLocation | None = None
     source: CatalogSource
 
 
@@ -194,6 +201,7 @@ _UPSERT_OFFER = text(
         languages,
         access_rules,
         contact,
+        location,
         availability,
         published,
         is_demo,
@@ -208,6 +216,18 @@ _UPSERT_OFFER = text(
         :languages,
         CAST(:access_rules AS jsonb),
         CAST(:contact AS jsonb),
+        CASE
+            WHEN CAST(:latitude AS double precision) IS NULL
+                OR CAST(:longitude AS double precision) IS NULL
+            THEN NULL
+            ELSE ST_SetSRID(
+                ST_MakePoint(
+                    CAST(:longitude AS double precision),
+                    CAST(:latitude AS double precision)
+                ),
+                4326
+            )::geography
+        END,
         CAST(:availability AS offer_availability),
         true,
         true,
@@ -221,6 +241,7 @@ _UPSERT_OFFER = text(
         languages = EXCLUDED.languages,
         access_rules = EXCLUDED.access_rules,
         contact = EXCLUDED.contact,
+        location = EXCLUDED.location,
         availability = EXCLUDED.availability,
         published = true,
         is_demo = true,
@@ -361,7 +382,22 @@ def _store_offer(
                 "summary": offer.summary,
                 "languages": [language.lower() for language in offer.languages],
                 "access_rules": offer.access.model_dump_json(),
-                "contact": json.dumps({"note": offer.contact_note}),
+                "contact": json.dumps(
+                    {
+                        "note": offer.contact_note,
+                        "address": (
+                            offer.location.address
+                            if offer.location is not None
+                            else None
+                        ),
+                    }
+                ),
+                "latitude": (
+                    offer.location.latitude if offer.location is not None else None
+                ),
+                "longitude": (
+                    offer.location.longitude if offer.location is not None else None
+                ),
                 "availability": offer.availability,
             },
         )

@@ -1,0 +1,49 @@
+# ADR 0007: Freiwilliges Standort-Matching und Wegbeschreibung
+
+- Status: angenommen
+- Datum: 2026-07-27
+
+## Kontext
+
+Geeignete Angebote wurden bisher ausschliesslich nach fachlicher Eignung und
+Name sortiert. Obwohl `offers.location` bereits als PostGIS-Geography
+existiert, enthielten Domainmodell, Import und API keine Standortdaten.
+
+Eine präzise oder dauerhafte Speicherung des Aufenthaltsorts einer
+hilfesuchenden Person wäre für den Prototyp unverhältnismässig. Gleichzeitig
+soll die Nähe helfen, wenn mehrere Angebote fachlich gleich geeignet sind.
+
+## Entscheid
+
+Der Browser fragt den Standort nur nach einem ausdrücklichen Klick ab. Die
+Koordinaten werden auf drei Dezimalstellen gerundet, bei jedem relevanten
+API-Aufruf optional mitgesendet und weder in der Dialogsession noch in der
+Datenbank gespeichert.
+
+Sicherheits-, Zugangs-, Veröffentlichungs- und Aktualitätsregeln bleiben
+vorrangig. Erst bei identischem Eignungsscore sortiert die deterministisch
+berechnete Luftliniendistanz. Angebote ohne Standort bleiben sichtbar und
+folgen bei gleicher Eignung nach Angeboten mit berechenbarer Distanz.
+
+Angebotsadressen und -koordinaten werden als verifizierte öffentliche
+Katalogdaten importiert. Die Distanz wird lokal im Matching-Service mit der
+Haversine-Formel berechnet; ein externer Routing-Dienst ist nicht erforderlich.
+Der Wegbeschreibungslink führt zu Google Maps und enthält nur den öffentlichen
+Zielpunkt des Angebots, nie den Ausgangspunkt der suchenden Person.
+
+Standortkoordinaten und konkrete Distanzen werden weder an das AI-Modell
+übermittelt noch im AI- oder Workflow-Audit gespeichert. Das Workflow-Audit
+merkt lediglich, ob die optionale Standortfunktion verwendet wurde.
+
+## Konsequenzen
+
+- Ohne Standortfreigabe verhält sich das Matching wie bisher.
+- Die angezeigte Distanz ist ausdrücklich eine ungefähre Luftlinie und keine
+  Gehstrecke oder Zeitangabe.
+- Das bestehende PostGIS-Feld und `contact.address` genügen; es ist keine
+  zusätzliche Datenbankmigration erforderlich.
+- Für grössere Kataloge kann die Distanzberechnung später in eine räumliche
+  PostGIS-Abfrage verschoben werden, ohne den öffentlichen API-Vertrag zu
+  ändern.
+- Manuelle Ortseingabe, Radiusfilter und ein eigener Routing-Dienst sind nicht
+  Teil dieses Prototyps.

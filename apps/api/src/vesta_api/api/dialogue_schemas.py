@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from vesta_api.api.schemas import CandidateResponse
+from vesta_api.api.schemas import CandidateResponse, UserLocationInput
 from vesta_api.domain.models import Need
 
 
@@ -28,6 +28,7 @@ class StartDialogueRequest(BaseModel):
     need: Need
     language: str = Field(default="de", min_length=2, max_length=12)
     workflow_id: str | None = Field(default=None, min_length=8, max_length=200)
+    user_location: UserLocationInput | None = None
 
 
 class AnswerRequest(BaseModel):
@@ -36,6 +37,7 @@ class AnswerRequest(BaseModel):
     value: object | None = None
     unknown: bool = False
     declined: bool = False
+    user_location: UserLocationInput | None = None
 
 
 class QuestionOptionResponse(BaseModel):

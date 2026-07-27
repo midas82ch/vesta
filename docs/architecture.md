@@ -52,16 +52,20 @@ Matching ist nachvollziehbar und ohne Sprachmodell testbar:
 2. Bedarf und Zielgruppe prüfen
 3. harte Zugangskriterien prüfen
 4. Öffnungs- und Statusinformationen berücksichtigen
-5. verbleibende Angebote anhand begründbarer Kriterien sortieren
+5. verbleibende Angebote nach fachlicher Eignung sortieren
+6. bei gleicher Eignung optional die Luftliniendistanz berücksichtigen
 
-Jedes Ergebnis enthält passende Gründe sowie Unsicherheiten.
+Jedes Ergebnis enthält passende Gründe sowie Unsicherheiten. Der freiwillig
+freigegebene Standort verändert nie Sicherheits- oder Zugangskriterien und
+blendet weiter entfernte Angebote nicht aus (ADR 0007).
 
 ### Angebotsregister
 
 PostgreSQL ist die spätere führende Datenquelle. PostGIS unterstützt
 Entfernungssuchen; pgvector kann freigegebene Dokumente semantisch auffindbar
 machen. Das initiale Dateirepository erlaubt Entwicklung und Tests ohne
-Datenbank. Es enthält nur klar markierte Beispieldaten.
+Datenbank. Es enthält nur klar markierte Beispieldaten. Angebotsstandorte sind
+öffentliche, quellengeprüfte Katalogdaten.
 
 ### AI-Adapter
 
@@ -77,6 +81,10 @@ Aktualität sichtbar machen.
 - Freitext wird im MVP nicht dauerhaft gespeichert.
 - Logs enthalten technische IDs, keine vollständigen Eingaben.
 - Analyseereignisse bilden Bedarf und Ergebnis ab, nicht Personenprofile.
+- Ein optional freigegebener Browserstandort wird auf drei Dezimalstellen
+  gerundet, nur für die aktuelle Distanzberechnung verwendet und weder
+  gespeichert noch an das AI-Modell übermittelt. Auch konkrete Distanzen
+  werden nicht im Workflow-Audit abgelegt (ADR 0007).
 - Ausnahme: tatsächlich versuchte AI-Gateway-Interaktionen
   (Freitext-Interpretation, Fragen-Formulierung, Ergebnis-Erklärung) werden
   im Volltext protokolliert, um den KI-Entscheidungsprozess prüfbar zu

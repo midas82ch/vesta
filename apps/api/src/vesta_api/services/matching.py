@@ -1,11 +1,35 @@
+from math import atan2, cos, radians, sin, sqrt
+
 from vesta_api.domain.models import (
     Availability,
     Candidate,
+    GeoPoint,
     MatchQuery,
     MatchResult,
     Offer,
 )
 from vesta_api.repositories.offers import OfferRepository
+
+EARTH_RADIUS_METERS = 6_371_008.8
+
+
+def distance_in_meters(origin: GeoPoint, destination: GeoPoint) -> int:
+    """Return deterministic great-circle distance for the small MVP catalog."""
+
+    latitude_delta = radians(destination.latitude - origin.latitude)
+    longitude_delta = radians(destination.longitude - origin.longitude)
+    origin_latitude = radians(origin.latitude)
+    destination_latitude = radians(destination.latitude)
+
+    haversine = (
+        sin(latitude_delta / 2) ** 2
+        + cos(origin_latitude)
+        * cos(destination_latitude)
+        * sin(longitude_delta / 2) ** 2
+    )
+    haversine = min(1.0, max(0.0, haversine))
+    angular_distance = 2 * atan2(sqrt(haversine), sqrt(1 - haversine))
+    return round(EARTH_RADIUS_METERS * angular_distance)
 
 
 class MatchingService:
@@ -26,7 +50,17 @@ class MatchingService:
             if candidate is not None:
                 candidates.append(candidate)
 
-        candidates.sort(key=lambda candidate: (-candidate.score, candidate.offer.name))
+        if query.user_location is None:
+            candidates.sort(key=lambda candidate: (-candidate.score, candidate.offer.name))
+        else:
+            candidates.sort(
+                key=lambda candidate: (
+                    -candidate.score,
+                    candidate.distance_meters is None,
+                    candidate.distance_meters or 0,
+                    candidate.offer.name,
+                )
+            )
         return MatchResult(
             candidates=tuple(candidates),
             human_handoff_required=not candidates,
@@ -84,9 +118,16 @@ class MatchingService:
         if target_group_unknown:
             uncertainties.append("target_group_must_be_confirmed")
 
+        distance_meters = (
+            distance_in_meters(query.user_location, offer.location)
+            if query.user_location is not None and offer.location is not None
+            else None
+        )
+
         return Candidate(
             offer=offer,
             score=score,
             reasons=tuple(reasons),
             uncertainties=tuple(uncertainties),
+            distance_meters=distance_meters,
         )

@@ -44,6 +44,13 @@ class Source:
 
 
 @dataclass(frozen=True)
+class GeoPoint:
+    latitude: float
+    longitude: float
+    address: str | None = None
+
+
+@dataclass(frozen=True)
 class Offer:
     id: str
     name: str
@@ -54,6 +61,7 @@ class Offer:
     availability: Availability
     contact_note: str
     source: Source
+    location: GeoPoint | None = None
     published: bool = False
     is_demo: bool = False
 
@@ -67,6 +75,7 @@ class MatchQuery:
     has_identity_document: bool | None = None
     gender: str | None = None
     age: int | None = None
+    user_location: GeoPoint | None = None
     risk_flags: tuple[RiskFlag, ...] = ()
 
 
@@ -76,6 +85,7 @@ class Candidate:
     score: int
     reasons: tuple[str, ...]
     uncertainties: tuple[str, ...] = field(default_factory=tuple)
+    distance_meters: int | None = None
 
 
 @dataclass(frozen=True)

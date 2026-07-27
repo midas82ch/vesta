@@ -233,6 +233,7 @@ def _record_system_logic(
     *,
     workflow_log: WorkflowAuditLogRepository,
     locale: str,
+    location_used: bool,
 ) -> None:
     workflow_id = turn.state.session_id
     state_payload: dict[str, object] = {
@@ -248,6 +249,7 @@ def _record_system_logic(
             for attribute in turn.state.attributes
         ],
         "safety_status": turn.state.safety_status,
+        "location_used": location_used,
     }
 
     if turn.question is not None:
@@ -326,6 +328,26 @@ def _output_summary(response: DialogueTurnResponse) -> str:
     return "Antwort an die Person enthält derzeit kein passendes Angebot."
 
 
+def _audit_output_payload(
+    response: DialogueTurnResponse,
+    *,
+    location_used: bool,
+) -> dict[str, object]:
+    """Retain workflow shape without persisting location-derived distances."""
+
+    payload = response.model_dump(mode="json")
+    candidates = payload.get("candidates")
+    if isinstance(candidates, list):
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            candidate = item.get("candidate")
+            if isinstance(candidate, dict):
+                candidate.pop("distance_meters", None)
+    payload["location_used"] = location_used
+    return payload
+
+
 def _turn_response(
     turn: DialogueTurnResult,
     *,
@@ -333,8 +355,14 @@ def _turn_response(
     catalog: DialogueCatalogRepository,
     locale: str,
     workflow_log: WorkflowAuditLogRepository,
+    location_used: bool,
 ) -> DialogueTurnResponse:
-    _record_system_logic(turn, workflow_log=workflow_log, locale=locale)
+    _record_system_logic(
+        turn,
+        workflow_log=workflow_log,
+        locale=locale,
+        location_used=location_used,
+    )
     response = DialogueTurnResponse(
         session_id=turn.state.session_id,
         ai_mode=gateway.mode,
@@ -363,7 +391,7 @@ def _turn_response(
         stage="output",
         event_type="public_response_returned",
         summary=_output_summary(response),
-        payload=response.model_dump(mode="json"),
+        payload=_audit_output_payload(response, location_used=location_used),
     )
     return response
 
@@ -381,6 +409,11 @@ def start(
         need=payload.need,
         now=datetime.now(UTC),
         session_id=payload.workflow_id,
+        user_location=(
+            payload.user_location.to_domain()
+            if payload.user_location is not None
+            else None
+        ),
     )
     _record_workflow_event(
         workflow_log,
@@ -396,6 +429,7 @@ def start(
         catalog=catalog,
         locale=payload.language,
         workflow_log=workflow_log,
+        location_used=payload.user_location is not None,
     )
 
 
@@ -413,7 +447,14 @@ def answer(
     try:
         if payload.declined:
             turn = orchestrator.decline_attribute(
-                session_id=payload.session_id, key=question.attribute_key, now=now
+                session_id=payload.session_id,
+                key=question.attribute_key,
+                now=now,
+                user_location=(
+                    payload.user_location.to_domain()
+                    if payload.user_location is not None
+                    else None
+                ),
             )
         else:
             value = None if payload.unknown else payload.value
@@ -422,6 +463,11 @@ def answer(
                 key=question.attribute_key,
                 value=value,
                 now=now,
+                user_location=(
+                    payload.user_location.to_domain()
+                    if payload.user_location is not None
+                    else None
+                ),
             )
     except KeyError as error:
         raise HTTPException(
@@ -464,4 +510,5 @@ def answer(
         catalog=catalog,
         locale=turn.state.locale,
         workflow_log=workflow_log,
+        location_used=payload.user_location is not None,
     )

@@ -153,7 +153,15 @@ Schreibrechten ausschliesslich auf den Angebotstabellen.
 Quellseiten. Der Importer respektiert `robots.txt`, lädt höchstens 2 MB pro
 Seite und akzeptiert einen Datensatz nur, wenn alle hinterlegten
 Evidenzbegriffe weiterhin vorkommen. Er übernimmt keine freien Kapazitäten und
-markiert jeden Datensatz sichtbar als Test.
+markiert jeden Datensatz sichtbar als Test. Verifizierte Adressen werden mit
+einmalig geprüften Koordinaten in `offers.location` übernommen.
+
+Die öffentlichen Endpunkte `/v1/matches`, `/v1/dialogue/start` und
+`/v1/dialogue/answer` akzeptieren optional
+`user_location: {latitude, longitude}`. Vesta reduziert die Präzision auf drei
+Dezimalstellen, speichert den Standort nicht und verwendet ihn nur als
+Distanz-Tiebreaker zwischen gleich geeigneten Angeboten. Ergebnisse liefern
+additiv `distance_meters`, `offer.address` und `offer.directions_url`.
 
 Quellen ohne Datenbankzugriff prüfen:
 

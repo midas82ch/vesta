@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -133,6 +134,49 @@ class DialogueRoutesTest(unittest.TestCase):
             )
 
         self.assertEqual(404, response.status_code)
+
+    def test_location_is_accepted_but_not_retained_in_workflow_audit(self) -> None:
+        location = {"latitude": 46.948123, "longitude": 7.447456}
+        with TestClient(app) as client:
+            started = client.post(
+                "/v1/dialogue/start",
+                json={
+                    "need": "sleep_tonight",
+                    "language": "de",
+                    "user_location": location,
+                },
+            )
+            payload = started.json()
+            workflow_id = payload["session_id"]
+
+            for _ in range(10):
+                if payload["question"] is None:
+                    break
+                response = client.post(
+                    "/v1/dialogue/answer",
+                    json={
+                        "session_id": workflow_id,
+                        "question_key": payload["question"]["question_key"],
+                        "declined": True,
+                        "user_location": location,
+                    },
+                )
+                self.assertEqual(200, response.status_code)
+                payload = response.json()
+
+            events = app.state.workflow_audit_log.list_events(workflow_id)
+
+        serialized = json.dumps(
+            [event.payload for event in events],
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        self.assertNotIn("46.948", serialized)
+        self.assertNotIn("7.447", serialized)
+        self.assertNotIn("distance_meters", serialized)
+        self.assertTrue(
+            any(event.payload.get("location_used") is True for event in events)
+        )
 
 
 if __name__ == "__main__":

@@ -2,9 +2,12 @@ import sys
 import unittest
 from pathlib import Path
 
+from pydantic import ValidationError  # noqa: E402
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from vesta_api.ingestion.web_offers import (  # noqa: E402
+    CatalogLocation,
     evaluate_evidence,
     html_to_text,
     load_catalog,
@@ -27,6 +30,35 @@ class OfferCatalogTest(unittest.TestCase):
         self.assertTrue(
             all(str(offer.source.url).startswith("https://") for offer in catalog.offers)
         )
+        self.assertTrue(all(offer.location is not None for offer in catalog.offers))
+        self.assertEqual(
+            6,
+            len(
+                {
+                    offer.location.address
+                    for offer in catalog.offers
+                    if offer.location is not None
+                }
+            ),
+        )
+
+    def test_catalog_location_requires_a_complete_valid_point(self) -> None:
+        with self.assertRaises(ValidationError):
+            CatalogLocation.model_validate(
+                {
+                    "address": "Teststrasse 1, 3000 Bern",
+                    "latitude": 46.95,
+                }
+            )
+
+        with self.assertRaises(ValidationError):
+            CatalogLocation.model_validate(
+                {
+                    "address": "Teststrasse 1, 3000 Bern",
+                    "latitude": 91,
+                    "longitude": 7.44,
+                }
+            )
 
     def test_visible_text_excludes_scripts_and_styles(self) -> None:
         text = html_to_text(

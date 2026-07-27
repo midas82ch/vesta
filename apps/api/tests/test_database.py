@@ -96,7 +96,12 @@ class PostgresOfferMappingTest(unittest.TestCase):
                     "accepts_dogs": True,
                     "identity_document_required": False,
                 },
-                "contact": {"note": "Vorher anrufen."},
+                "contact": {
+                    "note": "Vorher anrufen.",
+                    "address": "Muristrasse 6, 3006 Bern",
+                },
+                "latitude": 46.944359,
+                "longitude": 7.459041,
                 "availability": "confirmed",
                 "source_label": "Testquelle",
                 "source_url": "https://example.org/source",
@@ -113,6 +118,9 @@ class PostgresOfferMappingTest(unittest.TestCase):
         self.assertEqual(Availability.CONFIRMED, offer.availability)
         self.assertTrue(offer.access.accepts_dogs)
         self.assertEqual("Vorher anrufen.", offer.contact_note)
+        assert offer.location is not None
+        self.assertEqual("Muristrasse 6, 3006 Bern", offer.location.address)
+        self.assertAlmostEqual(46.944359, offer.location.latitude)
         self.assertEqual(expires_at, offer.source.expires_at)
 
 

@@ -61,6 +61,10 @@ const de = {
   "results.originalLanguage": "Angebotsangaben im Original auf Deutsch",
   "results.checked": "Automatisch geprüft am {date}",
   "results.source": "Quelle",
+  "results.distance.meters": "ca. {distance} m Luftlinie",
+  "results.distance.kilometers": "ca. {distance} km Luftlinie",
+  "results.address": "Adresse",
+  "results.directions": "Wegbeschreibung in Google Maps",
   "results.handoff":
     "Wir haben kein verlässlich passendes Angebot gefunden. Eine Fachperson sollte die Situation übernehmen.",
   "results.disclaimer":
@@ -130,6 +134,10 @@ const de = {
     "Für eine Suche verarbeitet Vesta ausschliesslich die Angaben, die du im Formular auswählst: den gewählten Bereich, deine Sprache und optionale Angaben wie Hund, fehlender Ausweis, Zielgruppe, Alter oder Sicherheitshinweise. Diese Angaben werden nur für die einzelne Suche verwendet.",
   "privacy.scope.noAccount":
     "Vesta funktioniert ohne Konto. Deine Suche wird nicht als Dossier oder Profil gespeichert.",
+  "privacy.location.eyebrow": "Optionaler Standort",
+  "privacy.location.title": "Nur nach deiner ausdrücklichen Freigabe",
+  "privacy.location.text":
+    "Wenn du «Standort verwenden» auswählst, rundet Vesta die Browserposition auf ungefähr 100 Meter und verwendet sie nur zur Berechnung der Luftlinie und zur Sortierung gleich geeigneter Angebote. Die Position und die berechneten Distanzen werden weder gespeichert noch an das AI-Modell übermittelt. Der externe Google-Maps-Link enthält nur das öffentliche Ziel des Angebots, nicht deinen Ausgangspunkt.",
   "privacy.storage.eyebrow": "Speicherung",
   "privacy.storage.title": "Keine dauerhafte Speicherung deiner Suche",
   "privacy.storage.text":
@@ -194,6 +202,19 @@ const de = {
   "dialogue.interpretation.needApplied": "Erkannter Bereich: {need}",
   "dialogue.interpretation.confirmLegend": "Passt dieser Bereich?",
   "dialogue.needPicker.legend": "Wähle einen Bereich",
+  "dialogue.location.title": "Angebote in deiner Nähe",
+  "dialogue.location.text":
+    "Optional: Nutze deinen ungefähren Standort, um gleich geeignete Angebote nach Nähe zu sortieren.",
+  "dialogue.location.use": "Standort verwenden",
+  "dialogue.location.locating": "Standort wird bestimmt …",
+  "dialogue.location.active": "Der ungefähre Standort wird für diese Suche verwendet.",
+  "dialogue.location.remove": "Standort nicht mehr verwenden",
+  "dialogue.location.denied":
+    "Der Standort wurde nicht freigegeben. Du kannst ohne Standort fortfahren.",
+  "dialogue.location.timeout":
+    "Der Standort konnte nicht rechtzeitig bestimmt werden. Du kannst ohne Standort fortfahren.",
+  "dialogue.location.unavailable":
+    "Die Standortbestimmung ist in diesem Browser nicht verfügbar. Du kannst ohne Standort fortfahren.",
   "dialogue.start": "AI-Dialog starten",
   "dialogue.loading": "Wird verarbeitet …",
   "dialogue.progress.label": "Fortschritt im Hilfe-Dialog",
@@ -299,6 +320,10 @@ const fr: Record<MessageKey, string> = {
   "results.originalLanguage": "Informations originales de l’offre en allemand",
   "results.checked": "Vérification automatique le {date}",
   "results.source": "Source",
+  "results.distance.meters": "env. {distance} m à vol d’oiseau",
+  "results.distance.kilometers": "env. {distance} km à vol d’oiseau",
+  "results.address": "Adresse",
+  "results.directions": "Itinéraire dans Google Maps",
   "results.handoff":
     "Nous n’avons pas trouvé d’offre suffisamment fiable. Une personne spécialisée devrait reprendre la situation.",
   "results.disclaimer":
@@ -368,6 +393,10 @@ const fr: Record<MessageKey, string> = {
     "Pour une recherche, Vesta traite uniquement les informations que tu sélectionnes dans le formulaire : le domaine choisi, ta langue et des informations optionnelles comme un chien, l’absence de pièce d’identité, le groupe cible, l’âge ou des indications de sécurité. Ces informations ne servent qu’à cette recherche précise.",
   "privacy.scope.noAccount":
     "Vesta fonctionne sans compte. Ta recherche n’est pas enregistrée comme dossier ou profil.",
+  "privacy.location.eyebrow": "Localisation facultative",
+  "privacy.location.title": "Uniquement avec ton accord explicite",
+  "privacy.location.text":
+    "Si tu sélectionnes « Utiliser ma position », Vesta arrondit la position du navigateur à environ 100 mètres et l’utilise uniquement pour calculer la distance à vol d’oiseau et trier les offres de même pertinence. La position et les distances calculées ne sont ni enregistrées ni transmises au modèle d’IA. Le lien externe Google Maps contient uniquement la destination publique de l’offre, pas ton point de départ.",
   "privacy.storage.eyebrow": "Conservation",
   "privacy.storage.title": "Aucune conservation durable de ta recherche",
   "privacy.storage.text":
@@ -433,6 +462,20 @@ const fr: Record<MessageKey, string> = {
   "dialogue.interpretation.needApplied": "Domaine reconnu : {need}",
   "dialogue.interpretation.confirmLegend": "Ce domaine correspond-il ?",
   "dialogue.needPicker.legend": "Choisis un domaine",
+  "dialogue.location.title": "Offres près de toi",
+  "dialogue.location.text":
+    "Facultatif : utilise ta position approximative pour trier par proximité les offres de même pertinence.",
+  "dialogue.location.use": "Utiliser ma position",
+  "dialogue.location.locating": "Localisation en cours…",
+  "dialogue.location.active":
+    "La position approximative est utilisée pour cette recherche.",
+  "dialogue.location.remove": "Ne plus utiliser ma position",
+  "dialogue.location.denied":
+    "La position n’a pas été autorisée. Tu peux continuer sans localisation.",
+  "dialogue.location.timeout":
+    "La position n’a pas pu être déterminée à temps. Tu peux continuer sans localisation.",
+  "dialogue.location.unavailable":
+    "La localisation n’est pas disponible dans ce navigateur. Tu peux continuer sans localisation.",
   "dialogue.start": "Démarrer le dialogue AI",
   "dialogue.loading": "Traitement en cours …",
   "dialogue.progress.label": "Progression dans le dialogue d’aide",
@@ -536,6 +579,10 @@ const en: Record<MessageKey, string> = {
   "results.originalLanguage": "Original service information in German",
   "results.checked": "Automatically checked on {date}",
   "results.source": "Source",
+  "results.distance.meters": "approx. {distance} m straight-line distance",
+  "results.distance.kilometers": "approx. {distance} km straight-line distance",
+  "results.address": "Address",
+  "results.directions": "Directions in Google Maps",
   "results.handoff":
     "We could not find a reliably suitable service. A qualified professional should take over.",
   "results.disclaimer":
@@ -605,6 +652,10 @@ const en: Record<MessageKey, string> = {
     "For a search, Vesta only processes the details you choose in the form: the selected area, your language, and optional details such as a dog, missing identity document, target group, age or safety flags. These details are only used for that one search.",
   "privacy.scope.noAccount":
     "Vesta works without an account. Your search is not stored as a case file or profile.",
+  "privacy.location.eyebrow": "Optional location",
+  "privacy.location.title": "Only with your explicit permission",
+  "privacy.location.text":
+    "If you select “Use my location”, Vesta rounds the browser position to about 100 metres and uses it only to calculate straight-line distance and sort equally suitable services. The position and calculated distances are neither stored nor sent to the AI model. The external Google Maps link contains only the service’s public destination, not your starting point.",
   "privacy.storage.eyebrow": "Storage",
   "privacy.storage.title": "No lasting storage of your search",
   "privacy.storage.text":
@@ -669,6 +720,20 @@ const en: Record<MessageKey, string> = {
   "dialogue.interpretation.needApplied": "Recognized area: {need}",
   "dialogue.interpretation.confirmLegend": "Is this the right area?",
   "dialogue.needPicker.legend": "Choose an area",
+  "dialogue.location.title": "Services near you",
+  "dialogue.location.text":
+    "Optional: use your approximate location to sort equally suitable services by proximity.",
+  "dialogue.location.use": "Use my location",
+  "dialogue.location.locating": "Finding your location…",
+  "dialogue.location.active":
+    "Your approximate location is being used for this search.",
+  "dialogue.location.remove": "Stop using my location",
+  "dialogue.location.denied":
+    "Location permission was not granted. You can continue without location.",
+  "dialogue.location.timeout":
+    "Your location could not be found in time. You can continue without location.",
+  "dialogue.location.unavailable":
+    "Location is not available in this browser. You can continue without location.",
   "dialogue.start": "Start AI dialogue",
   "dialogue.loading": "Processing …",
   "dialogue.progress.label": "Progress through the support dialogue",
@@ -771,6 +836,10 @@ const ar: Record<MessageKey, string> = {
   "results.originalLanguage": "معلومات الخدمة الأصلية باللغة الألمانية",
   "results.checked": "تم التحقق آلياً في {date}",
   "results.source": "المصدر",
+  "results.distance.meters": "نحو {distance} م بخط مستقيم",
+  "results.distance.kilometers": "نحو {distance} كم بخط مستقيم",
+  "results.address": "العنوان",
+  "results.directions": "الاتجاهات في خرائط Google",
   "results.handoff":
     "لم نعثر على خدمة مناسبة بدرجة موثوقة. ينبغي أن يتولى شخص مختص متابعة الحالة.",
   "results.disclaimer":
@@ -840,6 +909,10 @@ const ar: Record<MessageKey, string> = {
     "عند إجراء بحث، تعالج فيستا فقط المعلومات التي تختارها في النموذج: المجال المختار، لغتك، ومعلومات اختيارية مثل وجود كلب، أو عدم وجود وثيقة هوية، أو الفئة المستهدفة، أو العمر، أو مؤشرات السلامة. تُستخدم هذه المعلومات فقط لهذا البحث.",
   "privacy.scope.noAccount":
     "تعمل فيستا من دون حساب. لا يُحفَظ بحثك كملف حالة أو ملف شخصي.",
+  "privacy.location.eyebrow": "الموقع الاختياري",
+  "privacy.location.title": "فقط بعد موافقتك الصريحة",
+  "privacy.location.text":
+    "إذا اخترت «استخدام موقعي»، تقرّب فيستا موقع المتصفح إلى نحو 100 متر وتستخدمه فقط لحساب المسافة بخط مستقيم وترتيب الخدمات المتساوية في الملاءمة. لا يُحفَظ الموقع ولا المسافات المحسوبة ولا تُرسل إلى نموذج الذكاء الاصطناعي. يحتوي رابط خرائط Google الخارجي فقط على الوجهة العامة للخدمة، وليس نقطة انطلاقك.",
   "privacy.storage.eyebrow": "التخزين",
   "privacy.storage.title": "لا يُحفَظ بحثك بشكل دائم",
   "privacy.storage.text":
@@ -903,6 +976,19 @@ const ar: Record<MessageKey, string> = {
   "dialogue.interpretation.needApplied": "المجال الذي تم التعرف عليه: {need}",
   "dialogue.interpretation.confirmLegend": "هل هذا هو المجال المناسب؟",
   "dialogue.needPicker.legend": "اختر مجالاً",
+  "dialogue.location.title": "خدمات قريبة منك",
+  "dialogue.location.text":
+    "اختياري: استخدم موقعك التقريبي لترتيب الخدمات المتساوية في الملاءمة حسب القرب.",
+  "dialogue.location.use": "استخدام موقعي",
+  "dialogue.location.locating": "جارٍ تحديد موقعك…",
+  "dialogue.location.active": "يُستخدم موقعك التقريبي لهذا البحث.",
+  "dialogue.location.remove": "إيقاف استخدام موقعي",
+  "dialogue.location.denied":
+    "لم تمنح إذن الموقع. يمكنك المتابعة من دون موقع.",
+  "dialogue.location.timeout":
+    "تعذر تحديد موقعك في الوقت المناسب. يمكنك المتابعة من دون موقع.",
+  "dialogue.location.unavailable":
+    "تحديد الموقع غير متاح في هذا المتصفح. يمكنك المتابعة من دون موقع.",
   "dialogue.start": "بدء حوار الذكاء الاصطناعي",
   "dialogue.loading": "جارٍ المعالجة…",
   "dialogue.progress.label": "التقدم في حوار المساعدة",
