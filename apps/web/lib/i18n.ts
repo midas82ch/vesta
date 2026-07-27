@@ -192,8 +192,6 @@ const de = {
   "dialogue.freeText.label": "Beschreibe kurz, was du brauchst",
   "dialogue.freeText.placeholder":
     "z. B. Ich brauche heute einen Schlafplatz mit meinem Hund",
-  "dialogue.freeText.privacy":
-    "Keine Namen, Adressen oder Kontaktdaten eingeben. Der Text wird zur Interpretation an OpenAI übermittelt.",
   "dialogue.freeText.submit": "Vorschlag prüfen",
   "dialogue.freeText.loading": "Wird geprüft …",
   "dialogue.interpretation.unclear":
@@ -449,8 +447,6 @@ const fr: Record<MessageKey, string> = {
   "dialogue.freeText.label": "Décris brièvement ce dont tu as besoin",
   "dialogue.freeText.placeholder":
     "p. ex. J'ai besoin d'une place pour dormir ce soir avec mon chien",
-  "dialogue.freeText.privacy":
-    "Ne saisis aucun nom, adresse ou coordonnée. Le texte est transmis à OpenAI pour interprétation.",
   "dialogue.freeText.submit": "Vérifier la proposition",
   "dialogue.freeText.loading": "Vérification en cours …",
   "dialogue.interpretation.unclear":
@@ -704,8 +700,6 @@ const en: Record<MessageKey, string> = {
   "offline.back": "Back to home",
   "dialogue.freeText.label": "Briefly describe what you need",
   "dialogue.freeText.placeholder": "e.g. I need a place to sleep tonight with my dog",
-  "dialogue.freeText.privacy":
-    "Do not enter names, addresses or contact details. The text is sent to OpenAI for interpretation.",
   "dialogue.freeText.submit": "Check suggestion",
   "dialogue.freeText.loading": "Checking …",
   "dialogue.interpretation.unclear":
@@ -957,8 +951,6 @@ const ar: Record<MessageKey, string> = {
   "offline.back": "العودة إلى الصفحة الرئيسية",
   "dialogue.freeText.label": "صف باختصار ما تحتاجه",
   "dialogue.freeText.placeholder": "مثال: أحتاج مكانًا للنوم الليلة مع كلبي",
-  "dialogue.freeText.privacy":
-    "لا تُدخل أسماء أو عناوين أو بيانات اتصال. يُرسل النص إلى OpenAI للتفسير.",
   "dialogue.freeText.submit": "التحقق من الاقتراح",
   "dialogue.freeText.loading": "جارٍ التحقق…",
   "dialogue.interpretation.unclear":

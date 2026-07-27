@@ -645,7 +645,6 @@ export function DialogueForm() {
             <>
               <form onSubmit={handleInterpret}>
                 <TextAreaField
-                  hint={t("dialogue.freeText.privacy")}
                   id="dialogue-free-text"
                   label={t("dialogue.freeText.label")}
                   maxLength={2000}
