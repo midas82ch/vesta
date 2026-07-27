@@ -476,7 +476,7 @@ export function DialogueForm() {
           ? t("dialogue.conversation.interpreted", {
               need: t(titleFor(result.need_key)),
             })
-          : t("dialogue.interpretation.unavailable"),
+          : t("dialogue.interpretation.unclear"),
       );
       setPhase("idle");
     } catch {
@@ -724,12 +724,6 @@ export function DialogueForm() {
           {turn.question.help_text && (
             <p className="dialogue-question-help">{turn.question.help_text}</p>
           )}
-          <p className="field-hint">
-            {turn.ai_mode === "live"
-              ? t("dialogue.aiBadge")
-              : t("dialogue.templateBadge")}
-          </p>
-
           <fieldset className="dialogue-answer">
             <legend>{t("dialogue.question.answerLegend")}</legend>
             {turn.question.answer_type === "single_choice" && (
@@ -847,11 +841,6 @@ export function DialogueForm() {
               )}
               {explanation ? (
                 <>
-                  <p className="field-hint">
-                    {explanation.source === "ai"
-                      ? t("dialogue.aiBadge")
-                      : t("dialogue.templateBadge")}
-                  </p>
                   <p lang={explanation.source === "ai" ? locale : "de"}>
                     {explanation.headline}
                   </p>

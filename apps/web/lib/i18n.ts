@@ -197,8 +197,8 @@ const de = {
     "Keine Namen, Adressen oder Kontaktdaten eingeben. Der Text wird zur Interpretation an OpenAI übermittelt.",
   "dialogue.freeText.submit": "Vorschlag prüfen",
   "dialogue.freeText.loading": "Wird geprüft …",
-  "dialogue.interpretation.unavailable":
-    "Automatische Texterkennung ist gerade nicht aktiv (Vorlagen-Modus). Wähle unten direkt einen Bereich für den AI-Dialog.",
+  "dialogue.interpretation.unclear":
+    "Ich konnte dein Anliegen noch keinem Bereich eindeutig zuordnen. Wähle unten den passenden Bereich.",
   "dialogue.interpretation.needApplied": "Erkannter Bereich: {need}",
   "dialogue.interpretation.confirmLegend": "Passt dieser Bereich?",
   "dialogue.needPicker.legend": "Wähle einen Bereich",
@@ -250,8 +250,6 @@ const de = {
   "dialogue.question.numberSubmit": "Bestätigen",
   "dialogue.result.eyebrow": "Erklärtes Ergebnis",
   "dialogue.result.title": "Das könnte dir weiterhelfen",
-  "dialogue.aiBadge": "AI-Erklärung",
-  "dialogue.templateBadge": "Standardtext · AI nicht aktiv",
   "dialogue.restart": "Neu starten",
   "dialogue.other.title": "Etwas anderes",
   "dialogue.other.detail": "Beschreibe es mit eigenen Worten",
@@ -457,8 +455,8 @@ const fr: Record<MessageKey, string> = {
     "Ne saisis aucun nom, adresse ou coordonnée. Le texte est transmis à OpenAI pour interprétation.",
   "dialogue.freeText.submit": "Vérifier la proposition",
   "dialogue.freeText.loading": "Vérification en cours …",
-  "dialogue.interpretation.unavailable":
-    "La reconnaissance automatique de texte n'est pas active actuellement (mode modèle). Choisis un domaine ci-dessous pour le dialogue AI.",
+  "dialogue.interpretation.unclear":
+    "Je n’ai pas encore pu attribuer clairement ta demande à un domaine. Choisis ci-dessous le domaine qui convient.",
   "dialogue.interpretation.needApplied": "Domaine reconnu : {need}",
   "dialogue.interpretation.confirmLegend": "Ce domaine correspond-il ?",
   "dialogue.needPicker.legend": "Choisis un domaine",
@@ -511,8 +509,6 @@ const fr: Record<MessageKey, string> = {
   "dialogue.question.numberSubmit": "Confirmer",
   "dialogue.result.eyebrow": "Résultat expliqué",
   "dialogue.result.title": "Voici ce qui pourrait t’aider",
-  "dialogue.aiBadge": "Explication AI",
-  "dialogue.templateBadge": "Texte standard · AI inactive",
   "dialogue.restart": "Recommencer",
   "dialogue.other.title": "Autre chose",
   "dialogue.other.detail": "Décris-le avec tes propres mots",
@@ -715,8 +711,8 @@ const en: Record<MessageKey, string> = {
     "Do not enter names, addresses or contact details. The text is sent to OpenAI for interpretation.",
   "dialogue.freeText.submit": "Check suggestion",
   "dialogue.freeText.loading": "Checking …",
-  "dialogue.interpretation.unavailable":
-    "Automatic text understanding is not active right now (template mode). Choose an area below to start the AI dialogue.",
+  "dialogue.interpretation.unclear":
+    "I could not yet match your request to one area with confidence. Choose the most suitable area below.",
   "dialogue.interpretation.needApplied": "Recognized area: {need}",
   "dialogue.interpretation.confirmLegend": "Is this the right area?",
   "dialogue.needPicker.legend": "Choose an area",
@@ -769,8 +765,6 @@ const en: Record<MessageKey, string> = {
   "dialogue.question.numberSubmit": "Confirm",
   "dialogue.result.eyebrow": "Explained result",
   "dialogue.result.title": "This may help you",
-  "dialogue.aiBadge": "AI explanation",
-  "dialogue.templateBadge": "Standard text · AI inactive",
   "dialogue.restart": "Start over",
   "dialogue.other.title": "Something else",
   "dialogue.other.detail": "Describe it in your own words",
@@ -971,8 +965,8 @@ const ar: Record<MessageKey, string> = {
     "لا تُدخل أسماء أو عناوين أو بيانات اتصال. يُرسل النص إلى OpenAI للتفسير.",
   "dialogue.freeText.submit": "التحقق من الاقتراح",
   "dialogue.freeText.loading": "جارٍ التحقق…",
-  "dialogue.interpretation.unavailable":
-    "التعرف التلقائي على النص غير مفعل حاليًا (وضع القوالب). اختر مجالاً أدناه لبدء حوار الذكاء الاصطناعي.",
+  "dialogue.interpretation.unclear":
+    "لم أتمكن بعد من تحديد المجال المناسب لطلبك بوضوح. اختر المجال الأنسب أدناه.",
   "dialogue.interpretation.needApplied": "المجال الذي تم التعرف عليه: {need}",
   "dialogue.interpretation.confirmLegend": "هل هذا هو المجال المناسب؟",
   "dialogue.needPicker.legend": "اختر مجالاً",
@@ -1024,8 +1018,6 @@ const ar: Record<MessageKey, string> = {
   "dialogue.question.numberSubmit": "تأكيد",
   "dialogue.result.eyebrow": "نتيجة موضحة",
   "dialogue.result.title": "قد تساعدك هذه العروض",
-  "dialogue.aiBadge": "توضيح الذكاء الاصطناعي",
-  "dialogue.templateBadge": "نص قياسي · الذكاء الاصطناعي غير مفعل",
   "dialogue.restart": "البدء من جديد",
   "dialogue.other.title": "شيء آخر",
   "dialogue.other.detail": "صفه بكلماتك الخاصة",
