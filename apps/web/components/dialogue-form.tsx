@@ -105,6 +105,7 @@ type ConversationMessage = {
 const OTHER_NEED_VALUE = "__other__";
 const UNKNOWN_ANSWER_VALUE = "__unknown__";
 const DECLINED_ANSWER_VALUE = "__declined__";
+const ADULT_AGE_THRESHOLD = 18;
 
 function formatDistance(
   meters: number,
@@ -489,7 +490,9 @@ export function DialogueForm() {
     setNumberValue("");
     const responseMessage = appendMessage(
       "vesta",
-      result.question?.text ?? t("dialogue.conversation.resultsReady"),
+      result.question
+        ? controlledQuestionText(result.question)
+        : t("dialogue.conversation.resultsReady"),
     );
     setActiveQuestionId(result.question ? responseMessage.id : null);
     setPhase(result.question ? "question" : "result");
@@ -534,10 +537,60 @@ export function DialogueForm() {
   }
 
   function skipOptions(question: RenderedQuestion): ChoiceOption[] {
+    if (
+      question.attribute_key === "person.gender" ||
+      question.attribute_key === "person.age"
+    ) {
+      return [
+        {
+          value: DECLINED_ANSWER_VALUE,
+          label: t("dialogue.fit.decline"),
+        },
+      ];
+    }
+
     return [
       { value: UNKNOWN_ANSWER_VALUE, label: question.unknown_label },
       { value: DECLINED_ANSWER_VALUE, label: question.decline_label },
     ];
+  }
+
+  function controlledQuestionText(question: RenderedQuestion) {
+    if (question.attribute_key === "person.gender") {
+      return t("dialogue.fit.gender.question");
+    }
+    if (question.attribute_key === "person.age") {
+      return t("dialogue.fit.age.question");
+    }
+    return question.text;
+  }
+
+  function controlledQuestionHelp(question: RenderedQuestion) {
+    if (question.attribute_key === "person.gender") {
+      return t("dialogue.fit.gender.help");
+    }
+    if (question.attribute_key === "person.age") {
+      return t("dialogue.fit.age.help");
+    }
+    return question.help_text;
+  }
+
+  function controlledQuestionOptions(
+    question: RenderedQuestion,
+  ): ChoiceOption[] | null {
+    if (question.attribute_key === "person.gender") {
+      return [
+        { value: "finta", label: t("dialogue.fit.gender.yes") },
+        { value: "other", label: t("dialogue.fit.gender.no") },
+      ];
+    }
+    if (question.attribute_key === "person.age") {
+      return [
+        { value: "adult", label: t("dialogue.fit.age.adult") },
+        { value: "minor", label: t("dialogue.fit.age.minor") },
+      ];
+    }
+    return null;
   }
 
   function handleAnswerSelect(value: string) {
@@ -555,6 +608,31 @@ export function DialogueForm() {
         value === "yes"
           ? t("dialogue.question.yes")
           : t("dialogue.question.no"),
+      );
+      return;
+    }
+    if (turn?.question?.attribute_key === "person.age") {
+      const selectedOption = controlledQuestionOptions(turn.question)?.find(
+        (option) => option.value === value,
+      );
+      submitAnswer(
+        {
+          value:
+            value === "adult"
+              ? ADULT_AGE_THRESHOLD
+              : ADULT_AGE_THRESHOLD - 1,
+        },
+        typeof selectedOption?.label === "string" ? selectedOption.label : value,
+      );
+      return;
+    }
+    if (turn?.question?.attribute_key === "person.gender") {
+      const selectedOption = controlledQuestionOptions(turn.question)?.find(
+        (option) => option.value === value,
+      );
+      submitAnswer(
+        { value },
+        typeof selectedOption?.label === "string" ? selectedOption.label : value,
       );
       return;
     }
@@ -719,12 +797,25 @@ export function DialogueForm() {
             headingRef={responseHeadingRef}
             messages={conversation}
           />
-          {turn.question.help_text && (
-            <p className="dialogue-question-help">{turn.question.help_text}</p>
+          {controlledQuestionHelp(turn.question) && (
+            <p className="dialogue-question-help">
+              {controlledQuestionHelp(turn.question)}
+            </p>
           )}
           <fieldset className="dialogue-answer">
             <legend>{t("dialogue.question.answerLegend")}</legend>
-            {turn.question.answer_type === "single_choice" && (
+            {controlledQuestionOptions(turn.question) && (
+              <ChoiceList
+                onSelect={handleAnswerSelect}
+                options={[
+                  ...(controlledQuestionOptions(turn.question) ?? []),
+                  ...skipOptions(turn.question),
+                ]}
+              />
+            )}
+
+            {turn.question.answer_type === "single_choice" &&
+              !controlledQuestionOptions(turn.question) && (
               <ChoiceList
                 onSelect={handleAnswerSelect}
                 options={[
@@ -735,9 +826,10 @@ export function DialogueForm() {
                   ...skipOptions(turn.question),
                 ]}
               />
-            )}
+              )}
 
-            {turn.question.answer_type === "yes_no_unknown" && (
+            {turn.question.answer_type === "yes_no_unknown" &&
+              !controlledQuestionOptions(turn.question) && (
               <ChoiceList
                 onSelect={handleAnswerSelect}
                 options={[
@@ -746,9 +838,10 @@ export function DialogueForm() {
                   ...skipOptions(turn.question),
                 ]}
               />
-            )}
+              )}
 
-            {turn.question.answer_type === "number" && (
+            {turn.question.answer_type === "number" &&
+              !controlledQuestionOptions(turn.question) && (
               <>
                 <form
                   onSubmit={(event) => {
@@ -776,7 +869,7 @@ export function DialogueForm() {
                   options={skipOptions(turn.question)}
                 />
               </>
-            )}
+              )}
           </fieldset>
         </section>
       )}

@@ -245,6 +245,19 @@ const de = {
   "dialogue.question.no": "Nein",
   "dialogue.question.numberLabel": "Ihre Antwort",
   "dialogue.question.numberSubmit": "Bestätigen",
+  "dialogue.fit.gender.question":
+    "Kommt für dich ein Angebot speziell für Frauen und FINTA-Personen infrage?",
+  "dialogue.fit.gender.help":
+    "Einige Unterkünfte sind ausschließlich für Frauen und FINTA-Personen zugänglich.",
+  "dialogue.fit.gender.yes": "Ja, das passt für mich",
+  "dialogue.fit.gender.no":
+    "Nein, ich suche ein allgemein zugängliches Angebot",
+  "dialogue.fit.age.question": "Geht es um eine volljährige Person?",
+  "dialogue.fit.age.help":
+    "Einige Schlafangebote sind erst ab 18 Jahren zugänglich.",
+  "dialogue.fit.age.adult": "Ja, 18 Jahre oder älter",
+  "dialogue.fit.age.minor": "Nein, unter 18 Jahre",
+  "dialogue.fit.decline": "Möchte ich nicht angeben",
   "dialogue.result.eyebrow": "Erklärtes Ergebnis",
   "dialogue.result.title": "Das könnte dir weiterhelfen",
   "dialogue.restart": "Neu starten",
@@ -501,6 +514,19 @@ const fr: Record<MessageKey, string> = {
   "dialogue.question.no": "Non",
   "dialogue.question.numberLabel": "Votre réponse",
   "dialogue.question.numberSubmit": "Confirmer",
+  "dialogue.fit.gender.question":
+    "Une offre spécialement destinée aux femmes et aux personnes FINTA te convient-elle ?",
+  "dialogue.fit.gender.help":
+    "Certains hébergements sont exclusivement accessibles aux femmes et aux personnes FINTA.",
+  "dialogue.fit.gender.yes": "Oui, cela me convient",
+  "dialogue.fit.gender.no": "Non, je cherche une offre accessible à tous",
+  "dialogue.fit.age.question":
+    "La recherche concerne-t-elle une personne majeure ?",
+  "dialogue.fit.age.help":
+    "Certains hébergements ne sont accessibles qu’à partir de 18 ans.",
+  "dialogue.fit.age.adult": "Oui, 18 ans ou plus",
+  "dialogue.fit.age.minor": "Non, moins de 18 ans",
+  "dialogue.fit.decline": "Je préfère ne pas l’indiquer",
   "dialogue.result.eyebrow": "Résultat expliqué",
   "dialogue.result.title": "Voici ce qui pourrait t’aider",
   "dialogue.restart": "Recommencer",
@@ -754,6 +780,18 @@ const en: Record<MessageKey, string> = {
   "dialogue.question.no": "No",
   "dialogue.question.numberLabel": "Your answer",
   "dialogue.question.numberSubmit": "Confirm",
+  "dialogue.fit.gender.question":
+    "Would a service specifically for women and FINTA people suit you?",
+  "dialogue.fit.gender.help":
+    "Some shelters are exclusively available to women and FINTA people.",
+  "dialogue.fit.gender.yes": "Yes, that suits me",
+  "dialogue.fit.gender.no": "No, I need a generally accessible service",
+  "dialogue.fit.age.question": "Is the search for an adult?",
+  "dialogue.fit.age.help":
+    "Some overnight services are only available from the age of 18.",
+  "dialogue.fit.age.adult": "Yes, aged 18 or older",
+  "dialogue.fit.age.minor": "No, under 18",
+  "dialogue.fit.decline": "Prefer not to say",
   "dialogue.result.eyebrow": "Explained result",
   "dialogue.result.title": "This may help you",
   "dialogue.restart": "Start over",
@@ -1004,6 +1042,18 @@ const ar: Record<MessageKey, string> = {
   "dialogue.question.no": "لا",
   "dialogue.question.numberLabel": "إجابتك",
   "dialogue.question.numberSubmit": "تأكيد",
+  "dialogue.fit.gender.question":
+    "هل يناسبك عرض مخصص للنساء ولأشخاص FINTA؟",
+  "dialogue.fit.gender.help":
+    "بعض أماكن الإيواء متاحة حصريًا للنساء ولأشخاص FINTA.",
+  "dialogue.fit.gender.yes": "نعم، هذا يناسبني",
+  "dialogue.fit.gender.no": "لا، أبحث عن عرض متاح للجميع",
+  "dialogue.fit.age.question": "هل البحث يخص شخصًا بالغًا؟",
+  "dialogue.fit.age.help":
+    "بعض أماكن المبيت متاحة فقط لمن يبلغون 18 عامًا أو أكثر.",
+  "dialogue.fit.age.adult": "نعم، 18 عامًا أو أكثر",
+  "dialogue.fit.age.minor": "لا، أقل من 18 عامًا",
+  "dialogue.fit.decline": "أفضل عدم ذكر ذلك",
   "dialogue.result.eyebrow": "نتيجة موضحة",
   "dialogue.result.title": "قد تساعدك هذه العروض",
   "dialogue.restart": "البدء من جديد",
