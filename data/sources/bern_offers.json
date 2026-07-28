@@ -1,8 +1,8 @@
 {
-  "catalog_version": 1,
+  "catalog_version": 2,
   "offers": [
     {
-      "slug": "test-passantenheim-bern",
+      "slug": "passantenheim-bern",
       "organization_key": "heilsarmee-schweiz",
       "organization_name": "Stiftung Heilsarmee Schweiz",
       "name": "Passantenheim Bern",
@@ -35,7 +35,7 @@
       }
     },
     {
-      "slug": "test-finta-notschlafstelle-bern",
+      "slug": "finta-notschlafstelle-bern",
       "organization_key": "heilsarmee-schweiz",
       "organization_name": "Stiftung Heilsarmee Schweiz",
       "name": "Frauen-/FINTA-Notschlafstelle Bern",
@@ -68,7 +68,7 @@
       }
     },
     {
-      "slug": "test-contact-anlaufstelle-bern",
+      "slug": "contact-anlaufstelle-bern",
       "organization_key": "contact-suchthilfe",
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT Anlaufstelle Bern",
@@ -101,7 +101,7 @@
       }
     },
     {
-      "slug": "test-contact-la-gare-bern",
+      "slug": "contact-la-gare-bern",
       "organization_key": "contact-suchthilfe",
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT La Gare",
@@ -134,7 +134,7 @@
       }
     },
     {
-      "slug": "test-wohnberatung-bern",
+      "slug": "wohnberatung-bern",
       "organization_key": "stadt-bern-heilsarmee",
       "organization_name": "Stadt Bern und Stiftung Heilsarmee Schweiz",
       "name": "Wohnberatung Bern",
@@ -167,7 +167,7 @@
       }
     },
     {
-      "slug": "test-hope-point-bern",
+      "slug": "hope-point-bern",
       "organization_key": "hope-point-bern",
       "organization_name": "HOPE POINT Bern",
       "name": "HOPE POINT Bern",
@@ -201,7 +201,7 @@
       }
     },
     {
-      "slug": "test-contact-suchtbehandlung-bern",
+      "slug": "contact-suchtbehandlung-bern",
       "organization_key": "contact-suchthilfe",
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT Suchtbehandlung Bern",

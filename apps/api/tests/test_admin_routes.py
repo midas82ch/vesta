@@ -349,7 +349,7 @@ class AdminRoutesTest(unittest.TestCase):
         self.ingestion_runs.add(
             IngestionRun(
                 id="run-1",
-                offer_slug="test-passantenheim-bern",
+                offer_slug="passantenheim-bern",
                 source_url="https://example.org/passantenheim",
                 status="imported",
                 http_status=200,

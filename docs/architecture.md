@@ -69,7 +69,9 @@ Datenbank. Es enthält nur klar markierte Beispieldaten. Angebotsstandorte sind
 
 Die über `data/sources/bern_offers.json` automatisiert eingelesenen Angebote
 sind seit dem 27.07.2026 einzeln verifiziert (nicht mehr pauschal als
-Testdaten markiert, `is_demo = false`). Ein täglicher systemd-Timer
+Testdaten markiert, `is_demo = false`). Ihre Slugs tragen seit der Migration
+`20260728_0008` auch keinen historischen `test-`-Präfix mehr. Ein täglicher
+systemd-Timer
 (`infra/systemd/vesta-offer-ingest.timer`) prüft die hinterlegten
 Bestätigungssätze auf den Quell-Webseiten erneut und hält die Datenbank
 aktuell; die Lauf-Historie ist im Adminbereich unter „Angebots-Prüfung"

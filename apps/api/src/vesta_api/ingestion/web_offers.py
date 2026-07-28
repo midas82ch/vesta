@@ -11,10 +11,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
-from uuid import NAMESPACE_URL, uuid4, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
-from sqlalchemy import Engine, text
+from sqlalchemy import Connection, Engine, text
 
 USER_AGENT = "VestaPrototypeOfferVerifier/0.2 (+https://www.vesta-app.ch)"
 # Immutable UUID namespace used by already imported records. This is an
@@ -191,6 +191,16 @@ _UPSERT_ORGANIZATION = text(
     """
 )
 
+_FIND_EXISTING_OFFER_ID = text(
+    """
+    SELECT id
+    FROM offers
+    WHERE slug IN (:slug, :legacy_slug)
+    ORDER BY CASE WHEN slug = :slug THEN 0 ELSE 1 END
+    LIMIT 1
+    """
+)
+
 _UPSERT_OFFER = text(
     """
     INSERT INTO offers (
@@ -346,6 +356,20 @@ def _record_failed_run(
         )
 
 
+def _resolve_offer_id(connection: Connection, slug: str) -> UUID:
+    legacy_slug = slug if slug.startswith("test-") else f"test-{slug}"
+    existing_id = connection.execute(
+        _FIND_EXISTING_OFFER_ID,
+        {"slug": slug, "legacy_slug": legacy_slug},
+    ).scalar_one_or_none()
+    if existing_id is not None:
+        return existing_id
+    return uuid5(
+        NAMESPACE_URL,
+        f"{LEGACY_ID_NAMESPACE}/offers/{slug}",
+    )
+
+
 def _store_offer(
     engine: Engine,
     offer: CatalogOffer,
@@ -356,19 +380,15 @@ def _store_offer(
         NAMESPACE_URL,
         f"{LEGACY_ID_NAMESPACE}/organizations/{offer.organization_key}",
     )
-    offer_id = uuid5(
-        NAMESPACE_URL,
-        f"{LEGACY_ID_NAMESPACE}/offers/{offer.slug}",
-    )
-    verification_id = uuid5(
-        NAMESPACE_URL,
-        (
-            f"{LEGACY_ID_NAMESPACE}/verifications/"
-            f"{offer.slug}/{page.content_sha256}"
-        ),
-    )
-
     with engine.begin() as connection:
+        offer_id = _resolve_offer_id(connection, offer.slug)
+        verification_id = uuid5(
+            NAMESPACE_URL,
+            (
+                f"{LEGACY_ID_NAMESPACE}/verifications/"
+                f"{offer.slug}/{page.content_sha256}"
+            ),
+        )
         connection.execute(
             _UPSERT_ORGANIZATION,
             {"id": organization_id, "name": offer.organization_name},
