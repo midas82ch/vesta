@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from vesta_api.api.admin_routes import (  # noqa: E402
     admin_login_attempt_store,
+    admin_offer_repository,
     admin_session_store,
     admin_user_repository,
     ai_audit_log_repository,
@@ -29,6 +30,7 @@ from vesta_api.repositories.ai_audit_log import InMemoryAiAuditLogRepository  # 
 from vesta_api.repositories.ingestion_runs import (  # noqa: E402
     InMemoryIngestionRunRepository,
 )
+from vesta_api.repositories.offers import JsonOfferRepository  # noqa: E402
 from vesta_api.repositories.workflow_audit_log import (  # noqa: E402
     InMemoryWorkflowAuditLogRepository,
 )
@@ -49,6 +51,9 @@ class AdminRoutesTest(unittest.TestCase):
         self.audit_log = InMemoryAiAuditLogRepository()
         self.workflow_log = InMemoryWorkflowAuditLogRepository()
         self.ingestion_runs = InMemoryIngestionRunRepository()
+        self.offers = JsonOfferRepository(
+            Path(__file__).resolve().parents[3] / "data" / "seed" / "offers.example.json"
+        )
         self.sessions = AdminSessionStore()
         self.attempts = AdminLoginAttemptStore()
 
@@ -60,6 +65,7 @@ class AdminRoutesTest(unittest.TestCase):
             lambda: self.workflow_log
         )
         app.dependency_overrides[ingestion_run_repository] = lambda: self.ingestion_runs
+        app.dependency_overrides[admin_offer_repository] = lambda: self.offers
 
     def tearDown(self) -> None:
         app.dependency_overrides.clear()
@@ -433,6 +439,61 @@ class AdminRoutesTest(unittest.TestCase):
             for query in ("limit=0", "limit=201", "offset=-1", "status=unknown"):
                 with self.subTest(query=query):
                     response = client.get(f"/v1/admin/ingestion-runs?{query}")
+                    self.assertEqual(422, response.status_code)
+
+    def test_offers_require_a_session(self) -> None:
+        with TestClient(app) as client:
+            response = client.get("/v1/admin/offers")
+
+        self.assertEqual(401, response.status_code)
+
+    def test_login_then_list_all_offers(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.get("/v1/admin/offers")
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(3, payload["total"])
+        self.assertEqual(50, payload["limit"])
+        self.assertEqual(0, payload["offset"])
+        self.assertEqual(3, len(payload["offers"]))
+        offer = payload["offers"][0]
+        self.assertEqual("demo-sleep", offer["id"])
+        self.assertEqual(["sleep_tonight"], offer["needs"])
+        self.assertTrue(offer["published"])
+        self.assertTrue(offer["is_demo"])
+        self.assertEqual("Vesta Testfixture", offer["source_label"])
+
+    def test_offers_support_pagination(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.get("/v1/admin/offers?limit=1&offset=1")
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(3, payload["total"])
+        self.assertEqual(1, payload["limit"])
+        self.assertEqual(1, payload["offset"])
+        self.assertEqual(1, len(payload["offers"]))
+        self.assertEqual("demo-basic-needs", payload["offers"][0]["id"])
+
+    def test_offers_reject_invalid_pagination(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+
+            for query in ("limit=0", "limit=201", "offset=-1"):
+                with self.subTest(query=query):
+                    response = client.get(f"/v1/admin/offers?{query}")
                     self.assertEqual(422, response.status_code)
 
 

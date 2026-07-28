@@ -87,3 +87,29 @@ class IngestionRunResponse(BaseModel):
 
 class IngestionRunListResponse(BaseModel):
     runs: list[IngestionRunResponse]
+
+
+class AdminOfferResponse(BaseModel):
+    id: str
+    slug: str | None
+    name: str
+    organization_name: str | None
+    summary: str
+    needs: list[str]
+    languages: list[str]
+    availability: str
+    published: bool
+    is_demo: bool
+    contact_note: str
+    address: str | None
+    source_label: str
+    source_url: str | None
+    verified_at: datetime
+    updated_at: datetime | None
+
+
+class AdminOfferListResponse(BaseModel):
+    offers: list[AdminOfferResponse]
+    total: int
+    limit: int
+    offset: int

@@ -88,7 +88,9 @@ class PostgresOfferMappingTest(unittest.TestCase):
         offer = _postgres_row_to_offer(
             {
                 "id": "9c995262-bffd-4c94-8d1e-dc260dd94bea",
+                "slug": "testangebot",
                 "name": "Testangebot",
+                "organization_name": "Testorganisation",
                 "summary": "Nur für den Test.",
                 "needs": ["sleep_tonight"],
                 "languages": ["DE", "fr"],
@@ -110,9 +112,13 @@ class PostgresOfferMappingTest(unittest.TestCase):
                 "expires_at": expires_at,
                 "published": True,
                 "is_demo": False,
+                "updated_at": verified_at,
             }
         )
 
+        self.assertEqual("testangebot", offer.slug)
+        self.assertEqual("Testorganisation", offer.organization_name)
+        self.assertEqual(verified_at, offer.updated_at)
         self.assertEqual((Need.SLEEP_TONIGHT,), offer.needs)
         self.assertEqual(("de", "fr"), offer.languages)
         self.assertEqual(Availability.CONFIRMED, offer.availability)

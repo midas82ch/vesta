@@ -89,6 +89,17 @@ class JsonOfferRepository:
             ),
             published=bool(item.get("published", False)),
             is_demo=bool(item.get("is_demo", False)),
+            slug=str(item["slug"]) if item.get("slug") else None,
+            organization_name=(
+                str(item["organization_name"])
+                if item.get("organization_name")
+                else None
+            ),
+            updated_at=(
+                _parse_datetime(str(item["updated_at"]))
+                if item.get("updated_at")
+                else None
+            ),
         )
 
 
@@ -96,6 +107,7 @@ _LIST_OFFERS = text(
     """
     SELECT
         offer.id::text AS id,
+        offer.slug,
         offer.name,
         offer.summary,
         offer.languages,
@@ -106,6 +118,8 @@ _LIST_OFFERS = text(
         offer.availability::text AS availability,
         offer.published,
         offer.is_demo,
+        offer.updated_at,
+        organization.name AS organization_name,
         categories.needs,
         verification.source_label,
         verification.source_url,
@@ -113,6 +127,7 @@ _LIST_OFFERS = text(
         verification.verified_at,
         verification.expires_at
     FROM offers AS offer
+    JOIN organizations AS organization ON organization.id = offer.organization_id
     JOIN LATERAL (
         SELECT
             source_label,
@@ -179,6 +194,9 @@ def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
         ),
         published=bool(row["published"]),
         is_demo=bool(row["is_demo"]),
+        slug=str(row["slug"]),
+        organization_name=str(row["organization_name"]),
+        updated_at=row["updated_at"],
     )
 
 

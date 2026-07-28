@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 
 from vesta_api.api.admin_schemas import (
     AdminLoginRequest,
+    AdminOfferListResponse,
+    AdminOfferResponse,
     AiAuditEntryDetailResponse,
     AiAuditEntrySummaryResponse,
     AiAuditLogListResponse,
@@ -22,6 +24,7 @@ from vesta_api.domain.ingestion_models import IngestionStatus
 from vesta_api.repositories.admin_users import AdminUserRepository
 from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
 from vesta_api.repositories.ingestion_runs import IngestionRunRepository
+from vesta_api.repositories.offers import OfferRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.security import (
     SESSION_COOKIE_NAME,
@@ -58,6 +61,10 @@ def workflow_audit_log_repository(request: Request) -> WorkflowAuditLogRepositor
 
 def ingestion_run_repository(request: Request) -> IngestionRunRepository:
     return request.app.state.ingestion_runs
+
+
+def admin_offer_repository(request: Request) -> OfferRepository:
+    return request.app.state.offer_repository
 
 
 def require_admin_session(
@@ -373,4 +380,41 @@ def list_ingestion_runs(
             )
             for run in runs.list_runs(limit=limit, offset=offset, status=status_filter)
         ]
+    )
+
+
+@router.get("/offers", response_model=AdminOfferListResponse)
+def list_admin_offers(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    offers: Annotated[OfferRepository, Depends(admin_offer_repository)],
+    limit: Annotated[int, Query(ge=1, le=MAX_LIST_LIMIT)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> AdminOfferListResponse:
+    all_offers = offers.list_offers()
+    selected_offers = all_offers[offset : offset + limit]
+    return AdminOfferListResponse(
+        offers=[
+            AdminOfferResponse(
+                id=offer.id,
+                slug=offer.slug,
+                name=offer.name,
+                organization_name=offer.organization_name,
+                summary=offer.summary,
+                needs=[need.value for need in offer.needs],
+                languages=list(offer.languages),
+                availability=offer.availability.value,
+                published=offer.published,
+                is_demo=offer.is_demo,
+                contact_note=offer.contact_note,
+                address=offer.location.address if offer.location is not None else None,
+                source_label=offer.source.label,
+                source_url=offer.source.url,
+                verified_at=offer.source.verified_at,
+                updated_at=offer.updated_at,
+            )
+            for offer in selected_offers
+        ],
+        total=len(all_offers),
+        limit=limit,
+        offset=offset,
     )

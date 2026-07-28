@@ -67,6 +67,9 @@ class Offer:
     location: GeoPoint | None = None
     published: bool = False
     is_demo: bool = False
+    slug: str | None = None
+    organization_name: str | None = None
+    updated_at: datetime | None = None
 
 
 @dataclass(frozen=True)
