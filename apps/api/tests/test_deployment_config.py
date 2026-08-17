@@ -32,6 +32,19 @@ class ReleaseConfigurationTest(unittest.TestCase):
 
         self.assertEqual(3, compose.count("image: vesta-api:latest"))
 
+    def test_public_locales_replace_standard_arabic_with_darija(self) -> None:
+        i18n = (REPOSITORY_ROOT / "apps" / "web" / "lib" / "i18n.ts").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            '["de", "fr", "en", "es", "pt", "ary"] as const',
+            i18n,
+        )
+        self.assertIn('normalized === "ar"', i18n)
+        self.assertIn('return "ary"', i18n)
+        self.assertIn('locale === "ary" ? "rtl" : "ltr"', i18n)
+
 
 if __name__ == "__main__":
     unittest.main()

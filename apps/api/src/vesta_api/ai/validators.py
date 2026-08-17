@@ -12,7 +12,9 @@ _FORBIDDEN_PHRASES: dict[str, tuple[str, ...]] = {
     "de": ("ist reserviert", "garantiert", "sicher einen platz", "ist zugesichert"),
     "fr": ("est réservé", "garanti", "une place assurée"),
     "en": ("is reserved", "guaranteed", "a place is assured"),
-    "ar": ("محجوز", "مضمون"),
+    "es": ("está reservada", "garantizado", "plaza asegurada", "plaza garantizada"),
+    "pt": ("está reservado", "garantido", "lugar assegurado", "lugar garantido"),
+    "ary": ("محجوزة", "مضمون", "البلاصة مضمونة", "بلاصة أكيدة"),
 }
 
 

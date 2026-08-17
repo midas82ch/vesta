@@ -11,6 +11,7 @@ from vesta_api.ai.live_gateway import (
     _bundle_payload,
     _describe_catalog,
 )
+from vesta_api.ai.locales import ai_locale_name
 from vesta_api.domain.ai_models import (
     AttributeProposal,
     ExplanationReason,
@@ -83,7 +84,7 @@ class OpenAiGateway:
         payload = self._create(
             system=_INTERPRETATION_SYSTEM,
             user=(
-                f"Sprache: {locale}\n\n"
+                f"Sprache: {ai_locale_name(locale)}\n\n"
                 f"{_describe_catalog(needs, attributes)}\n\n"
                 f"Freitext der Person: {free_text}"
             ),
@@ -117,7 +118,7 @@ class OpenAiGateway:
         payload = self._create(
             system=_QUESTION_SYSTEM,
             user=(
-                f"Sprache: {locale}\n"
+                f"Sprache: {ai_locale_name(locale)}\n"
                 f"Kanonischer Text: {canonical['canonical_text']}\n"
                 f"Hilfetext: {canonical.get('help_text', '')}\n"
                 f"Erlaubte Antwortoptionen: {allowed_values}\n\n"
@@ -141,7 +142,7 @@ class OpenAiGateway:
         payload = self._create(
             system=_EXPLANATION_SYSTEM,
             user=(
-                f"Sprache: {locale}\n\n"
+                f"Sprache: {ai_locale_name(locale)}\n\n"
                 f"Faktenpaket:\n{json.dumps(_bundle_payload(bundle), ensure_ascii=False)}"
             ),
             schema_name="explanation_result",

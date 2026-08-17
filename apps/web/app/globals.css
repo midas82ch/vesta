@@ -265,6 +265,18 @@ h1 {
   letter-spacing: 0;
 }
 
+[dir="rtl"] .eyebrow {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[dir="rtl"] .result-heading h2,
+[dir="rtl"] .imprint-section h2,
+[dir="rtl"] .imprint-principles h3 {
+  font-family: Tahoma, Arial, sans-serif;
+  letter-spacing: 0;
+}
+
 .lead {
   color: var(--muted);
   font-size: clamp(1.05rem, 4vw, 1.25rem);

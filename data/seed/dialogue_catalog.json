@@ -7,7 +7,9 @@
         "de": { "title": "Heute schlafen", "description": "Einen Platz für die Nacht suchen" },
         "fr": { "title": "Dormir ce soir", "description": "Chercher une place pour la nuit" },
         "en": { "title": "Sleep tonight", "description": "Find a place for the night" },
-        "ar": { "title": "النوم الليلة", "description": "البحث عن مكان لقضاء الليلة" }
+        "es": { "title": "Dormir esta noche", "description": "Buscar un lugar para pasar la noche" },
+        "pt": { "title": "Dormir esta noite", "description": "Procurar um lugar para passar a noite" },
+        "ary": { "title": "فين تنعس الليلة", "description": "قلب على بلاصة تبات فيها" }
       }
     },
     {
@@ -17,7 +19,9 @@
         "de": { "title": "Grundversorgung", "description": "Essen, Dusche oder Ersthilfe" },
         "fr": { "title": "Besoins de base", "description": "Nourriture, douche ou premiers secours" },
         "en": { "title": "Basic needs", "description": "Food, shower or first aid" },
-        "ar": { "title": "الاحتياجات الأساسية", "description": "الطعام أو الاستحمام أو الإسعافات الأولية" }
+        "es": { "title": "Necesidades básicas", "description": "Comida, ducha o primeros auxilios" },
+        "pt": { "title": "Necessidades básicas", "description": "Comida, duche ou primeiros socorros" },
+        "ary": { "title": "الحاجيات الأساسية", "description": "الماكلة، الدوش ولا الإسعافات الأولية" }
       }
     },
     {
@@ -27,7 +31,9 @@
         "de": { "title": "Beratung", "description": "Hilfe bei Sucht, Wohnen oder Geld" },
         "fr": { "title": "Conseil", "description": "Aide en cas de dépendance, logement ou argent" },
         "en": { "title": "Counselling", "description": "Help with addiction, housing or money" },
-        "ar": { "title": "الاستشارة", "description": "المساعدة في الإدمان أو السكن أو المال" }
+        "es": { "title": "Asesoramiento", "description": "Ayuda con adicciones, vivienda o dinero" },
+        "pt": { "title": "Aconselhamento", "description": "Ajuda com dependências, habitação ou dinheiro" },
+        "ary": { "title": "الاستشارة", "description": "مساعدة فالإدمان، السكن ولا الفلوس" }
       }
     }
   ],
@@ -59,7 +65,9 @@
             "de": { "label": "Frau / FINTA" },
             "fr": { "label": "Femme / FINTA" },
             "en": { "label": "Woman / FINTA" },
-            "ar": { "label": "امرأة / FINTA" }
+            "es": { "label": "Mujer / FINTA" },
+            "pt": { "label": "Mulher / FINTA" },
+            "ary": { "label": "مرا / FINTA" }
           }
         },
         {
@@ -69,7 +77,9 @@
             "de": { "label": "Andere / allgemeine Suche" },
             "fr": { "label": "Autre / recherche générale" },
             "en": { "label": "Other / general search" },
-            "ar": { "label": "أخرى / بحث عام" }
+            "es": { "label": "Otro / búsqueda general" },
+            "pt": { "label": "Outro / pesquisa geral" },
+            "ary": { "label": "اختيار آخر / بحث عام" }
           }
         }
       ]
@@ -91,16 +101,16 @@
       "ai_rephrasing_allowed": true,
       "localizations": {
         "de": {
-          "canonical_text": "Führen Sie ein Tier mit sich?",
+          "canonical_text": "Hast du ein Tier dabei?",
           "help_text": "Einige Schlafangebote können keine Hunde aufnehmen.",
           "unknown_label": "Weiss nicht",
-          "decline_label": "Möchte ich nicht sagen"
+          "decline_label": "Möchte ich nicht angeben"
         },
         "fr": {
-          "canonical_text": "Avez-vous un animal avec vous ?",
+          "canonical_text": "As-tu un animal avec toi ?",
           "help_text": "Certaines offres d'hébergement n'acceptent pas les chiens.",
           "unknown_label": "Je ne sais pas",
-          "decline_label": "Je préfère ne pas dire"
+          "decline_label": "Je préfère ne pas l’indiquer"
         },
         "en": {
           "canonical_text": "Do you have an animal with you?",
@@ -108,11 +118,23 @@
           "unknown_label": "Don't know",
           "decline_label": "Prefer not to say"
         },
-        "ar": {
-          "canonical_text": "هل معك حيوان؟",
-          "help_text": "بعض أماكن المبيت لا يمكنها استقبال الكلاب.",
-          "unknown_label": "لا أعرف",
-          "decline_label": "أفضل عدم الإجابة"
+        "es": {
+          "canonical_text": "¿Tienes un animal contigo?",
+          "help_text": "Algunos alojamientos nocturnos no admiten perros.",
+          "unknown_label": "No lo sé",
+          "decline_label": "Prefiero no responder"
+        },
+        "pt": {
+          "canonical_text": "Tens algum animal contigo?",
+          "help_text": "Alguns alojamentos noturnos não aceitam cães.",
+          "unknown_label": "Não sei",
+          "decline_label": "Prefiro não responder"
+        },
+        "ary": {
+          "canonical_text": "واش معاك شي حيوان؟",
+          "help_text": "شي خدمات المبيت ما كيقبلوش الكلاب.",
+          "unknown_label": "ما عارفش",
+          "decline_label": "ما بغيتش نجاوب"
         }
       }
     },
@@ -124,16 +146,16 @@
       "ai_rephrasing_allowed": true,
       "localizations": {
         "de": {
-          "canonical_text": "Haben Sie einen Ausweis dabei?",
+          "canonical_text": "Hast du einen Ausweis dabei?",
           "help_text": "Einige Angebote setzen einen Ausweis voraus.",
           "unknown_label": "Weiss nicht",
-          "decline_label": "Möchte ich nicht sagen"
+          "decline_label": "Möchte ich nicht angeben"
         },
         "fr": {
-          "canonical_text": "Avez-vous une pièce d'identité ?",
+          "canonical_text": "As-tu une pièce d’identité ?",
           "help_text": "Certaines offres exigent une pièce d'identité.",
           "unknown_label": "Je ne sais pas",
-          "decline_label": "Je préfère ne pas dire"
+          "decline_label": "Je préfère ne pas l’indiquer"
         },
         "en": {
           "canonical_text": "Do you have an identity document?",
@@ -141,11 +163,23 @@
           "unknown_label": "Don't know",
           "decline_label": "Prefer not to say"
         },
-        "ar": {
-          "canonical_text": "هل معك وثيقة هوية؟",
-          "help_text": "بعض العروض تتطلب وثيقة هوية.",
-          "unknown_label": "لا أعرف",
-          "decline_label": "أفضل عدم الإجابة"
+        "es": {
+          "canonical_text": "¿Tienes un documento de identidad?",
+          "help_text": "Algunos servicios exigen un documento de identidad.",
+          "unknown_label": "No lo sé",
+          "decline_label": "Prefiero no responder"
+        },
+        "pt": {
+          "canonical_text": "Tens um documento de identificação?",
+          "help_text": "Alguns serviços exigem um documento de identificação.",
+          "unknown_label": "Não sei",
+          "decline_label": "Prefiro não responder"
+        },
+        "ary": {
+          "canonical_text": "واش معاك وثيقة الهوية؟",
+          "help_text": "شي خدمات كيطلبو وثيقة الهوية.",
+          "unknown_label": "ما عارفش",
+          "decline_label": "ما بغيتش نجاوب"
         }
       }
     },
@@ -157,28 +191,40 @@
       "ai_rephrasing_allowed": true,
       "localizations": {
         "de": {
-          "canonical_text": "Welche Zielgruppe trifft auf Sie zu?",
-          "help_text": "Die Angabe hilft, Angebote mit besonderen Zugangsbedingungen korrekt einzuordnen.",
+          "canonical_text": "Kommt für dich ein Angebot speziell für Frauen und FINTA-Personen infrage?",
+          "help_text": "Einige Unterkünfte sind ausschliesslich für Frauen und FINTA-Personen zugänglich.",
           "unknown_label": "Weiss nicht",
           "decline_label": "Keine Angabe"
         },
         "fr": {
-          "canonical_text": "Quel groupe cible vous correspond ?",
-          "help_text": "Cette information aide à identifier les offres avec des conditions d'accès particulières.",
+          "canonical_text": "Une offre spécialement destinée aux femmes et aux personnes FINTA te convient-elle ?",
+          "help_text": "Certains hébergements sont exclusivement accessibles aux femmes et aux personnes FINTA.",
           "unknown_label": "Je ne sais pas",
           "decline_label": "Sans indication"
         },
         "en": {
-          "canonical_text": "Which target group applies to you?",
-          "help_text": "This helps match offers with specific access conditions.",
+          "canonical_text": "Would a service specifically for women and FINTA people suit you?",
+          "help_text": "Some shelters are exclusively available to women and FINTA people.",
           "unknown_label": "Don't know",
           "decline_label": "Prefer not to say"
         },
-        "ar": {
-          "canonical_text": "ما هي الفئة المستهدفة التي تنطبق عليك؟",
-          "help_text": "تساعد هذه المعلومة في تحديد العروض ذات شروط الوصول الخاصة.",
-          "unknown_label": "لا أعرف",
-          "decline_label": "دون تحديد"
+        "es": {
+          "canonical_text": "¿Te conviene un servicio específico para mujeres y personas FINTA?",
+          "help_text": "Algunos alojamientos son accesibles exclusivamente para mujeres y personas FINTA.",
+          "unknown_label": "No lo sé",
+          "decline_label": "Prefiero no indicarlo"
+        },
+        "pt": {
+          "canonical_text": "Um serviço específico para mulheres e pessoas FINTA é adequado para ti?",
+          "help_text": "Alguns alojamentos destinam-se exclusivamente a mulheres e pessoas FINTA.",
+          "unknown_label": "Não sei",
+          "decline_label": "Prefiro não indicar"
+        },
+        "ary": {
+          "canonical_text": "واش تناسبك خدمة خاصة بالنساء وبأشخاص FINTA؟",
+          "help_text": "شي مراكز الإيواء مخصصين غير للنساء ولأشخاص FINTA.",
+          "unknown_label": "ما عارفش",
+          "decline_label": "ما بغيتش نجاوب"
         }
       }
     },
@@ -190,28 +236,40 @@
       "ai_rephrasing_allowed": true,
       "localizations": {
         "de": {
-          "canonical_text": "Wie alt sind Sie?",
-          "help_text": "Einige Angebote gelten nur ab oder bis zu einem bestimmten Alter.",
+          "canonical_text": "Geht es um eine volljährige Person?",
+          "help_text": "Einige Schlafangebote sind erst ab 18 Jahren zugänglich.",
           "unknown_label": "Weiss nicht",
           "decline_label": "Möchte ich nicht sagen"
         },
         "fr": {
-          "canonical_text": "Quel âge avez-vous ?",
-          "help_text": "Certaines offres s'appliquent seulement à partir ou jusqu'à un certain âge.",
+          "canonical_text": "La recherche concerne-t-elle une personne majeure ?",
+          "help_text": "Certains hébergements ne sont accessibles qu’à partir de 18 ans.",
           "unknown_label": "Je ne sais pas",
           "decline_label": "Je préfère ne pas dire"
         },
         "en": {
-          "canonical_text": "How old are you?",
-          "help_text": "Some offers only apply from or up to a certain age.",
+          "canonical_text": "Is the search for an adult?",
+          "help_text": "Some overnight services are only available from the age of 18.",
           "unknown_label": "Don't know",
           "decline_label": "Prefer not to say"
         },
-        "ar": {
-          "canonical_text": "كم عمرك؟",
-          "help_text": "بعض العروض تنطبق فقط بدءًا من أو حتى عمر معين.",
-          "unknown_label": "لا أعرف",
-          "decline_label": "أفضل عدم الإجابة"
+        "es": {
+          "canonical_text": "¿La búsqueda es para una persona adulta?",
+          "help_text": "Algunos alojamientos nocturnos solo están disponibles a partir de los 18 años.",
+          "unknown_label": "No lo sé",
+          "decline_label": "Prefiero no indicarlo"
+        },
+        "pt": {
+          "canonical_text": "A pesquisa é para uma pessoa adulta?",
+          "help_text": "Alguns alojamentos noturnos só estão disponíveis a partir dos 18 anos.",
+          "unknown_label": "Não sei",
+          "decline_label": "Prefiro não indicar"
+        },
+        "ary": {
+          "canonical_text": "واش البحث على شخص راشد؟",
+          "help_text": "شي خدمات المبيت متوفرين غير للناس اللي عندهم 18 عام ولا كثر.",
+          "unknown_label": "ما عارفش",
+          "decline_label": "ما بغيتش نجاوب"
         }
       }
     }

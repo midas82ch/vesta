@@ -169,6 +169,31 @@ class ValidateExplanationTest(unittest.TestCase):
 
         self.assertIn("forbidden_claim_detected", violations)
 
+    def test_rejects_forbidden_claims_in_all_new_locales(self) -> None:
+        claims = {
+            "es": "La plaza está reservada para ti.",
+            "pt": "O lugar está reservado para ti.",
+            "ary": "البلاصة مضمونة ليك.",
+        }
+        for locale, headline in claims.items():
+            with self.subTest(locale=locale):
+                result = ExplanationResult(
+                    headline=headline,
+                    reasons=(
+                        ExplanationReason(
+                            text="x", supported_by=("reason:need_matches",)
+                        ),
+                    ),
+                    clarification=None,
+                    next_action=None,
+                )
+
+                violations = validate_explanation(
+                    result, bundle=self._bundle(), locale=locale
+                )
+
+                self.assertIn("forbidden_claim_detected", violations)
+
     def test_accepts_well_formed_explanation(self) -> None:
         result = ExplanationResult(
             headline="Dieses Angebot könnte passen.",

@@ -1,4 +1,8 @@
-export const supportedLocales = ["de", "fr", "en", "ar"] as const;
+import { ary } from "@/lib/locales/ary";
+import { es } from "@/lib/locales/es";
+import { pt } from "@/lib/locales/pt";
+
+export const supportedLocales = ["de", "fr", "en", "es", "pt", "ary"] as const;
 
 export type Locale = (typeof supportedLocales)[number];
 
@@ -15,7 +19,9 @@ const de = {
   "locale.de": "Deutsch",
   "locale.fr": "Français",
   "locale.en": "English",
-  "locale.ar": "العربية",
+  "locale.es": "Español",
+  "locale.pt": "Português",
+  "locale.ary": "الدارجة المغربية",
   "pwa.install": "App installieren",
   "hero.eyebrow": "Berner Sozial-Lotse",
   "hero.title": "Was brauchst du gerade?",
@@ -212,7 +218,7 @@ const de = {
     "Der Standort konnte nicht rechtzeitig bestimmt werden. Du kannst ohne Standort fortfahren.",
   "dialogue.location.unavailable":
     "Die Standortbestimmung ist in diesem Browser nicht verfügbar. Du kannst ohne Standort fortfahren.",
-  "dialogue.start": "AI-Dialog starten",
+  "dialogue.start": "Dialog starten",
   "dialogue.loading": "Wird verarbeitet …",
   "dialogue.progress.label": "Fortschritt im Hilfe-Dialog",
   "dialogue.progress.need": "Anliegen",
@@ -238,12 +244,12 @@ const de = {
   "dialogue.busy.answer.text":
     "Wir bestimmen den nächsten passenden Schritt und prüfen danach mögliche Angebote.",
   "dialogue.error.title": "Das hat nicht geklappt",
-  "dialogue.error": "Der AI-Dialog ist gerade nicht erreichbar.",
+  "dialogue.error": "Der Dialog ist gerade nicht erreichbar.",
   "dialogue.question.eyebrow": "Eine Frage noch",
   "dialogue.question.answerLegend": "Deine Antwort",
   "dialogue.question.yes": "Ja",
   "dialogue.question.no": "Nein",
-  "dialogue.question.numberLabel": "Ihre Antwort",
+  "dialogue.question.numberLabel": "Deine Antwort",
   "dialogue.question.numberSubmit": "Bestätigen",
   "dialogue.fit.gender.question":
     "Kommt für dich ein Angebot speziell für Frauen und FINTA-Personen infrage?",
@@ -282,7 +288,9 @@ const fr: Record<MessageKey, string> = {
   "locale.de": "Deutsch",
   "locale.fr": "Français",
   "locale.en": "English",
-  "locale.ar": "العربية",
+  "locale.es": "Español",
+  "locale.pt": "Português",
+  "locale.ary": "الدارجة المغربية",
   "pwa.install": "Installer l’application",
   "hero.eyebrow": "Guide social bernois",
   "hero.title": "De quoi as-tu besoin maintenant ?",
@@ -481,7 +489,7 @@ const fr: Record<MessageKey, string> = {
     "La position n’a pas pu être déterminée à temps. Tu peux continuer sans localisation.",
   "dialogue.location.unavailable":
     "La localisation n’est pas disponible dans ce navigateur. Tu peux continuer sans localisation.",
-  "dialogue.start": "Démarrer le dialogue AI",
+  "dialogue.start": "Démarrer le dialogue",
   "dialogue.loading": "Traitement en cours …",
   "dialogue.progress.label": "Progression dans le dialogue d’aide",
   "dialogue.progress.need": "Demande",
@@ -507,12 +515,12 @@ const fr: Record<MessageKey, string> = {
   "dialogue.busy.answer.text":
     "Nous déterminons la prochaine étape appropriée, puis vérifions les offres possibles.",
   "dialogue.error.title": "Une erreur s’est produite",
-  "dialogue.error": "Le dialogue AI n'est pas disponible actuellement.",
+  "dialogue.error": "Le dialogue n’est pas disponible actuellement.",
   "dialogue.question.eyebrow": "Encore une question",
   "dialogue.question.answerLegend": "Ta réponse",
   "dialogue.question.yes": "Oui",
   "dialogue.question.no": "Non",
-  "dialogue.question.numberLabel": "Votre réponse",
+  "dialogue.question.numberLabel": "Ta réponse",
   "dialogue.question.numberSubmit": "Confirmer",
   "dialogue.fit.gender.question":
     "Une offre spécialement destinée aux femmes et aux personnes FINTA te convient-elle ?",
@@ -543,13 +551,15 @@ const en: Record<MessageKey, string> = {
   "pilot.label": "Pilot · Bern",
   "nav.primaryLabel": "Main navigation",
   "nav.home": "Search",
-  "nav.imprint": "Imprint",
+  "nav.imprint": "Legal notice",
   "nav.privacy": "Privacy",
   "locale.label": "Interface language",
   "locale.de": "Deutsch",
   "locale.fr": "Français",
   "locale.en": "English",
-  "locale.ar": "العربية",
+  "locale.es": "Español",
+  "locale.pt": "Português",
+  "locale.ary": "الدارجة المغربية",
   "pwa.install": "Install app",
   "hero.eyebrow": "Bern social services guide",
   "hero.title": "What do you need right now?",
@@ -747,7 +757,7 @@ const en: Record<MessageKey, string> = {
     "Your location could not be found in time. You can continue without location.",
   "dialogue.location.unavailable":
     "Location is not available in this browser. You can continue without location.",
-  "dialogue.start": "Start AI dialogue",
+  "dialogue.start": "Start dialogue",
   "dialogue.loading": "Processing …",
   "dialogue.progress.label": "Progress through the support dialogue",
   "dialogue.progress.need": "Your need",
@@ -773,7 +783,7 @@ const en: Record<MessageKey, string> = {
   "dialogue.busy.answer.text":
     "We are determining the next appropriate step and then checking possible services.",
   "dialogue.error.title": "Something went wrong",
-  "dialogue.error": "The AI dialogue is currently unavailable.",
+  "dialogue.error": "The dialogue is currently unavailable.",
   "dialogue.question.eyebrow": "One more question",
   "dialogue.question.answerLegend": "Your answer",
   "dialogue.question.yes": "Yes",
@@ -801,273 +811,13 @@ const en: Record<MessageKey, string> = {
   "dialogue.interpretation.confirmHint": "Tap to continue",
 };
 
-const ar: Record<MessageKey, string> = {
-  "a11y.skipToContent": "الانتقال مباشرة إلى المحتوى",
-  "a11y.opensNewTab": "يفتح في علامة تبويب جديدة",
-  "brand.homeLabel": "الصفحة الرئيسية لفيستا",
-  "pilot.label": "مشروع تجريبي · برن",
-  "nav.primaryLabel": "التنقل الرئيسي",
-  "nav.home": "البحث",
-  "nav.imprint": "معلومات قانونية",
-  "nav.privacy": "الخصوصية",
-  "locale.label": "لغة الواجهة",
-  "locale.de": "Deutsch",
-  "locale.fr": "Français",
-  "locale.en": "English",
-  "locale.ar": "العربية",
-  "pwa.install": "تثبيت التطبيق",
-  "hero.eyebrow": "دليل الخدمات الاجتماعية في برن",
-  "hero.title": "ما الذي تحتاج إليه الآن؟",
-  "hero.lead":
-    "اعثر على خدمات اجتماعية مناسبة في برن بسهولة ومع عرض المصادر.",
-  "hero.trust": "لا تحتاج إلى حساب. لا يُحفَظ بحثك كملف حالة.",
-  "form.help":
-    "أدخل فقط المعلومات المهمة لبحثك، ثم سنعرض الخدمات المحتملة.",
-  "form.need.legend": "اختر مجالاً",
-  "need.sleep.title": "مكان للنوم الليلة",
-  "need.sleep.detail": "البحث عن مكان للمبيت",
-  "need.basic.title": "الاحتياجات الأساسية",
-  "need.basic.detail": "طعام أو استحمام أو إسعافات أولية",
-  "need.counselling.title": "استشارة",
-  "need.counselling.detail": "مساعدة بشأن الإدمان أو السكن أو المال",
-  "form.targetGroup.label": "الفئة المستهدفة",
-  "form.targetGroup.hint":
-    "تساعد هذه المعلومة في تصنيف الخدمات ذات شروط الدخول الخاصة بشكل صحيح.",
-  "form.targetGroup.none": "أفضل عدم الإجابة",
-  "form.targetGroup.finta": "امرأة / FINTA",
-  "form.targetGroup.other": "أخرى / بحث عام",
-  "form.additional.legend": "معلومات إضافية",
-  "form.dog": "لدي كلب",
-  "form.noIdentity": "ليس لدي وثيقة هوية",
-  "form.submit": "العثور على مساعدة مناسبة",
-  "form.loading": "جارٍ التحقق من الخدمات…",
-  "status.loading": "جارٍ التحقق من الخدمات.",
-  "error.search":
-    "البحث غير متاح حالياً. حاول مرة أخرى لاحقاً أو تواصل مباشرة مع شخص مختص.",
-  "results.eyebrow": "النتيجة",
-  "results.count.zero": "لا توجد خدمات تجريبية مطابقة",
-  "results.count.one": "خدمة محتملة واحدة",
-  "results.count.two": "خدمتان محتملتان",
-  "results.count.few": "{count} خدمات محتملة",
-  "results.count.many": "{count} خدمة محتملة",
-  "results.count.other": "{count} خدمة محتملة",
-  "results.demoBadge": "بيانات تجريبية · ليست للاستخدام الميداني",
-  "availability.confirmed": "الحالة مؤكدة",
-  "availability.call_to_confirm": "يرجى التحقق أولاً",
-  "availability.unknown": "الحالة غير معروفة",
-  "results.uncertainty": "يجب التحقق من بعض المعلومات.",
-  "results.originalLanguage": "معلومات الخدمة الأصلية باللغة الألمانية",
-  "results.checked": "تم التحقق آلياً في {date}",
-  "results.source": "المصدر",
-  "results.distance.meters": "نحو {distance} م بخط مستقيم",
-  "results.distance.kilometers": "نحو {distance} كم بخط مستقيم",
-  "results.address": "العنوان",
-  "results.directions": "الاتجاهات في خرائط Google",
-  "results.handoff":
-    "لم نعثر على خدمة مناسبة بدرجة موثوقة. ينبغي أن يتولى شخص مختص متابعة الحالة.",
-  "results.disclaimer":
-    "لا تُحجز الخدمات تلقائياً. تحقّق مباشرة من حداثة المعلومات وبيانات الاتصال.",
-  "principles.eyebrow": "كيف تعمل فيستا",
-  "principles.title": "تقنية تسهّل الوصول.",
-  "principle.verified.title": "معلومات متحقق منها",
-  "principle.verified.text":
-    "تعرض كل نتيجة مصدرها وتاريخ التحقق وأوجه عدم اليقين المتبقية.",
-  "principle.rules.title": "قواعد واضحة",
-  "principle.rules.text":
-    "يتم التحقق من شروط الدخول بشفافية ولا يقررها الذكاء الاصطناعي.",
-  "principle.handoff.title": "إحالة إلى شخص مختص",
-  "principle.handoff.text":
-    "عند وجود خطر أو عدم يقين أو بناءً على الطلب، يتولى شخص مختص المتابعة.",
-  "about.back": "العودة إلى البحث عن المساعدة",
-  "about.eyebrow": "حول فيستا والمعلومات القانونية",
-  "about.title": "عقبات أقل في النظام. وصول أسهل إلى المساعدة.",
-  "about.lead":
-    "تطوّر فيستا بوابة موثوقة ومتعددة اللغات إلى منظومة الدعم في برن، لتصبح الخدمات المتاحة أسهل في العثور عليها وفهمها والتحقق منها.",
-  "about.problem.eyebrow": "لماذا فيستا",
-  "about.problem.title":
-    "المساعدة موجودة، لكن الوصول إليها غالباً ما يكون معقداً.",
-  "about.problem.text":
-    "تتوزع الخدمات والمسؤوليات وشروط الوصول بين جهات عديدة. تركز فيستا على المجالات التي يمكن للدعم الرقمي أن يفيد فيها فعلياً: التوجيه واللغة وتوضيح الخطوة التالية.",
-  "about.people.title": "للأشخاص",
-  "about.people.text":
-    "مصطلحات أقل تعقيداً وطرق أقصر وخدمات مناسبة مع إظهار المصادر وأوجه عدم اليقين.",
-  "about.professionals.title": "للمختصين",
-  "about.professionals.text":
-    "وقت أقل للبحث المتكرر وقاعدة معلومات مشتركة وموثوقة للإحالة إلى الخدمات.",
-  "about.system.title": "لمدينة برن",
-  "about.system.text":
-    "يمكن إظهار مسارات المساعدة غير الناجحة والخدمات الناقصة من دون إنشاء ملفات شخصية.",
-  "about.responsibility.eyebrow": "المسؤولية",
-  "about.responsibility.title":
-    "الذكاء الاصطناعي يشرح. القواعد تتحقق. والأشخاص يتولون المسؤولية.",
-  "about.responsibility.text":
-    "لا تؤتمت فيستا القرارات المتعلقة بالحالات ولا توزع الأماكن المحدودة. يمكن للذكاء الاصطناعي فهم اللغة وشرح المعلومات المتحقق منها، بينما تبقى السلامة والوصول والإحالة خاضعة لقواعد واضحة ولمسؤولية بشرية.",
-  "about.pilot.eyebrow": "مشروع تجريبي",
-  "about.pilot.title": "نبدأ بخطوات صغيرة ونتعلم معاً.",
-  "about.pilot.text":
-    "يركز النموذج الأولي على المبيت والاحتياجات الأساسية والاستشارة. ويعمل من دون حساب أو ملف حالة. يجب أن يشارك أصحاب التجربة والمختصون والمنظمات في تحديد ما هو مفيد وآمن.",
-  "about.pilot.link": "عرض المشروع على GitHub",
-  "about.pilot.note":
-    "النموذج التقني متاح للاطلاع العام، ونرحب بالملاحظات والمشاركة.",
-  "imprint.eyebrow": "الشفافية",
-  "imprint.title": "المعلومات القانونية",
-  "imprint.project.label": "المشروع",
-  "imprint.project.value": "فيستا – دليل الخدمات الاجتماعية في برن",
-  "imprint.status.label": "الحالة",
-  "imprint.status.value": "نموذج تقني أولي مستقل قيد التطوير",
-  "imprint.responsibility.label": "الجهة المسؤولة",
-  "imprint.responsibility.value":
-    "لم تُحدَّد رسمياً بعد للاستخدام الميداني العام",
-  "imprint.contact.label": "المشروع والملاحظات",
-  "imprint.contact.value": "مستودع فيستا على GitHub",
-  "imprint.note":
-    "قبل أي استخدام ميداني عام، ستُحدَّد رسمياً جهة الاتصال المسؤولة والجهة المشغلة ومعلومات الخصوصية والشركاء المشاركون.",
-  "privacy.eyebrow": "الشفافية",
-  "privacy.title": "إشعار الخصوصية",
-  "privacy.lead":
-    "لا تزال فيستا في مرحلة تجريبية مبكرة. توضح هذه الصفحة البيانات التي نعالجها حالياً - وهي بيانات قليلة عمداً.",
-  "privacy.scope.eyebrow": "ما الذي نعالجه",
-  "privacy.scope.title": "فقط معلومات بحثك الحالي",
-  "privacy.scope.text":
-    "عند إجراء بحث، تعالج فيستا فقط المعلومات التي تختارها في النموذج: المجال المختار، لغتك، ومعلومات اختيارية مثل وجود كلب، أو عدم وجود وثيقة هوية، أو الفئة المستهدفة، أو العمر، أو مؤشرات السلامة. تُستخدم هذه المعلومات فقط لهذا البحث.",
-  "privacy.scope.noAccount":
-    "تعمل فيستا من دون حساب. لا يُحفَظ بحثك كملف حالة أو ملف شخصي.",
-  "privacy.location.eyebrow": "الموقع الاختياري",
-  "privacy.location.title": "فقط بعد موافقتك الصريحة",
-  "privacy.location.text":
-    "إذا اخترت «استخدام موقعي»، تقرّب فيستا موقع المتصفح إلى نحو 100 متر وتستخدمه فقط لحساب المسافة بخط مستقيم وترتيب الخدمات المتساوية في الملاءمة. لا يُحفَظ الموقع ولا المسافات المحسوبة ولا تُرسل إلى نموذج الذكاء الاصطناعي. يحتوي رابط خرائط Google الخارجي فقط على الوجهة العامة للخدمة، وليس نقطة انطلاقك.",
-  "privacy.storage.eyebrow": "التخزين",
-  "privacy.storage.title": "لا يُحفَظ بحثك بشكل دائم",
-  "privacy.storage.text":
-    "تُرسَل معلومات بحثك إلى واجهة برمجة تطبيقات فيستا، وتُستخدم لتقييم النتيجة، ولا تُحفَظ بعد ذلك في قاعدة بيانات. لا يُنشأ أي سجل لعمليات بحث سابقة.",
-  "privacy.device.eyebrow": "على جهازك",
-  "privacy.device.title": "فقط تفضيل اللغة",
-  "privacy.device.text":
-    "تُخزّن فيستا محلياً على جهازك اللغة التي اخترتها فقط، حتى تظهر الواجهة باللغة الصحيحة في زيارتك القادمة. لا تغادر هذه المعلومة جهازك أبداً.",
-  "privacy.offline.eyebrow": "الاستخدام دون اتصال",
-  "privacy.offline.title": "لا يحتوي التخزين دون اتصال على نتائج بحث",
-  "privacy.offline.text":
-    "لتمكين التثبيت كتطبيق، تخزّن فيستا مؤقتاً عناصر تقنية مثل هيكل الصفحة والأيقونات والخطوط. تُستثنى طلبات واجهة برمجة تطبيقات البحث من ذلك صراحةً ولا تُخزَّن مؤقتاً أبداً.",
-  "privacy.logs.eyebrow": "السجلات التقنية",
-  "privacy.logs.title": "سجلات التشغيل لا تحتوي على إجاباتك الكاملة",
-  "privacy.logs.text":
-    "كما هو الحال مع أي خدمة ويب، ينشئ تشغيل الموقع سجلات تقنية، مثل عنوان IP والوقت والعنوان المطلوب، لأغراض الأمان واستكشاف الأخطاء. سيتم تحديد مدة الاحتفاظ وعملية الحذف بشكل ملزم قبل أي استخدام ميداني عام.",
-  "privacy.offers.eyebrow": "سجل الخدمات",
-  "privacy.offers.title": "معلومات عامة عن خدمات المساعدة",
-  "privacy.offers.text":
-    "يحتوي سجل الخدمات على معلومات عامة تم التحقق منها حول خدمات المساعدة في برن - ولا يحتوي على بيانات شخصية للمستخدمين.",
-  "privacy.ai.eyebrow": "الذكاء الاصطناعي",
-  "privacy.ai.title": "نموذج الذكاء الاصطناعي في مرحلة الاختبار",
-  "privacy.ai.text":
-    "تُرسل النصوص الحرة والأسئلة المعتمدة ومعلومات محدودة عن الخدمات إلى OpenAI للتفسير والصياغة الواضحة. لا يقرر الذكاء الاصطناعي الوصول إلى الخدمات ولا يخصص أماكن. لا تُدخل أسماء أو عناوين أو بيانات اتصال. تُحفظ المدخلات وطلبات الذكاء الاصطناعي وردوده ومنطق نظام Vesta الوسيط والرد المعروض كسير عمل مترابط إلى أن تُحذف يدويًا، ولا يمكن الاطلاع عليها إلا من قِبل المسؤولين المخوَّلين.",
-  "privacy.hosting.eyebrow": "الاستضافة",
-  "privacy.hosting.title": "يُخطَّط لبنية تحتية سويسرية",
-  "privacy.hosting.text":
-    "من المخطط تشغيل الخدمة على بنية تحتية سويسرية. قبل أي استخدام ميداني عام، سيتم تحديد اتفاقية معالجة البيانات والجهات الفرعية المعالِجة ومواقع التخزين وتقييم الأثر على حماية البيانات بشكل ملزم.",
-  "privacy.rights.eyebrow": "حقوقك",
-  "privacy.rights.title": "الاطلاع والتصحيح والحذف",
-  "privacy.rights.text":
-    "بما أن فيستا تعمل من دون حساب ولا تحتفظ بسجل بحث، فإن حقوق الاطلاع والتصحيح والحذف تتعلق بشكل أساسي بالسجلات التقنية. يرجى التواصل عبر جهة الاتصال أدناه لهذا الغرض.",
-  "privacy.responsible.eyebrow": "الجهة المسؤولة",
-  "privacy.responsible.title": "لم تُحدَّد رسمياً بعد",
-  "privacy.responsible.text":
-    "فيستا حالياً نموذج تقني أولي مستقل. لم تُحدَّد بعد رسمياً جهة مسؤولة عن الاستخدام الميداني العام.",
-  "privacy.contact.label": "الأسئلة والملاحظات",
-  "privacy.contact.value": "مستودع فيستا على GitHub",
-  "privacy.note":
-    "يصف هذا الإشعار حالة النموذج الأولي الحالية. قبل أي استخدام ميداني عام، سيُستكمَل بشكل ملزم بجهة اتصال مسؤولة وجهة مشغّلة وجهات معالجة فرعية تم التحقق منها.",
-  "footer.emergency": "لا تحل فيستا محل خدمات الطوارئ ولا تحجز أماكن.",
-  "footer.prototype":
-    "نموذج أولي · المعلومات غير معتمدة بعد للاستخدام الميداني",
-  "footer.imprint": "حول فيستا والمعلومات القانونية",
-  "footer.privacy": "إشعار الخصوصية",
-  "offline.eyebrow": "لا يوجد اتصال",
-  "offline.title": "فيستا غير متصلة بالإنترنت حالياً.",
-  "offline.body":
-    "من دون اتصال بالإنترنت لا نعرض عمداً خدمات قد تكون معلوماتها قديمة. أعد الاتصال وحاول مرة أخرى.",
-  "offline.retry": "إعادة المحاولة",
-  "offline.back": "العودة إلى الصفحة الرئيسية",
-  "dialogue.freeText.label": "صف باختصار ما تحتاجه",
-  "dialogue.freeText.placeholder": "مثال: أحتاج مكانًا للنوم الليلة مع كلبي",
-  "dialogue.freeText.submit": "التحقق من الاقتراح",
-  "dialogue.freeText.loading": "جارٍ التحقق…",
-  "dialogue.interpretation.unclear":
-    "لم أتمكن بعد من تحديد المجال المناسب لطلبك بوضوح. اختر المجال الأنسب أدناه.",
-  "dialogue.interpretation.needApplied": "المجال الذي تم التعرف عليه: {need}",
-  "dialogue.interpretation.confirmLegend": "هل هذا هو المجال المناسب؟",
-  "dialogue.needPicker.legend": "اختر مجالاً",
-  "dialogue.location.title": "خدمات قريبة منك",
-  "dialogue.location.text":
-    "اختياري: استخدم موقعك التقريبي لترتيب الخدمات المتساوية في الملاءمة حسب القرب.",
-  "dialogue.location.use": "استخدام موقعي",
-  "dialogue.location.locating": "جارٍ تحديد موقعك…",
-  "dialogue.location.active": "يُستخدم موقعك التقريبي لهذا البحث.",
-  "dialogue.location.remove": "إيقاف استخدام موقعي",
-  "dialogue.location.denied":
-    "لم تمنح إذن الموقع. يمكنك المتابعة من دون موقع.",
-  "dialogue.location.timeout":
-    "تعذر تحديد موقعك في الوقت المناسب. يمكنك المتابعة من دون موقع.",
-  "dialogue.location.unavailable":
-    "تحديد الموقع غير متاح في هذا المتصفح. يمكنك المتابعة من دون موقع.",
-  "dialogue.start": "بدء حوار الذكاء الاصطناعي",
-  "dialogue.loading": "جارٍ المعالجة…",
-  "dialogue.progress.label": "التقدم في حوار المساعدة",
-  "dialogue.progress.need": "طلبك",
-  "dialogue.progress.questions": "أسئلة",
-  "dialogue.progress.results": "العروض",
-  "dialogue.progress.current": "الخطوة الحالية",
-  "dialogue.progress.complete": "مكتمل",
-  "dialogue.conversation.label": "مسار الحوار",
-  "dialogue.conversation.you": "أنت",
-  "dialogue.conversation.vesta": "فيستا",
-  "dialogue.conversation.selectedNeed": "تم الاختيار: {need}",
-  "dialogue.conversation.interpreted":
-    "أفهم طلبك على أنه «{need}». هل هذا صحيح؟",
-  "dialogue.conversation.answer": "إجابتك: {answer}",
-  "dialogue.conversation.resultsReady": "العروض المناسبة جاهزة.",
-  "dialogue.busy.interpreting.title": "فيستا يفهم طلبك",
-  "dialogue.busy.interpreting.text":
-    "يجري تصنيف مدخلاتك، وعادة لا يستغرق ذلك سوى لحظة.",
-  "dialogue.busy.starting.title": "فيستا يحضّر السؤال التالي",
-  "dialogue.busy.starting.text":
-    "يتحقق منطق النظام من المعلومة الإضافية المهمة لبحث آمن.",
-  "dialogue.busy.answer.title": "فيستا يتحقق من إجابتك",
-  "dialogue.busy.answer.text":
-    "نحدد الخطوة المناسبة التالية ثم نتحقق من العروض الممكنة.",
-  "dialogue.error.title": "حدث خطأ",
-  "dialogue.error": "حوار الذكاء الاصطناعي غير متاح حاليًا.",
-  "dialogue.question.eyebrow": "سؤال آخر",
-  "dialogue.question.answerLegend": "إجابتك",
-  "dialogue.question.yes": "نعم",
-  "dialogue.question.no": "لا",
-  "dialogue.question.numberLabel": "إجابتك",
-  "dialogue.question.numberSubmit": "تأكيد",
-  "dialogue.fit.gender.question":
-    "هل يناسبك عرض مخصص للنساء ولأشخاص FINTA؟",
-  "dialogue.fit.gender.help":
-    "بعض أماكن الإيواء متاحة حصريًا للنساء ولأشخاص FINTA.",
-  "dialogue.fit.gender.yes": "نعم، هذا يناسبني",
-  "dialogue.fit.gender.no": "لا، أبحث عن عرض متاح للجميع",
-  "dialogue.fit.age.question": "هل البحث يخص شخصًا بالغًا؟",
-  "dialogue.fit.age.help":
-    "بعض أماكن المبيت متاحة فقط لمن يبلغون 18 عامًا أو أكثر.",
-  "dialogue.fit.age.adult": "نعم، 18 عامًا أو أكثر",
-  "dialogue.fit.age.minor": "لا، أقل من 18 عامًا",
-  "dialogue.fit.decline": "أفضل عدم ذكر ذلك",
-  "dialogue.result.eyebrow": "نتيجة موضحة",
-  "dialogue.result.title": "قد تساعدك هذه العروض",
-  "dialogue.restart": "البدء من جديد",
-  "dialogue.other.title": "شيء آخر",
-  "dialogue.other.detail": "صفه بكلماتك الخاصة",
-  "dialogue.back": "رجوع",
-  "dialogue.interpretation.confirmHint": "اضغط للمتابعة",
-};
-
 export const messages: Record<Locale, Record<MessageKey, string>> = {
   de,
   fr,
   en,
-  ar,
+  es,
+  pt,
+  ary,
 };
 
 export const defaultLocale: Locale = "de";
@@ -1076,7 +826,9 @@ export const localeTags: Record<Locale, string> = {
   de: "de-CH",
   fr: "fr-CH",
   en: "en-GB",
-  ar: "ar",
+  es: "es-ES",
+  pt: "pt-PT",
+  ary: "ary-MA",
 };
 
 export function normalizeLocale(value: string | null | undefined): Locale | null {
@@ -1084,12 +836,17 @@ export function normalizeLocale(value: string | null | undefined): Locale | null
     return null;
   }
 
-  const language = value.toLowerCase().split("-")[0];
+  const normalized = value.toLowerCase();
+  if (normalized === "ar" || normalized.startsWith("ar-")) {
+    return "ary";
+  }
+
+  const language = normalized.split("-")[0];
   return supportedLocales.find((locale) => locale === language) ?? null;
 }
 
 export function getDirection(locale: Locale): "ltr" | "rtl" {
-  return locale === "ar" ? "rtl" : "ltr";
+  return locale === "ary" ? "rtl" : "ltr";
 }
 
 export function interpolate(

@@ -2,6 +2,7 @@ import json
 import logging
 from contextvars import ContextVar
 
+from vesta_api.ai.locales import ai_locale_name
 from vesta_api.domain.ai_models import (
     AttributeProposal,
     ExplanationReason,
@@ -178,7 +179,7 @@ class AnthropicGateway:
         attributes: tuple[AttributeDefinition, ...],
     ) -> InterpretationResult:
         user_content = (
-            f"Sprache: {locale}\n\n"
+            f"Sprache: {ai_locale_name(locale)}\n\n"
             f"{_describe_catalog(needs, attributes)}\n\n"
             f"Freitext der Person: {free_text}"
         )
@@ -221,7 +222,7 @@ class AnthropicGateway:
             else "ja / nein / weiss nicht"
         )
         user_content = (
-            f"Sprache: {locale}\n"
+            f"Sprache: {ai_locale_name(locale)}\n"
             f"Kanonischer Text: {canonical['canonical_text']}\n"
             f"Hilfetext: {canonical.get('help_text', '')}\n"
             f"Erlaubte Antwortoptionen: {allowed_values}\n\n"
@@ -252,7 +253,7 @@ class AnthropicGateway:
 
     def explain(self, *, bundle: GroundingBundle, locale: str) -> ExplanationResult:
         user_content = (
-            f"Sprache: {locale}\n\n"
+            f"Sprache: {ai_locale_name(locale)}\n\n"
             f"Faktenpaket:\n{json.dumps(_bundle_payload(bundle), ensure_ascii=False)}"
         )
         request_text = f"[system]\n{_EXPLANATION_SYSTEM}\n\n[user]\n{user_content}"

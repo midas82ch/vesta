@@ -18,6 +18,7 @@ EXPECTED_ATTRIBUTE_KEYS = {
     "person.gender",
     "person.age",
 }
+EXPECTED_LOCALES = {"de", "fr", "en", "es", "pt", "ary"}
 
 
 class DialogueCatalogTest(unittest.TestCase):
@@ -32,10 +33,7 @@ class DialogueCatalogTest(unittest.TestCase):
             [need.key for need in needs],
         )
         for need in needs:
-            self.assertIn("de", need.localizations)
-            self.assertIn("fr", need.localizations)
-            self.assertIn("en", need.localizations)
-            self.assertIn("ar", need.localizations)
+            self.assertEqual(EXPECTED_LOCALES, set(need.localizations))
 
     def test_lists_all_attributes_backing_todays_hardcoded_access_rules(self) -> None:
         attributes = self.repository.list_attributes()
@@ -50,6 +48,8 @@ class DialogueCatalogTest(unittest.TestCase):
         self.assertEqual({"finta", "other"}, {o.value for o in attribute.options})
         finta = next(o for o in attribute.options if o.value == "finta")
         self.assertEqual("Frau / FINTA", finta.localizations["de"]["label"])
+        self.assertEqual(EXPECTED_LOCALES, set(finta.localizations))
+        self.assertEqual("مرا / FINTA", finta.localizations["ary"]["label"])
 
     def test_unknown_attribute_returns_none(self) -> None:
         self.assertIsNone(self.repository.get_attribute("person.does_not_exist"))
@@ -65,7 +65,7 @@ class DialogueCatalogTest(unittest.TestCase):
         )
         for question in questions:
             self.assertIn(question.attribute_key, attribute_keys)
-            self.assertIn("de", question.localizations)
+            self.assertEqual(EXPECTED_LOCALES, set(question.localizations))
             canonical = question.localizations["de"]["canonical_text"]
             self.assertTrue(canonical)
 

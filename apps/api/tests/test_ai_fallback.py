@@ -43,7 +43,11 @@ class TemplateGatewayTest(unittest.TestCase):
             question=question, attribute=attribute, locale="fr"
         )
 
-        self.assertEqual("Quel groupe cible vous correspond ?", rendered.text)
+        self.assertEqual(
+            "Une offre spécialement destinée aux femmes et aux personnes FINTA "
+            "te convient-elle ?",
+            rendered.text,
+        )
         self.assertEqual({"finta", "other"}, {o.value for o in rendered.options})
         finta = next(o for o in rendered.options if o.value == "finta")
         self.assertEqual("Femme / FINTA", finta.label)
@@ -60,7 +64,49 @@ class TemplateGatewayTest(unittest.TestCase):
             question=question, attribute=attribute, locale="it"
         )
 
-        self.assertEqual("Führen Sie ein Tier mit sich?", rendered.text)
+        self.assertEqual("Hast du ein Tier dabei?", rendered.text)
+
+    def test_render_question_supports_all_new_locales_without_fallback(self) -> None:
+        question = next(
+            q for q in self.catalog.list_questions() if q.key == "sleep.has_dog"
+        )
+        attribute = self.catalog.get_attribute("person.has_dog")
+        assert attribute is not None
+
+        expected = {
+            "es": "¿Tienes un animal contigo?",
+            "pt": "Tens algum animal contigo?",
+            "ary": "واش معاك شي حيوان؟",
+        }
+        for locale, expected_text in expected.items():
+            with self.subTest(locale=locale):
+                rendered = self.gateway.render_question(
+                    question=question,
+                    attribute=attribute,
+                    locale=locale,
+                )
+                self.assertEqual(expected_text, rendered.text)
+
+    def test_explanation_supports_all_new_locales_without_fallback(self) -> None:
+        bundle = GroundingBundle(
+            offer_id="offer-1",
+            facts=(
+                GroundingFact(id="reason:need_matches", type="need_matches", value=True),
+            ),
+            match_reasons=("need_matches",),
+            uncertainties=(),
+            allowed_next_actions=(),
+        )
+
+        expected = {
+            "es": "Este servicio se ajusta a tu búsqueda.",
+            "pt": "Este serviço corresponde à tua pesquisa.",
+            "ary": "هاد الخدمة مناسبة للبحث ديالك.",
+        }
+        for locale, expected_headline in expected.items():
+            with self.subTest(locale=locale):
+                result = self.gateway.explain(bundle=bundle, locale=locale)
+                self.assertEqual(expected_headline, result.headline)
 
     def test_explain_only_states_what_the_bundle_supports(self) -> None:
         bundle = GroundingBundle(
