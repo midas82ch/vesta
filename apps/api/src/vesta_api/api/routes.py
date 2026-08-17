@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from vesta_api.api.localization import disclaimer_for
 from vesta_api.api.schemas import (
     MatchRequest,
     MatchResponse,
@@ -69,8 +70,5 @@ def create_match(
         candidates=[candidate_to_response(candidate) for candidate in result.candidates],
         human_handoff_required=result.human_handoff_required,
         handoff_reason=result.handoff_reason,
-        disclaimer=(
-            "Angebote werden nicht automatisch reserviert. "
-            "Aktualität und Kontaktangaben vor Ort bestätigen."
-        ),
+        disclaimer=disclaimer_for(payload.language),
     )

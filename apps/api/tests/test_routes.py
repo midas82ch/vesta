@@ -62,6 +62,7 @@ class RoutesTest(unittest.TestCase):
         self.assertIsNone(payload["candidates"][0]["distance_meters"])
         self.assertIsNone(payload["candidates"][0]["offer"]["address"])
         self.assertIsNone(payload["candidates"][0]["offer"]["directions_url"])
+        self.assertTrue(payload["disclaimer"].startswith("Les offres"))
 
     def test_rejects_invalid_user_location(self) -> None:
         with TestClient(app) as client:

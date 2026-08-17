@@ -20,6 +20,7 @@ from vesta_api.api.dialogue_schemas import (
     RenderedQuestionResponse,
     StartDialogueRequest,
 )
+from vesta_api.api.localization import disclaimer_for
 from vesta_api.api.schemas import candidate_to_response
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
 from vesta_api.domain.models import (
@@ -38,12 +39,6 @@ from vesta_api.services.result_grounding import build_grounding_bundle
 
 router = APIRouter(prefix="/v1/dialogue")
 logger = logging.getLogger(__name__)
-
-DISCLAIMER = (
-    "Angebote werden nicht automatisch reserviert. "
-    "Aktualität und Kontaktangaben vor Ort bestätigen."
-)
-
 
 def _validated_answer_value(
     question: QuestionDefinition,
@@ -414,7 +409,7 @@ def _turn_response(
             turn.match_result.human_handoff_required if turn.match_result else False
         ),
         handoff_reason=turn.match_result.handoff_reason if turn.match_result else None,
-        disclaimer=DISCLAIMER,
+        disclaimer=disclaimer_for(locale),
     )
     _record_workflow_event(
         workflow_log,
