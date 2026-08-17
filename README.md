@@ -127,7 +127,7 @@ read -rsp "Exoscale PostgreSQL URI: " DATABASE_URI
 printf '%s' "$DATABASE_URI" > secrets/database-admin-url
 unset DATABASE_URI
 chmod 600 secrets/database-admin-url
-sudo docker compose -f compose.prod.yaml build api migrate
+sudo docker compose -f compose.prod.yaml build api
 sudo docker compose -f compose.prod.yaml run --rm migrate
 sudo docker run --rm \
   -e DATABASE_ADMIN_URL_FILE=/run/secrets/database-admin-url \
@@ -152,9 +152,14 @@ Schreibrechten ausschliesslich auf den Angebotstabellen.
 `data/sources/bern_offers.json` enthält kuratierte, offizielle Berner
 Quellseiten. Der Importer respektiert `robots.txt`, lädt höchstens 2 MB pro
 Seite und akzeptiert einen Datensatz nur, wenn alle hinterlegten
-Evidenzbegriffe weiterhin vorkommen. Er übernimmt keine freien Kapazitäten und
-markiert jeden Datensatz sichtbar als Test. Verifizierte Adressen werden mit
+Evidenzbegriffe weiterhin vorkommen. Er übernimmt keine freien Kapazitäten.
+Verifizierte Adressen werden mit
 einmalig geprüften Koordinaten in `offers.location` übernommen.
+
+API, Migration und Import verwenden in Produktion dasselbe `vesta-api:latest`-
+Image. Dadurch prüft der tägliche Import immer genau den Katalog des aktuell
+deployten API-Releases und kann nicht unbemerkt mit einem veralteten separaten
+Job-Image weiterlaufen.
 
 Die öffentlichen Endpunkte `/v1/matches`, `/v1/dialogue/start` und
 `/v1/dialogue/answer` akzeptieren optional

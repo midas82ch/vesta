@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.vesta-app.ch"),
-  title: "Vesta – Weniger Systemreibung. Mehr Zugang zu Hilfe.",
+  title: "Vesta - einfach Hilfe finden",
   description:
     "Der verifizierte, mehrsprachige Sozial-Lotse für Bern: passende Hilfe finden, Fachpersonen entlasten und Systemlücken sichtbar machen.",
   applicationName: "Vesta",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Vesta – Berner Sozial-Lotse",
+    title: "Vesta - einfach Hilfe finden",
     description:
       "Weniger Systemreibung, mehr Zugang zu Hilfe: verständlich, mehrsprachig und mit sichtbaren Quellen.",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Vesta – Berner Sozial-Lotse",
+    title: "Vesta - einfach Hilfe finden",
     description:
       "Weniger Systemreibung, mehr Zugang zu Hilfe: verständlich, mehrsprachig und mit sichtbaren Quellen.",
   },

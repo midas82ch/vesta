@@ -59,6 +59,7 @@ services:
     logging: *default-logging
 
   api:
+    image: vesta-api:latest
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -98,9 +99,7 @@ services:
     logging: *default-logging
 
   migrate:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    image: vesta-api:latest
     command:
       [
         "alembic",
@@ -120,9 +119,7 @@ services:
     logging: *default-logging
 
   ingest:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    image: vesta-api:latest
     command: ["python", "-m", "vesta_api.cli.ingest_offers"]
     environment:
       DATABASE_URL_FILE: /run/secrets/database-ingest-url

@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from sqlalchemy import Connection, Engine, text
 
 USER_AGENT = "VestaPrototypeOfferVerifier/0.2 (+https://www.vesta-app.ch)"
@@ -59,6 +59,13 @@ class CatalogOffer(BaseModel):
     contact_note: str
     location: CatalogLocation | None = None
     source: CatalogSource
+
+    @field_validator("slug")
+    @classmethod
+    def reject_legacy_test_slug(cls, value: str) -> str:
+        if value.startswith("test-"):
+            raise ValueError("Legacy test-prefixed offer slugs are not allowed")
+        return value
 
 
 class OfferCatalog(BaseModel):

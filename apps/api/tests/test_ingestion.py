@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from vesta_api.ingestion.web_offers import (  # noqa: E402
     LEGACY_ID_NAMESPACE,
     CatalogLocation,
+    OfferCatalog,
     _resolve_offer_id,
     evaluate_evidence,
     html_to_text,
@@ -57,6 +59,14 @@ class OfferCatalogTest(unittest.TestCase):
         parameters = connection.execute.call_args.args[1]
         self.assertEqual("passantenheim-bern", parameters["slug"])
         self.assertEqual("test-passantenheim-bern", parameters["legacy_slug"])
+
+    def test_catalog_rejects_legacy_test_prefixed_slugs(self) -> None:
+        catalog_path = REPOSITORY_ROOT / "data" / "sources" / "bern_offers.json"
+        payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+        payload["offers"][0]["slug"] = "test-passantenheim-bern"
+
+        with self.assertRaises(ValidationError):
+            OfferCatalog.model_validate(payload)
 
     def test_new_clean_slug_gets_a_stable_id_without_test_prefix(self) -> None:
         connection = Mock()
