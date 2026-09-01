@@ -46,6 +46,7 @@ export default function AiAuditPage() {
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
   const [selected, setSelected] = useState<WorkflowDetail | null>(null);
+  const [downloadingWorkflowId, setDownloadingWorkflowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +82,21 @@ export default function AiAuditPage() {
       setSelected(detail);
     } catch (requestError) {
       handleRequestError(requestError, "Workflow konnte nicht geladen werden.");
+    }
+  }
+
+  async function downloadWorkflow(workflowId: string) {
+    setError(null);
+    setDownloadingWorkflowId(workflowId);
+    try {
+      const detail = await fetchJson<WorkflowDetail>(
+        `/api/admin/ai-audit-workflows/${encodeURIComponent(workflowId)}`,
+      );
+      downloadWorkflowMarkdown(detail);
+    } catch (requestError) {
+      handleRequestError(requestError, "Workflow konnte nicht heruntergeladen werden.");
+    } finally {
+      setDownloadingWorkflowId(null);
     }
   }
 
@@ -139,13 +155,25 @@ export default function AiAuditPage() {
                     <time dateTime={workflow.updated_at}>{updatedAt}</time>
                     <p className="workflow-preview">{workflow.input_preview}</p>
                   </div>
-                  <span
-                    className={`workflow-status ${
-                      workflow.complete ? "workflow-status--complete" : ""
-                    }`}
-                  >
-                    {workflow.complete ? "Vollständige Spur" : "Teilspur"}
-                  </span>
+                  <div className="workflow-card-actions">
+                    <span
+                      className={`workflow-status ${
+                        workflow.complete ? "workflow-status--complete" : ""
+                      }`}
+                    >
+                      {workflow.complete ? "Vollständige Spur" : "Teilspur"}
+                    </span>
+                    <Button
+                      aria-label={`Workflow vom ${updatedAt} als Markdown-Datei herunterladen`}
+                      disabled={downloadingWorkflowId === workflow.workflow_id}
+                      onClick={() => downloadWorkflow(workflow.workflow_id)}
+                      variant="secondary"
+                    >
+                      {downloadingWorkflowId === workflow.workflow_id
+                        ? "Wird vorbereitet …"
+                        : "Download (.md)"}
+                    </Button>
+                  </div>
                 </div>
                 <p className="field-hint">
                   {workflow.event_count} Prozessschritte · {workflow.ai_call_count} AI-Aufrufe

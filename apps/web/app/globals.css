@@ -750,6 +750,7 @@ form + .choice-list {
   border-color: var(--green);
 }
 
+.workflow-card-actions,
 .workflow-detail-actions {
   display: grid;
   gap: 0.65rem;
@@ -1647,6 +1648,7 @@ footer a {
     justify-content: space-between;
   }
 
+  .workflow-card-actions,
   .workflow-detail-actions {
     justify-items: end;
   }
