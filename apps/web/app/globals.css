@@ -750,6 +750,12 @@ form + .choice-list {
   border-color: var(--green);
 }
 
+.workflow-detail-actions {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: start;
+}
+
 .ingestion-status {
   align-items: center;
   border: 1px solid var(--orange);
@@ -1639,6 +1645,10 @@ footer a {
     align-items: start;
     display: flex;
     justify-content: space-between;
+  }
+
+  .workflow-detail-actions {
+    justify-items: end;
   }
 
   .workflow-card {

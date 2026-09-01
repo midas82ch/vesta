@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdminNav } from "@/components/admin-nav";
 import { Button } from "@/components/ui";
+import {
+  downloadWorkflowMarkdown,
+  type WorkflowDetail,
+} from "@/lib/admin-audit-export";
 
 type WorkflowSummary = {
   workflow_id: string;
@@ -14,27 +18,6 @@ type WorkflowSummary = {
   ai_call_count: number;
   complete: boolean;
   has_fallback: boolean;
-};
-
-type WorkflowStep = {
-  id: string;
-  kind: "input" | "ai" | "system" | "output";
-  event_type: string;
-  label: string;
-  summary: string;
-  created_at: string;
-  provider: string | null;
-  model: string | null;
-  outcome: string | null;
-  details: Record<string, unknown>;
-};
-
-type WorkflowDetail = {
-  workflow_id: string;
-  started_at: string;
-  updated_at: string;
-  complete: boolean;
-  steps: WorkflowStep[];
 };
 
 class RequestError extends Error {
@@ -193,13 +176,22 @@ export default function AiAuditPage() {
                 Workflow-Details
               </h2>
             </div>
-            <span
-              className={`workflow-status ${
-                selected.complete ? "workflow-status--complete" : ""
-              }`}
-            >
-              {selected.complete ? "Vollständige Spur" : "Historische Teilspur"}
-            </span>
+            <div className="workflow-detail-actions">
+              <span
+                className={`workflow-status ${
+                  selected.complete ? "workflow-status--complete" : ""
+                }`}
+              >
+                {selected.complete ? "Vollständige Spur" : "Historische Teilspur"}
+              </span>
+              <Button
+                aria-label="Vollständige Spur als Markdown-Datei herunterladen"
+                onClick={() => downloadWorkflowMarkdown(selected)}
+                variant="secondary"
+              >
+                Download (.md)
+              </Button>
+            </div>
           </div>
           <p className="field-hint">
             Workflow-ID: <code>{selected.workflow_id}</code>
