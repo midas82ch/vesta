@@ -223,6 +223,8 @@ _UPSERT_OFFER = text(
         availability,
         published,
         is_demo,
+        origin,
+        management_mode,
         updated_at
     )
     VALUES (
@@ -249,21 +251,37 @@ _UPSERT_OFFER = text(
         CAST(:availability AS offer_availability),
         true,
         false,
+        'imported',
+        'source',
         now()
     )
     ON CONFLICT (id) DO UPDATE SET
-        organization_id = EXCLUDED.organization_id,
-        slug = EXCLUDED.slug,
-        name = EXCLUDED.name,
-        summary = EXCLUDED.summary,
-        languages = EXCLUDED.languages,
-        access_rules = EXCLUDED.access_rules,
-        contact = EXCLUDED.contact,
-        location = EXCLUDED.location,
-        availability = EXCLUDED.availability,
-        published = true,
+        organization_id = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.organization_id ELSE offers.organization_id END,
+        slug = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.slug ELSE offers.slug END,
+        name = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.name ELSE offers.name END,
+        summary = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.summary ELSE offers.summary END,
+        languages = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.languages ELSE offers.languages END,
+        access_rules = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.access_rules ELSE offers.access_rules END,
+        contact = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.contact ELSE offers.contact END,
+        location = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.location ELSE offers.location END,
+        availability = CASE WHEN offers.management_mode = 'source'
+            THEN EXCLUDED.availability ELSE offers.availability END,
+        published = CASE WHEN offers.management_mode = 'source'
+            THEN true ELSE offers.published END,
         is_demo = false,
-        updated_at = now()
+        revision = CASE WHEN offers.management_mode = 'source'
+            THEN offers.revision + 1 ELSE offers.revision END,
+        updated_at = CASE WHEN offers.management_mode = 'source'
+            THEN now() ELSE offers.updated_at END
+    RETURNING management_mode
     """
 )
 
@@ -400,7 +418,7 @@ def _store_offer(
             _UPSERT_ORGANIZATION,
             {"id": organization_id, "name": offer.organization_name},
         )
-        connection.execute(
+        management_mode = connection.execute(
             _UPSERT_OFFER,
             {
                 "id": offer_id,
@@ -428,30 +446,31 @@ def _store_offer(
                 ),
                 "availability": offer.availability,
             },
-        )
-        connection.execute(_DELETE_CATEGORIES, {"offer_id": offer_id})
-        connection.execute(
-            _INSERT_CATEGORY,
-            [
-                {"offer_id": offer_id, "category": category}
-                for category in offer.needs
-            ],
-        )
-        connection.execute(
-            _UPSERT_VERIFICATION,
-            {
-                "id": verification_id,
-                "offer_id": offer_id,
-                "source_label": offer.source.label,
-                "source_url": str(offer.source.url),
-                "verified_at": checked_at,
-                "expires_at": checked_at + VERIFICATION_TTL,
-                "notes": (
-                    "Automatisch anhand der öffentlichen Quelle geprüft; "
-                    f"content_sha256={page.content_sha256}"
-                ),
-            },
-        )
+        ).scalar_one()
+        if management_mode == "source":
+            connection.execute(_DELETE_CATEGORIES, {"offer_id": offer_id})
+            connection.execute(
+                _INSERT_CATEGORY,
+                [
+                    {"offer_id": offer_id, "category": category}
+                    for category in offer.needs
+                ],
+            )
+            connection.execute(
+                _UPSERT_VERIFICATION,
+                {
+                    "id": verification_id,
+                    "offer_id": offer_id,
+                    "source_label": offer.source.label,
+                    "source_url": str(offer.source.url),
+                    "verified_at": checked_at,
+                    "expires_at": checked_at + VERIFICATION_TTL,
+                    "notes": (
+                        "Automatisch anhand der öffentlichen Quelle geprüft; "
+                        f"content_sha256={page.content_sha256}"
+                    ),
+                },
+            )
         connection.execute(
             _INSERT_RUN,
             {

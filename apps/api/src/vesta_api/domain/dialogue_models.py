@@ -2,8 +2,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
-from vesta_api.domain.models import Need
-
 AttributeStatus = Literal["proposed", "confirmed", "unknown", "declined"]
 AttributeSource = Literal["user", "ai", "derived"]
 
@@ -30,7 +28,7 @@ class DialogueState:
     locale: str
     created_at: datetime
     expires_at: datetime
-    need: Need | None = None
+    need: str | None = None
     attributes: tuple[AttributeState, ...] = field(default_factory=tuple)
     safety_status: Literal["clear", "handoff"] = "clear"
     declined_question_keys: tuple[str, ...] = field(default_factory=tuple)

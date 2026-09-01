@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from urllib.parse import urlencode
 
 from pydantic import BaseModel, Field, field_validator
@@ -9,7 +10,6 @@ from vesta_api.domain.models import (
     Availability,
     Candidate,
     GeoPoint,
-    Need,
     RiskFlag,
 )
 
@@ -28,7 +28,7 @@ class UserLocationInput(BaseModel):
 
 
 class MatchRequest(BaseModel):
-    need: Need
+    need: str = Field(pattern=r"^[a-z0-9_-]+$", min_length=1, max_length=100)
     language: str = Field(default="de", min_length=2, max_length=12)
     dog: bool | None = None
     has_identity_document: bool | None = None
@@ -72,9 +72,21 @@ class CandidateResponse(BaseModel):
 
 class MatchResponse(BaseModel):
     candidates: list[CandidateResponse]
+    outcome: Literal["matches", "no_match", "handoff"]
     human_handoff_required: bool
     handoff_reason: str | None
     disclaimer: str
+
+
+class PublicCategoryResponse(BaseModel):
+    key: str
+    title: str
+    description: str
+    icon: str
+
+
+class PublicCategoryListResponse(BaseModel):
+    categories: list[PublicCategoryResponse]
 
 
 def candidate_to_response(candidate: Candidate) -> CandidateResponse:

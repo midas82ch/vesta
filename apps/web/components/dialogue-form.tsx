@@ -12,7 +12,7 @@ import { useI18n } from "@/components/i18n-provider";
 import { NeedSymbol } from "@/components/need-symbol";
 import { Button, ChoiceList, NumberField, TextAreaField, type ChoiceOption } from "@/components/ui";
 import { localeTags, type Locale, type MessageKey } from "@/lib/i18n";
-import { needs, type Need } from "@/lib/needs";
+import { needs, type Need, type NeedIcon } from "@/lib/needs";
 
 type Offer = {
   id: string;
@@ -70,11 +70,19 @@ type RenderedQuestion = {
 type DialogueTurn = {
   session_id: string;
   ai_mode: "live" | "template";
+  outcome: "question" | "matches" | "no_match" | "handoff";
   question: RenderedQuestion | null;
   candidates: ExplainedCandidate[];
   human_handoff_required: boolean;
   handoff_reason: string | null;
   disclaimer: string;
+};
+
+type PublicCategory = {
+  key: string;
+  title: string;
+  description: string;
+  icon: NeedIcon;
 };
 
 type InterpretResponse = {
@@ -140,15 +148,6 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
     throw new Error(`request_failed_${response.status}`);
   }
   return (await response.json()) as T;
-}
-
-function titleFor(needValue: string): MessageKey {
-  return (needs.find((need) => need.value === needValue)?.title ??
-    "need.sleep.title") as MessageKey;
-}
-
-function symbolFor(needValue: string) {
-  return needs.find((need) => need.value === needValue)?.icon ?? "other";
 }
 
 function DialogueProgress({ currentStage }: { currentStage: number }) {
@@ -352,6 +351,7 @@ export function DialogueForm() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationStatus, setLocationStatus] =
     useState<LocationStatus>("idle");
+  const [catalogCategories, setCatalogCategories] = useState<PublicCategory[]>([]);
 
   const busy = phase === "interpreting" || phase === "loading";
   const locationBusy = locationStatus === "locating";
@@ -368,6 +368,38 @@ export function DialogueForm() {
       responseHeadingRef.current?.focus();
     }
   }, [phase]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/categories?language=${encodeURIComponent(locale)}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("category_catalog_unavailable");
+        return response.json() as Promise<{ categories: PublicCategory[] }>;
+      })
+      .then((payload) => setCatalogCategories(payload.categories))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setCatalogCategories([]);
+        }
+      });
+    return () => controller.abort();
+  }, [locale]);
+
+  const availableCategories: PublicCategory[] = catalogCategories.length
+    ? catalogCategories
+    : needs.map((need) => ({
+        key: need.value,
+        title: t(need.title),
+        description: t(need.detail),
+        icon: need.icon,
+      }));
+
+  function categoryFor(value: string) {
+    return availableCategories.find((category) => category.key === value);
+  }
 
   function createMessage(
     speaker: ConversationMessage["speaker"],
@@ -433,7 +465,7 @@ export function DialogueForm() {
     appendMessage(
       "person",
       t("dialogue.conversation.selectedNeed", {
-        need: t(titleFor(need)),
+        need: categoryFor(need)?.title ?? need,
       }),
     );
     setActiveQuestionId(null);
@@ -477,7 +509,7 @@ export function DialogueForm() {
         "vesta",
         result.need_key
           ? t("dialogue.conversation.interpreted", {
-              need: t(titleFor(result.need_key)),
+              need: categoryFor(result.need_key)?.title ?? result.need_key,
             })
           : t("dialogue.interpretation.unclear"),
       );
@@ -494,7 +526,9 @@ export function DialogueForm() {
       "vesta",
       result.question
         ? controlledQuestionText(result.question)
-        : t("dialogue.conversation.resultsReady"),
+        : result.outcome === "no_match"
+          ? t("dialogue.conversation.noMatch")
+          : t("dialogue.conversation.resultsReady"),
     );
     setActiveQuestionId(result.question ? responseMessage.id : null);
     setPhase(result.question ? "question" : "result");
@@ -645,11 +679,11 @@ export function DialogueForm() {
   }
 
   const needPickerOptions: ChoiceOption[] = [
-    ...needs.map((need) => ({
-      value: need.value,
+    ...availableCategories.map((need) => ({
+      value: need.key,
       icon: <NeedSymbol name={need.icon} />,
-      label: t(need.title),
-      detail: t(need.detail),
+      label: need.title,
+      detail: need.description,
     })),
     {
       value: OTHER_NEED_VALUE,
@@ -663,16 +697,16 @@ export function DialogueForm() {
     ? [
         {
           value: interpretation.need_key,
-          icon: <NeedSymbol name={symbolFor(interpretation.need_key)} />,
-          label: t(titleFor(interpretation.need_key)),
+          icon: <NeedSymbol name={categoryFor(interpretation.need_key)?.icon ?? "other"} />,
+          label: categoryFor(interpretation.need_key)?.title ?? interpretation.need_key,
           detail: t("dialogue.interpretation.confirmHint"),
         },
       ]
-    : needs.map((need) => ({
-        value: need.value,
+    : availableCategories.map((need) => ({
+        value: need.key,
         icon: <NeedSymbol name={need.icon} />,
-        label: t(need.title),
-        detail: t(need.detail),
+        label: need.title,
+        detail: need.description,
       }));
 
   const busyTitle =
@@ -892,7 +926,9 @@ export function DialogueForm() {
               ref={responseHeadingRef}
               tabIndex={-1}
             >
-              {t("dialogue.result.title")}
+              {turn.outcome === "no_match"
+                ? t("results.noMatch.title")
+                : t("dialogue.result.title")}
             </h2>
           </div>
 
@@ -966,6 +1002,14 @@ export function DialogueForm() {
 
           {turn.human_handoff_required && (
             <p className="handoff-message">{t("results.handoff")}</p>
+          )}
+          {turn.outcome === "no_match" && (
+            <div className="no-match-message">
+              <p>{t("results.noMatch.text")}</p>
+              <Button onClick={restart} variant="secondary">
+                {t("results.noMatch.restart")}
+              </Button>
+            </div>
           )}
           <p className="disclaimer">{turn.disclaimer}</p>
         </section>

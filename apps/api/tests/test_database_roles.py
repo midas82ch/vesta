@@ -69,6 +69,31 @@ class DatabaseRolePrivilegesTest(unittest.TestCase):
             ("SELECT",), vesta_app.table_privileges["offer_ingestion_runs"]
         )
 
+    def test_catalog_roles_have_only_the_required_management_privileges(self) -> None:
+        vesta_app = next(role for role in ROLES if role.username == "vesta_app")
+        vesta_ingest = next(role for role in ROLES if role.username == "vesta_ingest")
+        vesta_admin = next(role for role in ROLES if role.username == "vesta_admin")
+
+        self.assertEqual(
+            ("SELECT",), vesta_app.table_privileges["offer_import_settings"]
+        )
+        self.assertEqual(
+            ("SELECT",), vesta_ingest.table_privileges["offer_import_settings"]
+        )
+        self.assertNotIn("admin_change_log", vesta_app.table_privileges)
+        self.assertNotIn("admin_change_log", vesta_ingest.table_privileges)
+
+        self.assertEqual(
+            ("SELECT", "UPDATE"),
+            vesta_admin.table_privileges["offer_import_settings"],
+        )
+        self.assertEqual(
+            ("SELECT", "INSERT"),
+            vesta_admin.table_privileges["admin_change_log"],
+        )
+        self.assertNotIn("DELETE", vesta_admin.table_privileges["offers"])
+        self.assertNotIn("UPDATE", vesta_admin.table_privileges["organizations"])
+
 
 class DatabaseRoleUrlTest(unittest.TestCase):
     def test_replaces_admin_credentials_and_preserves_tls(self) -> None:

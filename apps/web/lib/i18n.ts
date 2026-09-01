@@ -73,6 +73,10 @@ const de = {
   "results.directions": "Wegbeschreibung in Google Maps",
   "results.handoff":
     "Wir haben kein verlässlich passendes Angebot gefunden. Eine Fachperson sollte die Situation übernehmen.",
+  "results.noMatch.title": "Aktuell kein passendes Angebot gefunden",
+  "results.noMatch.text":
+    "Im aktuell geprüften Angebotsregister gibt es für diese Angaben leider keinen passenden Treffer. Du kannst deine Angaben anpassen oder einen anderen Bereich auswählen.",
+  "results.noMatch.restart": "Suche anpassen",
   "results.disclaimer":
     "Angebote werden nicht automatisch reserviert. Aktualität und Kontaktangaben vor Ort bestätigen.",
   "principles.eyebrow": "Wie Vesta arbeitet",
@@ -234,6 +238,8 @@ const de = {
     "Ich verstehe dein Anliegen als «{need}». Passt das?",
   "dialogue.conversation.answer": "Deine Antwort: {answer}",
   "dialogue.conversation.resultsReady": "Die passenden Angebote sind bereit.",
+  "dialogue.conversation.noMatch":
+    "Ich habe das geprüfte Register durchsucht, aber aktuell keinen passenden Treffer gefunden.",
   "dialogue.busy.interpreting.title": "Vesta versteht dein Anliegen",
   "dialogue.busy.interpreting.text":
     "Deine Eingabe wird eingeordnet. Das dauert meist nur einen Moment.",
@@ -342,6 +348,10 @@ const fr: Record<MessageKey, string> = {
   "results.directions": "Itinéraire dans Google Maps",
   "results.handoff":
     "Nous n’avons pas trouvé d’offre suffisamment fiable. Une personne spécialisée devrait reprendre la situation.",
+  "results.noMatch.title": "Aucune offre adaptée pour le moment",
+  "results.noMatch.text":
+    "Le registre actuellement vérifié ne contient malheureusement aucune offre correspondant à ces informations. Tu peux modifier tes réponses ou choisir un autre domaine.",
+  "results.noMatch.restart": "Modifier la recherche",
   "results.disclaimer":
     "Les offres ne sont pas réservées automatiquement. Confirmer sur place leur actualité et les coordonnées.",
   "principles.eyebrow": "Comment fonctionne Vesta",
@@ -505,6 +515,8 @@ const fr: Record<MessageKey, string> = {
     "Je comprends ta demande comme « {need} ». Est-ce correct ?",
   "dialogue.conversation.answer": "Ta réponse : {answer}",
   "dialogue.conversation.resultsReady": "Les offres adaptées sont prêtes.",
+  "dialogue.conversation.noMatch":
+    "J’ai consulté le registre vérifié, mais je n’ai trouvé aucune offre adaptée pour le moment.",
   "dialogue.busy.interpreting.title": "Vesta comprend ta demande",
   "dialogue.busy.interpreting.text":
     "Ta saisie est en cours de classement. Cela ne prend généralement qu’un instant.",
@@ -611,6 +623,10 @@ const en: Record<MessageKey, string> = {
   "results.directions": "Directions in Google Maps",
   "results.handoff":
     "We could not find a reliably suitable service. A qualified professional should take over.",
+  "results.noMatch.title": "No suitable service found right now",
+  "results.noMatch.text":
+    "The currently verified register does not contain a service matching these details. You can adjust your answers or choose another area.",
+  "results.noMatch.restart": "Adjust search",
   "results.disclaimer":
     "Services are not reserved automatically. Confirm current details and contact information directly.",
   "principles.eyebrow": "How Vesta works",
@@ -773,6 +789,8 @@ const en: Record<MessageKey, string> = {
     "I understand your need as “{need}”. Is that right?",
   "dialogue.conversation.answer": "Your answer: {answer}",
   "dialogue.conversation.resultsReady": "The relevant services are ready.",
+  "dialogue.conversation.noMatch":
+    "I checked the verified register but could not find a suitable service right now.",
   "dialogue.busy.interpreting.title": "Vesta is understanding your need",
   "dialogue.busy.interpreting.text":
     "Your input is being categorized. This usually takes only a moment.",

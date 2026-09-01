@@ -13,6 +13,7 @@ class NeedDefinition:
     key: str
     sort_order: int
     localizations: Localizations
+    icon: str = "other"
 
 
 @dataclass(frozen=True)

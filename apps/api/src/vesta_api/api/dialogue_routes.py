@@ -263,7 +263,7 @@ def _record_system_logic(
 ) -> None:
     workflow_id = turn.state.session_id
     state_payload: dict[str, object] = {
-        "need": turn.state.need.value if turn.state.need is not None else None,
+        "need": turn.state.need,
         "locale": turn.state.locale,
         "attributes": [
             {
@@ -392,6 +392,15 @@ def _turn_response(
     response = DialogueTurnResponse(
         session_id=turn.state.session_id,
         ai_mode=gateway.mode,
+        outcome=(
+            "question"
+            if turn.question is not None
+            else "handoff"
+            if turn.match_result and turn.match_result.human_handoff_required
+            else "matches"
+            if turn.match_result and turn.match_result.candidates
+            else "no_match"
+        ),
         question=_render_question(
             turn,
             gateway=gateway,
@@ -430,6 +439,8 @@ def start(
     catalog: Annotated[DialogueCatalogRepository, Depends(dialogue_catalog)],
     workflow_log: Annotated[WorkflowAuditLogRepository, Depends(workflow_audit_log)],
 ) -> DialogueTurnResponse:
+    if payload.need not in {need.key for need in catalog.list_needs()}:
+        raise HTTPException(status_code=422, detail="unknown_or_inactive_category")
     turn = orchestrator.start(
         locale=payload.language,
         need=payload.need,
@@ -446,8 +457,8 @@ def start(
         workflow_id=turn.state.session_id,
         stage="input",
         event_type="need_selected",
-        summary=f"Eingabe: Bedarf «{payload.need.value}» ausgewählt.",
-        payload={"need": payload.need.value, "language": payload.language},
+        summary=f"Eingabe: Bedarf «{payload.need}» ausgewählt.",
+        payload={"need": payload.need, "language": payload.language},
     )
     return _turn_response(
         turn,

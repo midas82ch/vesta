@@ -11,6 +11,7 @@ from vesta_api.domain.dialogue_catalog import (
     NeedDefinition,
     QuestionDefinition,
 )
+from vesta_api.repositories.admin_catalog import AdminCatalogRepository
 from vesta_api.repositories.database import create_database_engine
 
 
@@ -53,6 +54,7 @@ class JsonDialogueCatalogRepository:
                 key=str(item["key"]),
                 sort_order=int(item["sort_order"]),
                 localizations=dict(item["localizations"]),
+                icon=str(item.get("icon", "other")),
             )
             for item in sorted(payload["needs"], key=lambda item: item["sort_order"])
         )
@@ -97,11 +99,51 @@ class JsonDialogueCatalogRepository:
         return None
 
 
+class AdminManagedDialogueCatalogRepository:
+    """Expose in-memory admin category changes through the public dev catalog."""
+
+    def __init__(
+        self,
+        base: DialogueCatalogRepository,
+        admin_catalog: AdminCatalogRepository,
+    ) -> None:
+        self._base = base
+        self._admin_catalog = admin_catalog
+
+    def list_needs(self) -> tuple[NeedDefinition, ...]:
+        return tuple(
+            NeedDefinition(
+                key=category.key,
+                sort_order=category.sort_order,
+                localizations=category.localizations,
+                icon=category.icon,
+            )
+            for category in self._admin_catalog.list_categories()
+            if category.status == "published"
+        )
+
+    def list_attributes(self) -> tuple[AttributeDefinition, ...]:
+        return self._base.list_attributes()
+
+    def get_attribute(self, key: str) -> AttributeDefinition | None:
+        return self._base.get_attribute(key)
+
+    def list_questions(self) -> tuple[QuestionDefinition, ...]:
+        return self._base.list_questions()
+
+    def healthcheck(self) -> None:
+        self._base.healthcheck()
+
+    def close(self) -> None:
+        self._base.close()
+
+
 _LIST_NEEDS = text(
     """
     SELECT
         n.key,
         n.sort_order,
+        n.icon,
         COALESCE(
             jsonb_object_agg(nl.locale, jsonb_build_object(
                 'title', nl.title, 'description', nl.description
@@ -111,7 +153,7 @@ _LIST_NEEDS = text(
     FROM need_definitions AS n
     LEFT JOIN need_localizations AS nl ON nl.need_id = n.id
     WHERE n.status = 'published'
-    GROUP BY n.id, n.key, n.sort_order
+    GROUP BY n.id, n.key, n.sort_order, n.icon
     ORDER BY n.sort_order
     """
 )
@@ -185,6 +227,7 @@ def _row_to_need(row: Mapping[str, Any]) -> NeedDefinition:
         key=str(row["key"]),
         sort_order=int(row["sort_order"]),
         localizations=dict(row["localizations"]),
+        icon=str(row["icon"]),
     )
 
 

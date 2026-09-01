@@ -67,6 +67,10 @@ export const es: Record<MessageKey, string> = {
   "results.directions": "Cómo llegar con Google Maps",
   "results.handoff":
     "No hemos encontrado un servicio que encaje de forma fiable. Una persona especializada debería hacerse cargo de la situación.",
+  "results.noMatch.title": "No hay un servicio adecuado en este momento",
+  "results.noMatch.text":
+    "El registro verificado actualmente no contiene ningún servicio que coincida con estos datos. Puedes cambiar tus respuestas o elegir otro ámbito.",
+  "results.noMatch.restart": "Modificar la búsqueda",
   "results.disclaimer":
     "Los servicios no se reservan automáticamente. Confirma directamente que la información y los datos de contacto estén actualizados.",
   "principles.eyebrow": "Cómo funciona Vesta",
@@ -230,6 +234,8 @@ export const es: Record<MessageKey, string> = {
     "Entiendo tu necesidad como «{need}». ¿Es correcto?",
   "dialogue.conversation.answer": "Tu respuesta: {answer}",
   "dialogue.conversation.resultsReady": "Los servicios adecuados están listos.",
+  "dialogue.conversation.noMatch":
+    "He consultado el registro verificado, pero ahora mismo no he encontrado ningún servicio adecuado.",
   "dialogue.busy.interpreting.title": "Vesta está entendiendo tu necesidad",
   "dialogue.busy.interpreting.text":
     "Se está clasificando tu entrada. Normalmente solo tarda un momento.",

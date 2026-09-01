@@ -1,24 +1,15 @@
-import { NextResponse } from "next/server";
+import {
+  proxyAdminRequest,
+  rejectCrossSiteMutation,
+} from "@/lib/admin-api";
 
 export async function GET(request: Request) {
-  const apiUrl = process.env.VESTA_API_URL ?? "http://localhost:8000";
   const { search } = new URL(request.url);
+  return proxyAdminRequest(request, `/v1/admin/offers${search}`, "GET");
+}
 
-  try {
-    const response = await fetch(`${apiUrl}/v1/admin/offers${search}`, {
-      method: "GET",
-      headers: { cookie: request.headers.get("cookie") ?? "" },
-      cache: "no-store",
-    });
-
-    return new NextResponse(await response.text(), {
-      status: response.status,
-      headers: {
-        "Cache-Control": "no-store",
-        "Content-Type": "application/json",
-      },
-    });
-  } catch {
-    return NextResponse.json({ detail: "admin_service_unavailable" }, { status: 503 });
-  }
+export async function POST(request: Request) {
+  const rejected = rejectCrossSiteMutation(request);
+  if (rejected) return rejected;
+  return proxyAdminRequest(request, "/v1/admin/offers", "POST");
 }

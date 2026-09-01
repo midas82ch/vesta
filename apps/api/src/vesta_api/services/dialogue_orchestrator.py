@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
 from vesta_api.domain.dialogue_models import AttributeState, DialogueState
-from vesta_api.domain.models import GeoPoint, MatchQuery, MatchResult, Need
+from vesta_api.domain.models import GeoPoint, MatchQuery, MatchResult
 from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
 from vesta_api.services.matching import MatchingService
 from vesta_api.services.next_question import NextQuestionPolicy
@@ -112,7 +112,7 @@ class DialogueOrchestrator:
     def start(
         self,
         locale: str,
-        need: Need,
+        need: str,
         now: datetime,
         *,
         session_id: str | None = None,

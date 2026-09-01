@@ -54,6 +54,38 @@ class DatabaseConfigurationTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "sslmode"):
             settings.get_database_url()
 
+    def test_reads_separate_admin_database_url_from_secret_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            secret_file = Path(temporary_directory) / "database-admin-write-url"
+            secret_file.write_text(
+                "postgresql://vesta_admin:secret@database.example/vesta"
+                "?sslmode=verify-full\n",
+                encoding="utf-8",
+            )
+            settings = Settings(
+                _env_file=None,
+                VESTA_ENV="production",
+                ADMIN_DATABASE_URL_FILE=secret_file,
+            )
+
+            database_url = settings.get_admin_database_url()
+
+        self.assertEqual(
+            "postgresql://vesta_admin:secret@database.example/vesta"
+            "?sslmode=verify-full",
+            database_url,
+        )
+
+    def test_rejects_unencrypted_production_admin_database_url(self) -> None:
+        settings = Settings(
+            _env_file=None,
+            VESTA_ENV="production",
+            ADMIN_DATABASE_URL="postgresql://vesta_admin:secret@database.example/vesta",
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "ADMIN_DATABASE_URL"):
+            settings.get_admin_database_url()
+
     def test_reads_openai_api_key_from_secret_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             secret_file = Path(temporary_directory) / "openai-api-key"

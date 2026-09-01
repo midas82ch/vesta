@@ -63,8 +63,8 @@ class MatchingService:
             )
         return MatchResult(
             candidates=tuple(candidates),
-            human_handoff_required=not candidates,
-            handoff_reason=None if candidates else "no_verified_match",
+            human_handoff_required=False,
+            handoff_reason=None,
         )
 
     @staticmethod

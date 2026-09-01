@@ -1,7 +1,15 @@
 import type { MessageKey } from "@/lib/i18n";
 
-export type Need = "sleep_tonight" | "basic_needs" | "counselling";
-export type NeedIcon = "home" | "food" | "book";
+export type Need = string;
+export type NeedIcon =
+  | "home"
+  | "food"
+  | "book"
+  | "health"
+  | "clothing"
+  | "shower"
+  | "support"
+  | "other";
 
 export type NeedOption = {
   value: Need;

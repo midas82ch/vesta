@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-IngestionStatus = Literal["imported", "evidence_missing", "fetch_failed"]
+IngestionStatus = Literal[
+    "imported", "evidence_missing", "fetch_failed", "skipped_disabled"
+]
 
 
 @dataclass(frozen=True)

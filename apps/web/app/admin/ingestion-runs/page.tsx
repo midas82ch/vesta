@@ -9,7 +9,7 @@ type IngestionRun = {
   id: string;
   offer_slug: string;
   source_url: string;
-  status: "imported" | "evidence_missing" | "fetch_failed";
+  status: "imported" | "evidence_missing" | "fetch_failed" | "skipped_disabled";
   http_status: number | null;
   content_sha256: string | null;
   missing_evidence: string[];
@@ -21,6 +21,14 @@ const STATUS_LABELS: Record<IngestionRun["status"], string> = {
   imported: "Importiert",
   evidence_missing: "Beleg fehlt",
   fetch_failed: "Abruf fehlgeschlagen",
+  skipped_disabled: "Automatik ausgeschaltet",
+};
+
+type ImportSettings = {
+  automatic_enabled: boolean;
+  revision: number;
+  updated_at: string;
+  updated_by: string | null;
 };
 
 class RequestError extends Error {
@@ -45,6 +53,9 @@ export default function IngestionRunsPage() {
   const [runs, setRuns] = useState<IngestionRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<ImportSettings | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleRequestError = useCallback((requestError: unknown, message: string) => {
     if (requestError instanceof RequestError && requestError.status === 401) {
@@ -55,8 +66,14 @@ export default function IngestionRunsPage() {
   }, []);
 
   useEffect(() => {
-    fetchJson<{ runs: IngestionRun[] }>("/api/admin/ingestion-runs")
-      .then((data) => setRuns(data.runs))
+    Promise.all([
+      fetchJson<{ runs: IngestionRun[] }>("/api/admin/ingestion-runs"),
+      fetchJson<ImportSettings>("/api/admin/import-settings"),
+    ])
+      .then(([data, importSettings]) => {
+        setRuns(data.runs);
+        setSettings(importSettings);
+      })
       .catch((requestError: unknown) =>
         handleRequestError(requestError, "Prüfläufe konnten nicht geladen werden."),
       )
@@ -70,6 +87,42 @@ export default function IngestionRunsPage() {
       return;
     }
     setError("Abmeldung derzeit nicht möglich.");
+  }
+
+  async function toggleAutomaticImport() {
+    if (!settings) return;
+    setSavingSettings(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/admin/import-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          automatic_enabled: !settings.automatic_enabled,
+          revision: settings.revision,
+        }),
+      });
+      if (response.status === 401) {
+        window.location.replace("/admin/login");
+        return;
+      }
+      if (!response.ok) throw new RequestError(response.status);
+      const updated = (await response.json()) as ImportSettings;
+      setSettings(updated);
+      setNotice(
+        updated.automatic_enabled
+          ? "Die automatische Angebotsprüfung ist wieder aktiv."
+          : "Die automatische Angebotsprüfung ist ausgeschaltet. Bestehende Angebote bleiben unverändert.",
+      );
+    } catch (requestError) {
+      handleRequestError(
+        requestError,
+        "Import-Einstellung konnte nicht gespeichert werden.",
+      );
+    } finally {
+      setSavingSettings(false);
+    }
   }
 
   return (
@@ -91,11 +144,42 @@ export default function IngestionRunsPage() {
         zeigt die letzten Prüfläufe.
       </p>
 
+      {settings && (
+        <section aria-labelledby="import-control-heading" className="admin-import-control">
+          <div>
+            <p className="eyebrow">Betriebssteuerung</p>
+            <h2 id="import-control-heading">Automatische Angebotsprüfung</h2>
+            <p>
+              Status: <strong>{settings.automatic_enabled ? "Aktiv" : "Ausgeschaltet"}</strong>
+              {settings.updated_by && (
+                <> · zuletzt geändert von {settings.updated_by} am {formatTime(settings.updated_at)}</>
+              )}
+            </p>
+            <p className="field-hint">
+              Das Ausschalten verhindert neue automatische Läufe. Ein bereits laufender
+              Prüflauf wird beendet; veröffentlichte und manuelle Angebote bleiben bestehen.
+            </p>
+          </div>
+          <Button
+            disabled={savingSettings}
+            onClick={toggleAutomaticImport}
+            variant={settings.automatic_enabled ? "ghost" : "secondary"}
+          >
+            {savingSettings
+              ? "Wird gespeichert …"
+              : settings.automatic_enabled
+                ? "Automatik ausschalten"
+                : "Automatik einschalten"}
+          </Button>
+        </section>
+      )}
+
       {error && (
         <p className="error-message" role="alert">
           {error}
         </p>
       )}
+      {notice && <p className="admin-success" role="status">{notice}</p>}
       {loading && (
         <p aria-live="polite" className="field-hint" role="status">
           Prüfläufe werden geladen …

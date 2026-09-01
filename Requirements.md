@@ -25,6 +25,41 @@ Der bestehende klickfähige Prototyp wird in zwei Bereichen weiterentwickelt:
 
 Nur berechtigte Admins dürfen Quellen, Importe, Mappings und Veröffentlichungen verwalten.
 
+Der Adminbereich ist ein internes, desktop-orientiertes Arbeitswerkzeug. Auf
+kleineren Browserfenstern darf er nicht unbedienbar werden; eine eigenständige
+mobile Admin-Nutzerführung ist jedoch keine Anforderung.
+
+### Kategorien und Angebots-Mapping
+
+- Kategorien können im Adminbereich neu als Entwurf angelegt, übersetzt,
+  sortiert und veröffentlicht werden.
+- Jede Kategorie besitzt eine kontrollierte Symbolzuordnung und vollständige
+  Texte für Deutsch, Französisch, Englisch, Spanisch, Portugiesisch und Darija.
+- Die Zuordnung zwischen Kategorien und Angeboten ist als Matrix sichtbar und
+  kann ohne Codeänderung bearbeitet werden.
+- Kategorien mit zugeordneten Angeboten dürfen nicht archiviert werden.
+- Neue oder geänderte Kategorien erscheinen erst nach ihrer Veröffentlichung
+  in der öffentlichen Bedarfsauswahl.
+
+### Manuelle Angebote
+
+- Angebote können vollständig manuell erfasst und bestehenden
+  veröffentlichten Kategorien zugeordnet werden.
+- Manuell erfasste Angebote beginnen immer als Entwurf und werden erst nach
+  einem separaten Freigabeschritt öffentlich sichtbar.
+- Importierte Angebote können im Adminbereich übernommen und manuell geschützt
+  werden; nachfolgende automatische Importe überschreiben weder ihre Felder
+  noch ihr Kategorie-Mapping oder ihre manuelle Verifikation.
+- Bearbeitungen und Statuswechsel verwenden Revisionsnummern gegen
+  versehentliches gegenseitiges Überschreiben und werden protokolliert.
+
+### Kein passendes Angebot
+
+- Ein leeres Matching-Ergebnis ist ein reguläres fachliches Ergebnis und wird
+  öffentlich ausdrücklich als „aktuell kein passendes Angebot“ angezeigt.
+- Eine menschliche Notfall-Weiterleitung bleibt davon getrennt und wird nur
+  durch Sicherheitsregeln ausgelöst.
+
 ### Quellen und Import
 
 - Quellen anlegen, bearbeiten, aktivieren und deaktivieren.
@@ -32,6 +67,9 @@ Nur berechtigte Admins dürfen Quellen, Importe, Mappings und Veröffentlichunge
 - Importstatus, Laufzeit, Quelle und Ergebnis anzeigen.
 - Neue, geänderte, unveränderte und fehlerhafte Datensätze unterscheiden.
 - Fehlgeschlagene Importe nachvollziehbar wiederholen können.
+- Der automatische Import kann im Adminbereich zentral ein- und ausgeschaltet
+  werden. Ein deaktivierter geplanter Lauf wird als übersprungen protokolliert;
+  bestehende Angebote bleiben unverändert.
 
 ### Mapping und Datenqualität
 

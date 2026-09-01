@@ -145,7 +145,11 @@ Die URI muss TLS aktivieren (`sslmode=require` oder stärker). Der Ordner
 API-Start führt Compose alle noch offenen Alembic-Migrationen aus.
 `avnadmin` wird nur für Migrationen verwendet. Die API verbindet sich als
 `vesta_app` mit Leserechten; der Quellenimport verwendet `vesta_ingest` mit
-Schreibrechten ausschliesslich auf den Angebotstabellen.
+Schreibrechten ausschliesslich auf den Angebotstabellen. Schreibende
+Katalogfunktionen im geschützten Adminbereich verwenden die separat erzeugte
+Rolle `vesta_admin` aus `secrets/database-admin-write-url`; sie darf
+Kategorien, Zuordnungen, Angebote, Verifikationen, Importsteuerung und
+Änderungsprotokoll bearbeiten, besitzt aber keine allgemeinen Datenbankrechte.
 
 ## Öffentliche Testangebote aktualisieren
 
@@ -181,6 +185,12 @@ Import manuell ausführen:
 sudo docker compose -f compose.prod.yaml \
   --profile jobs run --rm --no-deps ingest
 ```
+
+Der Schalter „Automatische Angebotsprüfung“ im Adminbereich wirkt auch auf
+manuell gestartete Job-Container: Bei deaktiviertem Import wird kein Angebot
+verändert und ein Lauf mit Status `skipped_disabled` protokolliert. Manuell
+geschützte Angebote (`management_mode = manual`) werden bei aktivem Import
+ebenfalls nicht überschrieben.
 
 Für die tägliche Ausführung stehen eine One-shot-Unit und ein Timer bereit:
 

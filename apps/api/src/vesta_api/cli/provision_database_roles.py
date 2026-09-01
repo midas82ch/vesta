@@ -35,6 +35,7 @@ ROLES = (
             "ai_interaction_log": ("SELECT", "INSERT"),
             "dialogue_workflow_log": ("SELECT", "INSERT"),
             "offer_ingestion_runs": ("SELECT",),
+            "offer_import_settings": ("SELECT",),
         },
     ),
     DatabaseRole(
@@ -46,6 +47,22 @@ ROLES = (
             "offer_categories": ("SELECT", "INSERT", "DELETE"),
             "offer_verifications": ("SELECT", "INSERT", "UPDATE"),
             "offer_ingestion_runs": ("INSERT",),
+            "offer_import_settings": ("SELECT",),
+        },
+    ),
+    DatabaseRole(
+        username="vesta_admin",
+        secret_filename="database-admin-write-url",
+        table_privileges={
+            "organizations": ("SELECT", "INSERT"),
+            "offers": ("SELECT", "INSERT", "UPDATE"),
+            "offer_categories": ("SELECT", "INSERT", "DELETE"),
+            "offer_verifications": ("SELECT", "INSERT"),
+            "need_definitions": ("SELECT", "INSERT", "UPDATE"),
+            "need_localizations": ("SELECT", "INSERT", "DELETE"),
+            "admin_users": ("SELECT",),
+            "admin_change_log": ("SELECT", "INSERT"),
+            "offer_import_settings": ("SELECT", "UPDATE"),
         },
     ),
 )

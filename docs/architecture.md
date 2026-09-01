@@ -77,6 +77,15 @@ Bestätigungssätze auf den Quell-Webseiten erneut und hält die Datenbank
 aktuell; die Lauf-Historie ist im Adminbereich unter „Angebots-Prüfung"
 einsehbar.
 
+Kategorien und ihre sechs Übersetzungen werden ebenfalls in PostgreSQL
+geführt und von der öffentlichen Bedarfsauswahl dynamisch geladen. Der
+geschützte, desktop-orientierte Adminbereich zeigt das Kategorie-Angebots-
+Mapping als Matrix. Neue manuelle Angebote werden als Entwurf angelegt und
+separat veröffentlicht. Eine manuelle Übernahme (`management_mode = manual`)
+schützt Felder, Mapping und Verifikation vor nachfolgenden Quellenimporten.
+Der automatische Import kann über eine revisionierte, protokollierte
+Schalter-Einstellung deaktiviert werden (ADR 0008).
+
 ### AI-Adapter
 
 Ein Sprachmodell wird erst hinter einer schmalen Schnittstelle ergänzt. Seine
@@ -110,10 +119,13 @@ Aktualität sichtbar machen.
 Die Übergabe wird ausgelöst, wenn:
 
 - eine Sicherheitsregel greift
-- keine verlässliche Information vorhanden ist
 - widersprüchliche Zugangskriterien bestehen
 - die Person ausdrücklich menschliche Hilfe wünscht
 - ein Angebot eine telefonische Abklärung verlangt
+
+Wenn die deterministische Suche kein passendes, aktuelles Angebot findet, ist
+dies dagegen ein reguläres `no_match`-Ergebnis. Es wird transparent angezeigt
+und nicht als Sicherheits-Weiterleitung ausgegeben (ADR 0008).
 
 ## Geplante Ausbaustufen
 

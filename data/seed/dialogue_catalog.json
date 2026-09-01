@@ -2,6 +2,7 @@
   "needs": [
     {
       "key": "sleep_tonight",
+      "icon": "home",
       "sort_order": 1,
       "localizations": {
         "de": { "title": "Heute schlafen", "description": "Einen Platz für die Nacht suchen" },
@@ -14,6 +15,7 @@
     },
     {
       "key": "basic_needs",
+      "icon": "food",
       "sort_order": 2,
       "localizations": {
         "de": { "title": "Grundversorgung", "description": "Essen, Dusche oder Ersthilfe" },
@@ -26,6 +28,7 @@
     },
     {
       "key": "counselling",
+      "icon": "book",
       "sort_order": 3,
       "localizations": {
         "de": { "title": "Beratung", "description": "Hilfe bei Sucht, Wohnen oder Geld" },

@@ -58,7 +58,7 @@ class Offer:
     id: str
     name: str
     summary: str
-    needs: tuple[Need, ...]
+    needs: tuple[str, ...]
     languages: tuple[str, ...]
     access: AccessRules
     availability: Availability
@@ -74,7 +74,7 @@ class Offer:
 
 @dataclass(frozen=True)
 class MatchQuery:
-    need: Need
+    need: str
     language: str
     at: datetime
     dog: bool | None = None

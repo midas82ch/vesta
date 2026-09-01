@@ -67,6 +67,10 @@ export const ary: Record<MessageKey, string> = {
   "results.directions": "الطريق فـ Google Maps",
   "results.handoff":
     "ما لقيناش خدمة مناسبة بشكل موثوق. خاص شي شخص مختص يتكلف بالحالة.",
+  "results.noMatch.title": "ما لقيناش خدمة مناسبة دابا",
+  "results.noMatch.text":
+    "فالسجل اللي متحققين منو دابا ما كايناش خدمة كتناسب هاد المعلومات. تقدر تبدل الأجوبة ولا تختار مجال آخر.",
+  "results.noMatch.restart": "بدل البحث",
   "results.disclaimer":
     "الخدمات ما كيتحجزوش أوتوماتيكياً. تأكد مباشرة باللي المعلومات وبيانات الاتصال مازال صحيحة.",
   "principles.eyebrow": "كيفاش كتخدم فيستا",
@@ -230,6 +234,8 @@ export const ary: Record<MessageKey, string> = {
     "فهمت الطلب ديالك على أنه «{need}». واش هادا صحيح؟",
   "dialogue.conversation.answer": "الجواب ديالك: {answer}",
   "dialogue.conversation.resultsReady": "الخدمات المناسبة واجدة.",
+  "dialogue.conversation.noMatch":
+    "قلبت فالسجل اللي متحققين منو، ولكن ما لقيتش خدمة مناسبة دابا.",
   "dialogue.busy.interpreting.title": "فيستا كيفهم الطلب ديالك",
   "dialogue.busy.interpreting.text":
     "كنصنفو المدخل ديالك. غالباً كياخد غير لحظة.",

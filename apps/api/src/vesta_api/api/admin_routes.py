@@ -1,15 +1,24 @@
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Literal, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from vesta_api.api.admin_schemas import (
+    AdminCategoryListResponse,
+    AdminCategoryResponse,
+    AdminCategoryWriteRequest,
+    AdminChangeListResponse,
+    AdminChangeResponse,
     AdminLoginRequest,
+    AdminOfferLifecycleRequest,
     AdminOfferListResponse,
     AdminOfferResponse,
+    AdminOfferWriteRequest,
     AiAuditEntryDetailResponse,
     AiAuditEntrySummaryResponse,
     AiAuditLogListResponse,
+    ImportSettingsResponse,
+    ImportSettingsUpdateRequest,
     IngestionRunListResponse,
     IngestionRunResponse,
     WorkflowAuditDetailResponse,
@@ -18,13 +27,19 @@ from vesta_api.api.admin_schemas import (
     WorkflowAuditSummaryResponse,
 )
 from vesta_api.config import settings
+from vesta_api.domain.admin_catalog_models import CategoryWrite, OfferWrite
 from vesta_api.domain.admin_models import AdminUser
 from vesta_api.domain.audit_models import AiOutcome, AiPort
 from vesta_api.domain.ingestion_models import IngestionStatus
+from vesta_api.repositories.admin_catalog import (
+    AdminCatalogRepository,
+    CatalogConflictError,
+    CatalogNotFoundError,
+    CatalogValidationError,
+)
 from vesta_api.repositories.admin_users import AdminUserRepository
 from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
 from vesta_api.repositories.ingestion_runs import IngestionRunRepository
-from vesta_api.repositories.offers import OfferRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.security import (
     SESSION_COOKIE_NAME,
@@ -63,8 +78,18 @@ def ingestion_run_repository(request: Request) -> IngestionRunRepository:
     return request.app.state.ingestion_runs
 
 
-def admin_offer_repository(request: Request) -> OfferRepository:
-    return request.app.state.offer_repository
+def admin_offer_repository(request: Request) -> AdminCatalogRepository:
+    return request.app.state.admin_catalog
+
+
+def _raise_catalog_http_error(error: Exception) -> NoReturn:
+    if isinstance(error, CatalogNotFoundError):
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    if isinstance(error, CatalogConflictError):
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    if isinstance(error, CatalogValidationError):
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    raise error
 
 
 def require_admin_session(
@@ -386,7 +411,7 @@ def list_ingestion_runs(
 @router.get("/offers", response_model=AdminOfferListResponse)
 def list_admin_offers(
     _admin: Annotated[AdminUser, Depends(require_admin_session)],
-    offers: Annotated[OfferRepository, Depends(admin_offer_repository)],
+    offers: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
     limit: Annotated[int, Query(ge=1, le=MAX_LIST_LIMIT)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AdminOfferListResponse:
@@ -400,16 +425,24 @@ def list_admin_offers(
                 name=offer.name,
                 organization_name=offer.organization_name,
                 summary=offer.summary,
-                needs=[need.value for need in offer.needs],
+                needs=list(offer.needs),
                 languages=list(offer.languages),
-                availability=offer.availability.value,
-                published=offer.published,
+                access_rules=offer.access_rules,
+                availability=offer.availability,
+                lifecycle=offer.lifecycle,
+                origin=offer.origin,
+                management_mode=offer.management_mode,
+                revision=offer.revision,
                 is_demo=offer.is_demo,
                 contact_note=offer.contact_note,
-                address=offer.location.address if offer.location is not None else None,
-                source_label=offer.source.label,
-                source_url=offer.source.url,
-                verified_at=offer.source.verified_at,
+                address=offer.address,
+                latitude=offer.latitude,
+                longitude=offer.longitude,
+                source_label=offer.source_label,
+                source_url=offer.source_url,
+                verified_by=offer.verified_by,
+                verified_at=offer.verified_at,
+                expires_at=offer.expires_at,
                 updated_at=offer.updated_at,
             )
             for offer in selected_offers
@@ -417,4 +450,201 @@ def list_admin_offers(
         total=len(all_offers),
         limit=limit,
         offset=offset,
+    )
+
+
+def _category_response(category: object) -> AdminCategoryResponse:
+    return AdminCategoryResponse.model_validate(category, from_attributes=True)
+
+
+def _offer_response(offer: object) -> AdminOfferResponse:
+    return AdminOfferResponse.model_validate(offer, from_attributes=True)
+
+
+@router.get("/categories", response_model=AdminCategoryListResponse)
+def list_admin_categories(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminCategoryListResponse:
+    return AdminCategoryListResponse(
+        categories=[_category_response(category) for category in catalog.list_categories()]
+    )
+
+
+@router.post(
+    "/categories", response_model=AdminCategoryResponse, status_code=201
+)
+def create_admin_category(
+    payload: AdminCategoryWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminCategoryResponse:
+    try:
+        category = catalog.create_category(
+            CategoryWrite(
+                icon=payload.icon,
+                status=payload.status,
+                sort_order=payload.sort_order,
+                localizations={
+                    locale: values.model_dump()
+                    for locale, values in payload.localizations.items()
+                },
+            ),
+            admin,
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _category_response(category)
+
+
+@router.put("/categories/{key}", response_model=AdminCategoryResponse)
+def update_admin_category(
+    key: str,
+    payload: AdminCategoryWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminCategoryResponse:
+    if payload.revision is None:
+        raise HTTPException(status_code=422, detail="revision_required")
+    try:
+        category = catalog.update_category(
+            key,
+            CategoryWrite(
+                icon=payload.icon,
+                status=payload.status,
+                sort_order=payload.sort_order,
+                localizations={
+                    locale: values.model_dump()
+                    for locale, values in payload.localizations.items()
+                },
+                revision=payload.revision,
+            ),
+            admin,
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _category_response(category)
+
+
+def _offer_write(payload: AdminOfferWriteRequest) -> OfferWrite:
+    return OfferWrite(
+        name=payload.name,
+        organization_name=payload.organization_name,
+        summary=payload.summary,
+        needs=tuple(payload.needs),
+        languages=tuple(payload.languages),
+        access_rules=payload.access_rules.model_dump(),
+        availability=payload.availability,
+        contact_note=payload.contact_note,
+        address=payload.address,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        source_label=payload.source_label,
+        source_url=str(payload.source_url) if payload.source_url else None,
+        expires_at=payload.expires_at,
+        slug=payload.slug,
+        management_mode=payload.management_mode,
+        revision=payload.revision,
+    )
+
+
+@router.get("/offers/{offer_id}", response_model=AdminOfferResponse)
+def get_admin_offer(
+    offer_id: str,
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminOfferResponse:
+    offer = catalog.get_offer(offer_id)
+    if offer is None:
+        raise HTTPException(status_code=404, detail="offer_not_found")
+    return _offer_response(offer)
+
+
+@router.post("/offers", response_model=AdminOfferResponse, status_code=201)
+def create_admin_offer(
+    payload: AdminOfferWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminOfferResponse:
+    try:
+        offer = catalog.create_offer(_offer_write(payload), admin)
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _offer_response(offer)
+
+
+@router.put("/offers/{offer_id}", response_model=AdminOfferResponse)
+def update_admin_offer(
+    offer_id: str,
+    payload: AdminOfferWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminOfferResponse:
+    if payload.revision is None:
+        raise HTTPException(status_code=422, detail="revision_required")
+    try:
+        offer = catalog.update_offer(offer_id, _offer_write(payload), admin)
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _offer_response(offer)
+
+
+@router.post("/offers/{offer_id}/lifecycle", response_model=AdminOfferResponse)
+def set_admin_offer_lifecycle(
+    offer_id: str,
+    payload: AdminOfferLifecycleRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminOfferResponse:
+    try:
+        offer = catalog.set_offer_lifecycle(
+            offer_id, payload.lifecycle, payload.revision, admin
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _offer_response(offer)
+
+
+@router.get("/import-settings", response_model=ImportSettingsResponse)
+def get_admin_import_settings(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> ImportSettingsResponse:
+    return ImportSettingsResponse.model_validate(
+        catalog.get_import_settings(), from_attributes=True
+    )
+
+
+@router.put("/import-settings", response_model=ImportSettingsResponse)
+def update_admin_import_settings(
+    payload: ImportSettingsUpdateRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> ImportSettingsResponse:
+    try:
+        settings_value = catalog.update_import_settings(
+            payload.automatic_enabled, payload.revision, admin
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return ImportSettingsResponse.model_validate(settings_value, from_attributes=True)
+
+
+@router.get("/changes", response_model=AdminChangeListResponse)
+def list_admin_changes(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+    entity_type: Annotated[
+        Literal["category", "offer", "import_settings"], Query()
+    ],
+    entity_id: Annotated[str, Query(min_length=1, max_length=200)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> AdminChangeListResponse:
+    return AdminChangeListResponse(
+        changes=[
+            AdminChangeResponse.model_validate(change, from_attributes=True)
+            for change in catalog.list_changes(
+                entity_type=entity_type, entity_id=entity_id, limit=limit
+            )
+        ]
     )

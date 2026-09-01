@@ -10,6 +10,16 @@ from vesta_api.api.admin_routes import router as admin_router
 from vesta_api.api.dialogue_routes import router as dialogue_router
 from vesta_api.api.routes import router
 from vesta_api.config import settings
+from vesta_api.domain.admin_catalog_models import (
+    AdminCatalogState,
+    AdminCategory,
+    AdminOffer,
+)
+from vesta_api.repositories.admin_catalog import (
+    AdminCatalogRepository,
+    InMemoryAdminCatalogRepository,
+    PostgresAdminCatalogRepository,
+)
 from vesta_api.repositories.admin_users import (
     AdminUserRepository,
     InMemoryAdminUserRepository,
@@ -21,6 +31,7 @@ from vesta_api.repositories.ai_audit_log import (
     PostgresAiAuditLogRepository,
 )
 from vesta_api.repositories.dialogue_catalog import (
+    AdminManagedDialogueCatalogRepository,
     DialogueCatalogRepository,
     JsonDialogueCatalogRepository,
     PostgresDialogueCatalogRepository,
@@ -31,6 +42,7 @@ from vesta_api.repositories.ingestion_runs import (
     PostgresIngestionRunRepository,
 )
 from vesta_api.repositories.offers import (
+    AdminManagedOfferRepository,
     JsonOfferRepository,
     OfferRepository,
     PostgresOfferRepository,
@@ -114,6 +126,73 @@ def create_ingestion_run_repository() -> IngestionRunRepository:
     return InMemoryIngestionRunRepository()
 
 
+def create_admin_catalog_repository(
+    catalog: DialogueCatalogRepository,
+    offers: OfferRepository,
+) -> AdminCatalogRepository:
+    database_url = settings.get_admin_database_url()
+    if database_url is not None:
+        return PostgresAdminCatalogRepository(database_url)
+    if settings.environment.lower() == "production":
+        raise RuntimeError(
+            "ADMIN_DATABASE_URL is required when VESTA_ENV=production"
+        )
+    development_database_url = settings.get_database_url()
+    if development_database_url is not None:
+        return PostgresAdminCatalogRepository(development_database_url)
+    state = AdminCatalogState(
+        categories={
+            need.key: AdminCategory(
+                key=need.key,
+                icon=need.icon,
+                status="published",
+                sort_order=need.sort_order,
+                revision=1,
+                localizations=need.localizations,
+            )
+            for need in catalog.list_needs()
+        },
+        offers={
+            offer.id: AdminOffer(
+                id=offer.id,
+                slug=offer.slug or offer.id,
+                name=offer.name,
+                organization_name=offer.organization_name or "Unbekannte Organisation",
+                summary=offer.summary,
+                needs=offer.needs,
+                languages=offer.languages,
+                access_rules={
+                    "accepts_dogs": offer.access.accepts_dogs,
+                    "identity_document_required": (
+                        offer.access.identity_document_required
+                    ),
+                    "accepted_genders": list(offer.access.accepted_genders),
+                    "minimum_age": offer.access.minimum_age,
+                    "maximum_age": offer.access.maximum_age,
+                },
+                availability=offer.availability.value,
+                contact_note=offer.contact_note,
+                address=offer.location.address if offer.location else None,
+                latitude=offer.location.latitude if offer.location else None,
+                longitude=offer.location.longitude if offer.location else None,
+                source_label=offer.source.label,
+                source_url=offer.source.url,
+                verified_by=offer.source.verified_by,
+                verified_at=offer.source.verified_at,
+                expires_at=offer.source.expires_at,
+                origin="imported",
+                management_mode="source",
+                lifecycle="published" if offer.published else "draft",
+                revision=1,
+                is_demo=offer.is_demo,
+                updated_at=offer.updated_at or offer.source.verified_at,
+            )
+            for offer in offers.list_offers()
+        },
+    )
+    return InMemoryAdminCatalogRepository(state)
+
+
 def create_ai_gateway(audit_log: AiAuditLogRepository) -> AiGateway:
     if not settings.ai_enabled:
         return AiGateway(enabled=False)
@@ -195,6 +274,16 @@ async def lifespan(app: FastAPI):
     ingestion_runs.healthcheck()
     app.state.ingestion_runs = ingestion_runs
 
+    admin_catalog = create_admin_catalog_repository(catalog, repository)
+    admin_catalog.healthcheck()
+    app.state.admin_catalog = admin_catalog
+    if isinstance(admin_catalog, InMemoryAdminCatalogRepository):
+        catalog = AdminManagedDialogueCatalogRepository(catalog, admin_catalog)
+        app.state.dialogue_catalog = catalog
+        repository = AdminManagedOfferRepository(admin_catalog)
+        app.state.offer_repository = repository
+        app.state.matching_service = MatchingService(repository)
+
     app.state.dialogue_orchestrator = DialogueOrchestrator(
         matching_service=app.state.matching_service,
         catalog=catalog,
@@ -209,6 +298,7 @@ async def lifespan(app: FastAPI):
         ai_audit_log.close()
         workflow_audit_log.close()
         ingestion_runs.close()
+        admin_catalog.close()
 
 
 app = FastAPI(

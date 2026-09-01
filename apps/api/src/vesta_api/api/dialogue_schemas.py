@@ -1,7 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from vesta_api.api.schemas import CandidateResponse, UserLocationInput
-from vesta_api.domain.models import Need
 
 
 class InterpretRequest(BaseModel):
@@ -25,7 +26,7 @@ class InterpretResponse(BaseModel):
 
 
 class StartDialogueRequest(BaseModel):
-    need: Need
+    need: str = Field(pattern=r"^[a-z0-9_-]+$", min_length=1, max_length=100)
     language: str = Field(default="de", min_length=2, max_length=12)
     workflow_id: str | None = Field(default=None, min_length=8, max_length=200)
     user_location: UserLocationInput | None = None
@@ -78,6 +79,7 @@ class ExplainedCandidateResponse(BaseModel):
 class DialogueTurnResponse(BaseModel):
     session_id: str
     ai_mode: str
+    outcome: Literal["question", "matches", "no_match", "handoff"]
     question: RenderedQuestionResponse | None
     candidates: list[ExplainedCandidateResponse]
     human_handoff_required: bool

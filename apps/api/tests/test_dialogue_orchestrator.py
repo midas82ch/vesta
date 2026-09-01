@@ -117,8 +117,8 @@ class DialogueOrchestratorTest(unittest.TestCase):
 
         assert result.match_result is not None
         self.assertEqual((), result.match_result.candidates)
-        self.assertTrue(result.match_result.human_handoff_required)
-        self.assertEqual("no_verified_match", result.match_result.handoff_reason)
+        self.assertFalse(result.match_result.human_handoff_required)
+        self.assertIsNone(result.match_result.handoff_reason)
         self.assertIsNone(result.question)
 
     def test_confirming_a_compatible_answer_keeps_offer_and_asks_next_question(

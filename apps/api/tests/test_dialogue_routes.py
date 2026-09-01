@@ -8,6 +8,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from vesta_api.main import app  # noqa: E402
+from vesta_api.services.dialogue_orchestrator import (  # noqa: E402
+    DialogueOrchestrator,
+    DialogueSessionStore,
+)
+from vesta_api.services.matching import MatchingService  # noqa: E402
+
+
+class EmptyOfferRepository:
+    def list_offers(self) -> tuple[()]:
+        return ()
 
 
 class DialogueRoutesTest(unittest.TestCase):
@@ -83,6 +93,7 @@ class DialogueRoutesTest(unittest.TestCase):
         payload = response.json()
         self.assertTrue(payload["session_id"])
         self.assertEqual("template", payload["ai_mode"])
+        self.assertEqual("question", payload["outcome"])
         assert payload["question"] is not None
         self.assertEqual("person.has_identity_document", payload["question"]["attribute_key"])
         # Regression: the web UI rendered a stray number-input form on every
@@ -91,6 +102,37 @@ class DialogueRoutesTest(unittest.TestCase):
         self.assertEqual("yes_no_unknown", payload["question"]["answer_type"])
         self.assertTrue(payload["question"]["text"])
         self.assertEqual([], payload["candidates"])
+
+    def test_start_rejects_an_unknown_or_inactive_category(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/dialogue/start",
+                json={"need": "unknown_category", "language": "de"},
+            )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual("unknown_or_inactive_category", response.json()["detail"])
+
+    def test_dialogue_returns_an_explicit_no_offer_outcome(self) -> None:
+        with TestClient(app) as client:
+            original = app.state.dialogue_orchestrator
+            app.state.dialogue_orchestrator = DialogueOrchestrator(
+                matching_service=MatchingService(EmptyOfferRepository()),
+                catalog=app.state.dialogue_catalog,
+                session_store=DialogueSessionStore(),
+            )
+            try:
+                response = client.post(
+                    "/v1/dialogue/start",
+                    json={"need": "basic_needs", "language": "de"},
+                )
+            finally:
+                app.state.dialogue_orchestrator = original
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("no_match", response.json()["outcome"])
+        self.assertEqual([], response.json()["candidates"])
+        self.assertFalse(response.json()["human_handoff_required"])
 
     def test_full_turn_reaches_an_explained_result(self) -> None:
         with TestClient(app) as client:
@@ -116,6 +158,7 @@ class DialogueRoutesTest(unittest.TestCase):
                 self.assertEqual(200, response.status_code)
                 payload = response.json()
         self.assertGreaterEqual(len(payload["candidates"]), 1)
+        self.assertEqual("matches", payload["outcome"])
         explanation = payload["candidates"][0]["explanation"]
         assert explanation is not None
         self.assertEqual("template", explanation["source"])

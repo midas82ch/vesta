@@ -99,7 +99,8 @@ class MatchingServiceTest(unittest.TestCase):
         )
 
         self.assertEqual((), result.candidates)
-        self.assertEqual("no_verified_match", result.handoff_reason)
+        self.assertFalse(result.human_handoff_required)
+        self.assertIsNone(result.handoff_reason)
 
     def test_excludes_expired_information(self) -> None:
         service = MatchingService(

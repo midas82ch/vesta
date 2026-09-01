@@ -11,7 +11,6 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from vesta_api.api.admin_routes import (  # noqa: E402
     admin_login_attempt_store,
-    admin_offer_repository,
     admin_session_store,
     admin_user_repository,
     ai_audit_log_repository,
@@ -65,7 +64,6 @@ class AdminRoutesTest(unittest.TestCase):
             lambda: self.workflow_log
         )
         app.dependency_overrides[ingestion_run_repository] = lambda: self.ingestion_runs
-        app.dependency_overrides[admin_offer_repository] = lambda: self.offers
 
     def tearDown(self) -> None:
         app.dependency_overrides.clear()
@@ -464,7 +462,8 @@ class AdminRoutesTest(unittest.TestCase):
         offer = payload["offers"][0]
         self.assertEqual("demo-sleep", offer["id"])
         self.assertEqual(["sleep_tonight"], offer["needs"])
-        self.assertTrue(offer["published"])
+        self.assertEqual("published", offer["lifecycle"])
+        self.assertEqual("imported", offer["origin"])
         self.assertTrue(offer["is_demo"])
         self.assertEqual("Vesta Testfixture", offer["source_label"])
 
@@ -495,6 +494,225 @@ class AdminRoutesTest(unittest.TestCase):
                 with self.subTest(query=query):
                     response = client.get(f"/v1/admin/offers?{query}")
                     self.assertEqual(422, response.status_code)
+
+    def test_admin_can_create_and_publish_a_category(self) -> None:
+        localizations = {
+            locale: {
+                "title": f"Rechtsberatung {locale}",
+                "description": f"UnterstÃ¼tzung bei rechtlichen Fragen ({locale}).",
+            }
+            for locale in ("de", "fr", "en", "es", "pt", "ary")
+        }
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            created = client.post(
+                "/v1/admin/categories",
+                json={
+                    "icon": "book",
+                    "status": "draft",
+                    "sort_order": 40,
+                    "localizations": localizations,
+                },
+            )
+            self.assertEqual(201, created.status_code, created.text)
+            category = created.json()
+            self.assertEqual("rechtsberatung-de", category["key"])
+            self.assertEqual("draft", category["status"])
+
+            published = client.put(
+                f"/v1/admin/categories/{category['key']}",
+                json={
+                    "icon": "book",
+                    "status": "published",
+                    "sort_order": 40,
+                    "revision": category["revision"],
+                    "localizations": localizations,
+                },
+            )
+            changes = client.get(
+                "/v1/admin/changes",
+                params={"entity_type": "category", "entity_id": category["key"]},
+            )
+            public_catalog = client.get("/v1/catalog/categories?language=de")
+
+        self.assertEqual(200, published.status_code, published.text)
+        self.assertEqual("published", published.json()["status"])
+        self.assertEqual(2, published.json()["revision"])
+        self.assertEqual(200, changes.status_code)
+        self.assertEqual(
+            ["updated", "created"],
+            [entry["action"] for entry in changes.json()["changes"]],
+        )
+        self.assertIn(
+            category["key"],
+            [entry["key"] for entry in public_catalog.json()["categories"]],
+        )
+
+    def test_category_requires_all_supported_localizations(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.post(
+                "/v1/admin/categories",
+                json={
+                    "icon": "book",
+                    "status": "draft",
+                    "sort_order": 40,
+                    "localizations": {
+                        "de": {"title": "Recht", "description": "Rechtsberatung"}
+                    },
+                },
+            )
+
+        self.assertEqual(422, response.status_code)
+
+    def test_category_with_mapped_offers_cannot_be_archived(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            categories = client.get("/v1/admin/categories").json()["categories"]
+            category = next(item for item in categories if item["key"] == "counselling")
+            self.assertGreater(category["offer_count"], 0)
+            response = client.put(
+                "/v1/admin/categories/counselling",
+                json={
+                    "icon": category["icon"],
+                    "status": "archived",
+                    "sort_order": category["sort_order"],
+                    "revision": category["revision"],
+                    "localizations": category["localizations"],
+                },
+            )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual("category_still_has_offers", response.json()["detail"])
+
+    def test_admin_can_create_map_and_publish_a_manual_offer(self) -> None:
+        expires_at = "2027-09-01T23:59:59Z"
+        payload = {
+            "name": "Rechtsberatung Bern",
+            "organization_name": "Verein Hilfe",
+            "summary": "Kostenlose Erstberatung.",
+            "needs": ["counselling"],
+            "languages": ["DE", "fr"],
+            "access_rules": {
+                "accepts_dogs": None,
+                "identity_document_required": False,
+                "accepted_genders": [],
+                "minimum_age": 18,
+                "maximum_age": None,
+            },
+            "availability": "call_to_confirm",
+            "contact_note": "Vorher telefonisch anmelden.",
+            "address": "Bundesplatz 1, 3011 Bern",
+            "latitude": 46.9479,
+            "longitude": 7.4446,
+            "source_label": "Manuelle PrÃ¼fung",
+            "source_url": "https://example.org/rechtsberatung",
+            "expires_at": expires_at,
+            "management_mode": "manual",
+        }
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            created = client.post("/v1/admin/offers", json=payload)
+            self.assertEqual(201, created.status_code, created.text)
+            offer = created.json()
+            self.assertEqual("manual", offer["origin"])
+            self.assertEqual("draft", offer["lifecycle"])
+            self.assertEqual(["counselling"], offer["needs"])
+            self.assertEqual(["de", "fr"], offer["languages"])
+
+            published = client.post(
+                f"/v1/admin/offers/{offer['id']}/lifecycle",
+                json={"lifecycle": "published", "revision": offer["revision"]},
+            )
+            public_matches = client.post(
+                "/v1/matches",
+                json={"need": "counselling", "language": "de"},
+            )
+
+        self.assertEqual(200, published.status_code, published.text)
+        self.assertEqual("published", published.json()["lifecycle"])
+        self.assertIn(
+            offer["id"],
+            [
+                candidate["offer"]["id"]
+                for candidate in public_matches.json()["candidates"]
+            ],
+        )
+
+    def test_offer_rejects_unknown_or_inactive_category(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            response = client.post(
+                "/v1/admin/offers",
+                json={
+                    "name": "Nicht zugeordnet",
+                    "organization_name": "Verein Hilfe",
+                    "summary": "Soll nicht gespeichert werden.",
+                    "needs": ["does_not_exist"],
+                    "languages": ["de"],
+                    "access_rules": {},
+                    "availability": "unknown",
+                    "contact_note": "Kontakt vor Ort.",
+                    "source_label": "Manuelle PrÃ¼fung",
+                    "expires_at": "2027-09-01T23:59:59Z",
+                },
+            )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual("unknown_or_inactive_category", response.json()["detail"])
+
+    def test_import_can_be_disabled_with_optimistic_locking(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            initial = client.get("/v1/admin/import-settings")
+            self.assertEqual(200, initial.status_code)
+            revision = initial.json()["revision"]
+
+            disabled = client.put(
+                "/v1/admin/import-settings",
+                json={"automatic_enabled": False, "revision": revision},
+            )
+            conflict = client.put(
+                "/v1/admin/import-settings",
+                json={"automatic_enabled": True, "revision": revision},
+            )
+
+        self.assertEqual(200, disabled.status_code)
+        self.assertFalse(disabled.json()["automatic_enabled"])
+        self.assertEqual(TEST_USERNAME, disabled.json()["updated_by"])
+        self.assertEqual(409, conflict.status_code)
+
+    def test_new_admin_catalog_endpoints_require_a_session(self) -> None:
+        with TestClient(app) as client:
+            responses = (
+                client.get("/v1/admin/categories"),
+                client.get("/v1/admin/offers/unknown"),
+                client.get("/v1/admin/import-settings"),
+                client.get(
+                    "/v1/admin/changes",
+                    params={"entity_type": "offer", "entity_id": "unknown"},
+                ),
+            )
+
+        self.assertTrue(all(response.status_code == 401 for response in responses))
 
 
 if __name__ == "__main__":

@@ -10,10 +10,10 @@ from vesta_api.domain.models import (
     AccessRules,
     Availability,
     GeoPoint,
-    Need,
     Offer,
     Source,
 )
+from vesta_api.repositories.admin_catalog import AdminCatalogRepository
 from vesta_api.repositories.database import create_database_engine
 
 
@@ -43,6 +43,7 @@ class JsonOfferRepository:
     def close(self) -> None:
         return None
 
+
     @staticmethod
     def _to_offer(item: dict[str, object]) -> Offer:
         access = item["access"]
@@ -56,7 +57,7 @@ class JsonOfferRepository:
             id=str(item["id"]),
             name=str(item["name"]),
             summary=str(item["summary"]),
-            needs=tuple(Need(value) for value in item["needs"]),
+            needs=tuple(str(value) for value in item["needs"]),
             languages=tuple(str(value).lower() for value in item["languages"]),
             access=AccessRules(
                 accepts_dogs=access.get("accepts_dogs"),
@@ -101,6 +102,67 @@ class JsonOfferRepository:
                 else None
             ),
         )
+
+
+class AdminManagedOfferRepository:
+    """Expose in-memory admin offer changes through public development matching."""
+
+    def __init__(self, admin_catalog: AdminCatalogRepository) -> None:
+        self._admin_catalog = admin_catalog
+
+    def list_offers(self) -> tuple[Offer, ...]:
+        offers: list[Offer] = []
+        for item in self._admin_catalog.list_offers():
+            access = item.access_rules
+            location = (
+                GeoPoint(
+                    latitude=item.latitude,
+                    longitude=item.longitude,
+                    address=item.address,
+                )
+                if item.latitude is not None and item.longitude is not None
+                else None
+            )
+            offers.append(
+                Offer(
+                    id=item.id,
+                    slug=item.slug,
+                    name=item.name,
+                    organization_name=item.organization_name,
+                    summary=item.summary,
+                    needs=item.needs,
+                    languages=item.languages,
+                    access=AccessRules(
+                        accepts_dogs=access.get("accepts_dogs"),  # type: ignore[arg-type]
+                        identity_document_required=access.get(  # type: ignore[arg-type]
+                            "identity_document_required"
+                        ),
+                        accepted_genders=tuple(access.get("accepted_genders", ())),  # type: ignore[arg-type]
+                        minimum_age=access.get("minimum_age"),  # type: ignore[arg-type]
+                        maximum_age=access.get("maximum_age"),  # type: ignore[arg-type]
+                    ),
+                    availability=Availability(item.availability),
+                    contact_note=item.contact_note,
+                    source=Source(
+                        label=item.source_label,
+                        url=item.source_url,
+                        verified_at=item.verified_at,
+                        expires_at=item.expires_at,
+                        verified_by=item.verified_by,
+                    ),
+                    location=location,
+                    published=item.lifecycle == "published",
+                    is_demo=item.is_demo,
+                    updated_at=item.updated_at,
+                )
+            )
+        return tuple(offers)
+
+    def healthcheck(self) -> None:
+        self._admin_catalog.healthcheck()
+
+    def close(self) -> None:
+        return None
 
 
 _LIST_OFFERS = text(
@@ -161,7 +223,7 @@ def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
         id=str(row["id"]),
         name=str(row["name"]),
         summary=str(row["summary"]),
-        needs=tuple(Need(value) for value in row["needs"]),
+        needs=tuple(str(value) for value in row["needs"]),
         languages=tuple(str(value).lower() for value in row["languages"]),
         access=AccessRules(
             accepts_dogs=access.get("accepts_dogs"),

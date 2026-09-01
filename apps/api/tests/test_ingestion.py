@@ -1,8 +1,9 @@
 import json
 import sys
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from pydantic import ValidationError  # noqa: E402
@@ -10,10 +11,18 @@ from pydantic import ValidationError  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from vesta_api.ingestion.web_offers import (  # noqa: E402
+    _DELETE_CATEGORIES,
+    _FIND_EXISTING_OFFER_ID,
+    _INSERT_CATEGORY,
+    _INSERT_RUN,
+    _UPSERT_OFFER,
+    _UPSERT_VERIFICATION,
     LEGACY_ID_NAMESPACE,
     CatalogLocation,
+    FetchedPage,
     OfferCatalog,
     _resolve_offer_id,
+    _store_offer,
     evaluate_evidence,
     html_to_text,
     load_catalog,
@@ -132,6 +141,37 @@ class OfferCatalogTest(unittest.TestCase):
 
         self.assertFalse(result.accepted)
         self.assertEqual(("Hodlerstrasse 22",), result.missing)
+
+    def test_import_does_not_overwrite_a_manually_managed_offer(self) -> None:
+        offer = load_catalog(
+            REPOSITORY_ROOT / "data" / "sources" / "bern_offers.json"
+        ).offers[0]
+        connection = Mock()
+
+        def execute(statement: object, _parameters: object = None) -> Mock:
+            result = Mock()
+            if statement is _FIND_EXISTING_OFFER_ID:
+                result.scalar_one_or_none.return_value = uuid4()
+            elif statement is _UPSERT_OFFER:
+                result.scalar_one.return_value = "manual"
+            return result
+
+        connection.execute.side_effect = execute
+        engine = MagicMock()
+        engine.begin.return_value.__enter__.return_value = connection
+
+        _store_offer(
+            engine,
+            offer,
+            FetchedPage(status_code=200, text="accepted", content_sha256="abc123"),
+            datetime(2026, 9, 1, tzinfo=UTC),
+        )
+
+        statements = [call.args[0] for call in connection.execute.call_args_list]
+        self.assertNotIn(_DELETE_CATEGORIES, statements)
+        self.assertNotIn(_INSERT_CATEGORY, statements)
+        self.assertNotIn(_UPSERT_VERIFICATION, statements)
+        self.assertIn(_INSERT_RUN, statements)
 
 
 if __name__ == "__main__":

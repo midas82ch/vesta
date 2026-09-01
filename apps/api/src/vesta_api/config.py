@@ -27,6 +27,14 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="DATABASE_URL_FILE",
     )
+    admin_database_url: SecretStr | None = Field(
+        default=None,
+        validation_alias="ADMIN_DATABASE_URL",
+    )
+    admin_database_url_file: Path | None = Field(
+        default=None,
+        validation_alias="ADMIN_DATABASE_URL_FILE",
+    )
     offer_data_path: Path = DEFAULT_DATA_PATH
     offer_source_catalog_path: Path = Field(
         default=DEFAULT_SOURCE_CATALOG_PATH,
@@ -106,6 +114,24 @@ class Settings(BaseSettings):
             if not sslmode or sslmode[-1] not in {"require", "verify-ca", "verify-full"}:
                 raise RuntimeError(
                     "Production DATABASE_URL must use sslmode=require or stronger"
+                )
+        return database_url
+
+    def get_admin_database_url(self) -> str | None:
+        if self.admin_database_url_file is not None:
+            database_url = self.admin_database_url_file.read_text(encoding="utf-8").strip()
+            if not database_url:
+                raise RuntimeError("ADMIN_DATABASE_URL_FILE is empty")
+        elif self.admin_database_url is not None:
+            database_url = self.admin_database_url.get_secret_value()
+        else:
+            return None
+
+        if self.environment.lower() == "production":
+            sslmode = parse_qs(urlsplit(database_url).query).get("sslmode", [])
+            if not sslmode or sslmode[-1] not in {"require", "verify-ca", "verify-full"}:
+                raise RuntimeError(
+                    "Production ADMIN_DATABASE_URL must use sslmode=require or stronger"
                 )
         return database_url
 

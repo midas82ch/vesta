@@ -1,263 +1,441 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { AdminNav } from "@/components/admin-nav";
 import { Button } from "@/components/ui";
 
-type AdminOffer = {
+type Category = {
+  key: string;
+  status: "draft" | "published" | "archived";
+  localizations: Record<string, { title: string; description: string }>;
+};
+
+type Offer = {
   id: string;
-  slug: string | null;
+  slug: string;
   name: string;
-  organization_name: string | null;
+  organization_name: string;
   summary: string;
   needs: string[];
   languages: string[];
-  availability: string;
-  published: boolean;
+  access_rules: {
+    accepts_dogs?: boolean | null;
+    identity_document_required?: boolean | null;
+    accepted_genders?: string[];
+    minimum_age?: number | null;
+    maximum_age?: number | null;
+  };
+  availability: "confirmed" | "call_to_confirm" | "unknown";
+  lifecycle: "draft" | "published" | "archived";
+  origin: "imported" | "manual";
+  management_mode: "source" | "manual";
+  revision: number;
   is_demo: boolean;
   contact_note: string;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   source_label: string;
   source_url: string | null;
+  verified_by: string;
   verified_at: string;
-  updated_at: string | null;
+  expires_at: string;
+  updated_at: string;
 };
 
-type OfferListResponse = {
-  offers: AdminOffer[];
-  total: number;
-  limit: number;
-  offset: number;
+type Change = {
+  id: string;
+  admin_username: string;
+  action: string;
+  created_at: string;
 };
 
-const PAGE_SIZE = 50;
-
-const NEED_LABELS: Record<string, string> = {
-  sleep_tonight: "Schlafplatz",
-  basic_needs: "Grundbedürfnisse",
-  counselling: "Beratung",
+type OfferDraft = {
+  name: string;
+  organization_name: string;
+  summary: string;
+  needs: string[];
+  languages: string;
+  accepts_dogs: "unknown" | "yes" | "no";
+  identity_document_required: "unknown" | "yes" | "no";
+  accepted_genders: string;
+  minimum_age: string;
+  maximum_age: string;
+  availability: Offer["availability"];
+  contact_note: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  source_label: string;
+  source_url: string;
+  expires_on: string;
+  management_mode: Offer["management_mode"];
+  revision?: number;
 };
 
-const AVAILABILITY_LABELS: Record<string, string> = {
-  confirmed: "Bestätigt",
-  call_to_confirm: "Vorher abklären",
-  unknown: "Unbekannt",
-};
-
-class RequestError extends Error {
-  constructor(readonly status: number) {
-    super(`request_failed_${status}`);
-  }
+function dateDaysFromNow(days: number) {
+  const value = new Date();
+  value.setDate(value.getDate() + days);
+  return value.toISOString().slice(0, 10);
 }
 
-async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
-  const response = await fetch(url, { cache: "no-store", signal });
-  if (!response.ok) {
-    throw new RequestError(response.status);
-  }
-  return (await response.json()) as T;
+function emptyDraft(): OfferDraft {
+  return {
+    name: "",
+    organization_name: "",
+    summary: "",
+    needs: [],
+    languages: "de",
+    accepts_dogs: "unknown",
+    identity_document_required: "unknown",
+    accepted_genders: "",
+    minimum_age: "",
+    maximum_age: "",
+    availability: "unknown",
+    contact_note: "",
+    address: "",
+    latitude: "",
+    longitude: "",
+    source_label: "",
+    source_url: "",
+    expires_on: dateDaysFromNow(30),
+    management_mode: "manual",
+  };
 }
 
-function formatTime(value: string | null): string {
-  return value ? new Date(value).toLocaleString("de-CH") : "–";
+function triState(value: boolean | null | undefined): OfferDraft["accepts_dogs"] {
+  return value === true ? "yes" : value === false ? "no" : "unknown";
 }
 
-function offerRange(offset: number, count: number, total: number): string {
-  if (count === 0) {
-    return `0 von ${total}`;
-  }
-  return `${offset + 1}–${offset + count} von ${total}`;
+function offerDraft(offer: Offer): OfferDraft {
+  return {
+    name: offer.name,
+    organization_name: offer.organization_name,
+    summary: offer.summary,
+    needs: offer.needs,
+    languages: offer.languages.join(", "),
+    accepts_dogs: triState(offer.access_rules.accepts_dogs),
+    identity_document_required: triState(offer.access_rules.identity_document_required),
+    accepted_genders: (offer.access_rules.accepted_genders ?? []).join(", "),
+    minimum_age: offer.access_rules.minimum_age?.toString() ?? "",
+    maximum_age: offer.access_rules.maximum_age?.toString() ?? "",
+    availability: offer.availability,
+    contact_note: offer.contact_note,
+    address: offer.address ?? "",
+    latitude: offer.latitude?.toString() ?? "",
+    longitude: offer.longitude?.toString() ?? "",
+    source_label: offer.source_label,
+    source_url: offer.source_url ?? "",
+    expires_on: offer.expires_at.slice(0, 10),
+    management_mode: offer.management_mode,
+    revision: offer.revision,
+  };
+}
+
+function nullableBoolean(value: "unknown" | "yes" | "no") {
+  return value === "yes" ? true : value === "no" ? false : null;
+}
+
+function nullableNumber(value: string) {
+  return value.trim() ? Number(value) : null;
+}
+
+function draftPayload(draft: OfferDraft) {
+  return {
+    name: draft.name.trim(),
+    organization_name: draft.organization_name.trim(),
+    summary: draft.summary.trim(),
+    needs: draft.needs,
+    languages: draft.languages.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean),
+    access_rules: {
+      accepts_dogs: nullableBoolean(draft.accepts_dogs),
+      identity_document_required: nullableBoolean(draft.identity_document_required),
+      accepted_genders: draft.accepted_genders.split(",").map((item) => item.trim()).filter(Boolean),
+      minimum_age: nullableNumber(draft.minimum_age),
+      maximum_age: nullableNumber(draft.maximum_age),
+    },
+    availability: draft.availability,
+    contact_note: draft.contact_note.trim(),
+    address: draft.address.trim() || null,
+    latitude: nullableNumber(draft.latitude),
+    longitude: nullableNumber(draft.longitude),
+    source_label: draft.source_label.trim(),
+    source_url: draft.source_url.trim() || null,
+    expires_at: new Date(`${draft.expires_on}T23:59:59`).toISOString(),
+    management_mode: draft.management_mode,
+    revision: draft.revision,
+  };
+}
+
+function offerPayload(offer: Offer, needs: string[]) {
+  return {
+    name: offer.name,
+    organization_name: offer.organization_name,
+    summary: offer.summary,
+    needs,
+    languages: offer.languages,
+    access_rules: offer.access_rules,
+    availability: offer.availability,
+    contact_note: offer.contact_note,
+    address: offer.address,
+    latitude: offer.latitude,
+    longitude: offer.longitude,
+    source_label: offer.source_label,
+    source_url: offer.source_url,
+    expires_at: offer.expires_at,
+    management_mode: "manual",
+    revision: offer.revision,
+  };
+}
+
+function lifecycleLabel(value: Offer["lifecycle"]) {
+  return value === "published" ? "Veröffentlicht" : value === "draft" ? "Entwurf" : "Archiviert";
 }
 
 export default function AdminOffersPage() {
-  const [offers, setOffers] = useState<AdminOffer[]>([]);
-  const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<OfferDraft>(emptyDraft);
+  const [changes, setChanges] = useState<Change[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const activeCategories = categories.filter((item) => item.status === "published");
 
-  const handleRequestError = useCallback((requestError: unknown) => {
-    if (requestError instanceof RequestError && requestError.status === 401) {
+  const loadData = useCallback(async () => {
+    const [offersResponse, categoriesResponse] = await Promise.all([
+      fetch("/api/admin/offers?limit=200&offset=0", { cache: "no-store" }),
+      fetch("/api/admin/categories", { cache: "no-store" }),
+    ]);
+    if (offersResponse.status === 401 || categoriesResponse.status === 401) {
       window.location.replace("/admin/login");
       return;
     }
-    if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {
-      setError("Angebote konnten nicht geladen werden.");
-    }
+    if (!offersResponse.ok || !categoriesResponse.ok) throw new Error("load_failed");
+    setOffers(((await offersResponse.json()) as { offers: Offer[] }).offers);
+    setCategories(((await categoriesResponse.json()) as { categories: Category[] }).categories);
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    fetchJson<OfferListResponse>(
-      `/api/admin/offers?limit=${PAGE_SIZE}&offset=${offset}`,
-      controller.signal,
-    )
-      .then((data) => {
-        setOffers(data.offers);
-        setTotal(data.total);
-      })
-      .catch(handleRequestError)
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false);
+    Promise.all([
+      fetch("/api/admin/offers?limit=200&offset=0", { cache: "no-store" }),
+      fetch("/api/admin/categories", { cache: "no-store" }),
+    ])
+      .then(async ([offersResponse, categoriesResponse]) => {
+        if (offersResponse.status === 401 || categoriesResponse.status === 401) {
+          window.location.replace("/admin/login");
+          return null;
         }
-      });
+        if (!offersResponse.ok || !categoriesResponse.ok) {
+          throw new Error("load_failed");
+        }
+        return {
+          offers: ((await offersResponse.json()) as { offers: Offer[] }).offers,
+          categories: ((await categoriesResponse.json()) as { categories: Category[] }).categories,
+        };
+      })
+      .then((data) => {
+        if (!data) return;
+        setOffers(data.offers);
+        setCategories(data.categories);
+      })
+      .catch(() => setError("Angebote konnten nicht geladen werden."))
+      .finally(() => setLoading(false));
+  }, []);
 
-    return () => controller.abort();
-  }, [handleRequestError, offset]);
-
-  async function logout() {
-    const response = await fetch("/api/admin/logout", { method: "POST" });
-    if (response.ok) {
+  async function loadChanges(offerId: string) {
+    const response = await fetch(`/api/admin/changes?entity_type=offer&entity_id=${encodeURIComponent(offerId)}`, { cache: "no-store" });
+    if (response.status === 401) {
       window.location.replace("/admin/login");
       return;
     }
-    setError("Abmeldung derzeit nicht möglich.");
+    if (response.ok) setChanges(((await response.json()) as { changes: Change[] }).changes);
   }
 
-  function changePage(nextOffset: number) {
-    setLoading(true);
+  function startNew() {
+    setSelectedId(null);
+    setDraft(emptyDraft());
+    setChanges([]);
     setError(null);
-    setOffset(nextOffset);
+    setNotice(null);
+  }
+
+  function selectOffer(offer: Offer) {
+    setSelectedId(offer.id);
+    setDraft(offerDraft(offer));
+    setError(null);
+    setNotice(null);
+    loadChanges(offer.id).catch(() => setChanges([]));
+  }
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (draft.needs.length === 0) {
+      setError("Ordnen Sie dem Angebot mindestens eine aktive Kategorie zu.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(selectedId ? `/api/admin/offers/${selectedId}` : "/api/admin/offers", {
+        method: selectedId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftPayload(draft)),
+      });
+      if (response.status === 401) {
+        window.location.replace("/admin/login");
+        return;
+      }
+      const payload = (await response.json()) as Offer & { detail?: string };
+      if (!response.ok) throw new Error(payload.detail ?? "save_failed");
+      await loadData();
+      setSelectedId(payload.id);
+      setDraft(offerDraft(payload));
+      await loadChanges(payload.id);
+      setNotice(selectedId ? "Angebot wurde gespeichert." : "Angebot wurde als Entwurf angelegt.");
+    } catch (saveError) {
+      const detail = saveError instanceof Error ? saveError.message : "save_failed";
+      setError(detail === "offer_was_modified" ? "Das Angebot wurde zwischenzeitlich geändert. Bitte laden Sie es neu." : detail === "unknown_or_inactive_category" ? "Mindestens eine Kategorie ist nicht mehr aktiv." : "Angebot konnte nicht gespeichert werden. Bitte prüfen Sie Pflichtfelder, Quelle und Koordinaten.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateMapping(offer: Offer, key: string, checked: boolean) {
+    const needs = checked ? [...offer.needs, key] : offer.needs.filter((item) => item !== key);
+    if (needs.length === 0) {
+      setError("Jedes Angebot benötigt mindestens eine Kategorie.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/offers/${offer.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(offerPayload(offer, needs)),
+      });
+      if (response.status === 401) {
+        window.location.replace("/admin/login");
+        return;
+      }
+      const payload = (await response.json()) as Offer & { detail?: string };
+      if (!response.ok) throw new Error(payload.detail ?? "mapping_failed");
+      await loadData();
+      if (selectedId === offer.id) {
+        setDraft(offerDraft(payload));
+        await loadChanges(offer.id);
+      }
+      setNotice("Kategoriezuordnung wurde gespeichert; manuelle Verwaltung ist aktiv.");
+    } catch {
+      setError("Kategoriezuordnung konnte nicht gespeichert werden. Bitte laden Sie die Seite neu.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeLifecycle(lifecycle: Offer["lifecycle"]) {
+    const offer = offers.find((item) => item.id === selectedId);
+    if (!offer) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/offers/${offer.id}/lifecycle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lifecycle, revision: offer.revision }),
+      });
+      if (response.status === 401) {
+        window.location.replace("/admin/login");
+        return;
+      }
+      const payload = (await response.json()) as Offer & { detail?: string };
+      if (!response.ok) throw new Error(payload.detail ?? "lifecycle_failed");
+      await loadData();
+      setDraft(offerDraft(payload));
+      await loadChanges(offer.id);
+      setNotice(`Status wurde auf „${lifecycleLabel(lifecycle)}“ gesetzt.`);
+    } catch (lifecycleError) {
+      const detail = lifecycleError instanceof Error ? lifecycleError.message : "";
+      setError(detail === "offer_verification_expired" ? "Das Angebot kann erst nach einer erneuten Prüfung mit zukünftigem Ablaufdatum veröffentlicht werden." : "Status konnte nicht geändert werden.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function logout() {
+    const response = await fetch("/api/admin/logout", { method: "POST" });
+    if (response.ok) window.location.replace("/admin/login");
   }
 
   return (
-    <main className="admin-shell admin-offers-shell">
+    <main className="admin-shell admin-offers-shell" id="main-content">
       <AdminNav />
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Admin</p>
-          <h1>Ermittelte Angebote</h1>
-        </div>
-        <Button onClick={logout} variant="ghost">
-          Abmelden
-        </Button>
-      </div>
+      <div className="admin-heading"><div><p className="eyebrow">Angebotsregister</p><h1>Angebote & Mapping</h1></div><Button onClick={logout} variant="ghost">Abmelden</Button></div>
+      <p className="admin-intro">Die Matrix zeigt, welche aktiven Kategorien zu einem Angebot führen. Eine manuelle Änderung schützt das Angebot vor späterem Überschreiben durch den Import.</p>
+      {error && <p className="error-message" role="alert">{error}</p>}
+      {notice && <p className="admin-success" role="status">{notice}</p>}
 
-      <p className="admin-intro">
-        Diese Liste zeigt alle aktuell in Vesta gespeicherten Angebote – auch
-        unveröffentlichte Entwürfe und klar gekennzeichnete Demo-Daten.
-      </p>
-
-      {error && (
-        <p className="error-message" role="alert">
-          {error}
-        </p>
-      )}
-      {loading && (
-        <p aria-live="polite" className="field-hint" role="status">
-          Angebote werden geladen …
-        </p>
-      )}
-
-      {!loading && !error && offers.length === 0 && (
-        <p aria-live="polite" className="field-hint" role="status">
-          Noch keine Angebote gespeichert.
-        </p>
-      )}
-
-      {!loading && !error && offers.length > 0 && (
-        <>
-          <p aria-live="polite" className="admin-result-count" role="status">
-            {offerRange(offset, offers.length, total)} Angebote
-          </p>
-          <div
-            aria-label="Ermittelte Angebote, horizontal verschiebbar"
-            className="admin-table-scroll"
-            role="region"
-            tabIndex={0}
-          >
-            <table className="admin-table admin-offers-table">
-              <thead>
-                <tr>
-                  <th scope="col">Angebot</th>
-                  <th scope="col">Organisation</th>
-                  <th scope="col">Bereiche</th>
-                  <th scope="col">Sprachen</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Verfügbarkeit</th>
-                  <th scope="col">Standort und Kontakt</th>
-                  <th scope="col">Quelle</th>
-                  <th scope="col">Aktualisiert</th>
-                </tr>
-              </thead>
-              <tbody>
-                {offers.map((offer) => (
-                  <tr key={offer.id}>
-                    <td className="admin-offer-main">
-                      <strong>{offer.name}</strong>
-                      <span>{offer.summary}</span>
-                      <code>{offer.slug ?? offer.id}</code>
-                    </td>
-                    <td>{offer.organization_name ?? "–"}</td>
-                    <td>
-                      {offer.needs
-                        .map((need) => NEED_LABELS[need] ?? need)
-                        .join(", ")}
-                    </td>
-                    <td>{offer.languages.map((language) => language.toUpperCase()).join(", ")}</td>
-                    <td>
-                      <span
-                        className={
-                          offer.published
-                            ? "offer-status offer-status--published"
-                            : "offer-status offer-status--draft"
-                        }
-                      >
-                        {offer.published ? "Veröffentlicht" : "Entwurf"}
-                      </span>
-                      {offer.is_demo && (
-                        <span className="offer-status offer-status--demo">Demo</span>
-                      )}
-                    </td>
-                    <td>{AVAILABILITY_LABELS[offer.availability] ?? offer.availability}</td>
-                    <td>
-                      <span>{offer.address ?? "Kein Standort hinterlegt"}</span>
-                      {offer.contact_note && (
-                        <span className="admin-offer-secondary">{offer.contact_note}</span>
-                      )}
-                    </td>
-                    <td>
-                      {offer.source_url ? (
-                        <a href={offer.source_url} rel="noreferrer" target="_blank">
-                          {offer.source_label}
-                          <span className="visually-hidden"> (öffnet in neuem Tab)</span>
-                        </a>
-                      ) : (
-                        offer.source_label
-                      )}
-                      <span className="admin-offer-secondary">
-                        Geprüft: {formatTime(offer.verified_at)}
-                      </span>
-                    </td>
-                    <td>{formatTime(offer.updated_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
+      <section aria-labelledby="mapping-heading" className="admin-panel">
+        <div className="admin-panel-heading"><div><h2 id="mapping-heading">Kategorie–Angebot-Mapping</h2><p>{offers.length} Angebote</p></div><Button onClick={startNew} variant="secondary">Neues Angebot</Button></div>
+        {loading ? <p aria-live="polite">Angebote werden geladen …</p> : (
+          <div className="admin-table-scroll" role="region" aria-label="Kategoriezuordnung der Angebote" tabIndex={0}>
+            <table className="admin-table admin-mapping-table">
+              <thead><tr><th scope="col">Angebot</th><th scope="col">Status</th><th scope="col">Verwaltung</th>{activeCategories.map((category) => <th key={category.key} scope="col">{category.localizations.de?.title ?? category.key}</th>)}<th scope="col">Aktion</th></tr></thead>
+              <tbody>{offers.map((offer) => <tr key={offer.id}>
+                <td><strong>{offer.name}</strong><span className="admin-offer-secondary">{offer.organization_name}<br /><code>{offer.slug}</code></span></td>
+                <td><span className={`offer-status offer-status--${offer.lifecycle}`}>{lifecycleLabel(offer.lifecycle)}</span></td>
+                <td>{offer.origin === "manual" ? "Manuell" : offer.management_mode === "manual" ? "Import · geschützt" : "Import"}</td>
+                {activeCategories.map((category) => <td className="mapping-cell" key={category.key}><input aria-label={`${category.localizations.de?.title ?? category.key} für ${offer.name}`} checked={offer.needs.includes(category.key)} disabled={saving || offer.lifecycle === "archived"} onChange={(event) => updateMapping(offer, category.key, event.target.checked)} type="checkbox" /></td>)}
+                <td><Button onClick={() => selectOffer(offer)} variant="ghost">Bearbeiten</Button></td>
+              </tr>)}</tbody>
             </table>
           </div>
+        )}
+      </section>
 
-          <nav aria-label="Seitennavigation der Angebote" className="admin-pagination">
-            <Button
-              disabled={loading || offset === 0}
-              onClick={() => changePage(Math.max(0, offset - PAGE_SIZE))}
-              variant="secondary"
-            >
-              Zurück
-            </Button>
-            <span>{offerRange(offset, offers.length, total)}</span>
-            <Button
-              disabled={loading || offset + offers.length >= total}
-              onClick={() => changePage(offset + PAGE_SIZE)}
-              variant="secondary"
-            >
-              Weiter
-            </Button>
-          </nav>
-        </>
-      )}
+      <section aria-labelledby="offer-editor-heading" className="admin-panel admin-offer-editor">
+        <div className="admin-panel-heading"><div><h2 id="offer-editor-heading">{selectedId ? "Angebot bearbeiten" : "Neues Angebot erfassen"}</h2>{selectedId && <p>Änderungen werden historisiert.</p>}</div></div>
+        <form onSubmit={save}>
+          <fieldset><legend>Grunddaten</legend><div className="admin-form-grid admin-form-grid--three">
+            <label className="field" htmlFor="offer-name">Angebotsname<input id="offer-name" maxLength={200} required value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-organization">Organisation<input id="offer-organization" maxLength={200} required value={draft.organization_name} onChange={(e) => setDraft((d) => ({ ...d, organization_name: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-languages">Sprachen, kommagetrennt<input id="offer-languages" required value={draft.languages} onChange={(e) => setDraft((d) => ({ ...d, languages: e.target.value }))} /></label>
+          </div><label className="field" htmlFor="offer-summary">Kurzbeschreibung<textarea id="offer-summary" maxLength={1000} required rows={3} value={draft.summary} onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))} /></label></fieldset>
+
+          <fieldset className="check-group"><legend>Kategorien</legend><div className="admin-checkbox-grid">{activeCategories.map((category) => <label key={category.key}><input checked={draft.needs.includes(category.key)} onChange={(e) => setDraft((d) => ({ ...d, needs: e.target.checked ? [...d.needs, category.key] : d.needs.filter((key) => key !== category.key) }))} type="checkbox" />{category.localizations.de?.title ?? category.key}</label>)}</div></fieldset>
+
+          <fieldset><legend>Zugang und Verfügbarkeit</legend><div className="admin-form-grid admin-form-grid--three">
+            <label className="field" htmlFor="offer-availability">Verfügbarkeit<select id="offer-availability" value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value as Offer["availability"] }))}><option value="confirmed">Bestätigt</option><option value="call_to_confirm">Vorher abklären</option><option value="unknown">Unbekannt</option></select></label>
+            <label className="field" htmlFor="offer-dogs">Tiere/Hunde<select id="offer-dogs" value={draft.accepts_dogs} onChange={(e) => setDraft((d) => ({ ...d, accepts_dogs: e.target.value as OfferDraft["accepts_dogs"] }))}><option value="unknown">Unbekannt</option><option value="yes">Akzeptiert</option><option value="no">Nicht akzeptiert</option></select></label>
+            <label className="field" htmlFor="offer-id">Ausweis erforderlich<select id="offer-id" value={draft.identity_document_required} onChange={(e) => setDraft((d) => ({ ...d, identity_document_required: e.target.value as OfferDraft["identity_document_required"] }))}><option value="unknown">Unbekannt</option><option value="yes">Ja</option><option value="no">Nein</option></select></label>
+            <label className="field" htmlFor="offer-genders">Zielgruppen, kommagetrennt<input id="offer-genders" value={draft.accepted_genders} onChange={(e) => setDraft((d) => ({ ...d, accepted_genders: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-min-age">Mindestalter<input id="offer-min-age" max="120" min="0" type="number" value={draft.minimum_age} onChange={(e) => setDraft((d) => ({ ...d, minimum_age: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-max-age">Höchstalter<input id="offer-max-age" max="120" min="0" type="number" value={draft.maximum_age} onChange={(e) => setDraft((d) => ({ ...d, maximum_age: e.target.value }))} /></label>
+          </div></fieldset>
+
+          <fieldset><legend>Kontakt und Standort</legend><label className="field" htmlFor="offer-contact">Kontakt- und Zugangshinweis<textarea id="offer-contact" maxLength={2000} required rows={3} value={draft.contact_note} onChange={(e) => setDraft((d) => ({ ...d, contact_note: e.target.value }))} /></label><div className="admin-form-grid admin-form-grid--three">
+            <label className="field" htmlFor="offer-address">Adresse<input id="offer-address" value={draft.address} onChange={(e) => setDraft((d) => ({ ...d, address: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-latitude">Breitengrad<input id="offer-latitude" max="90" min="-90" step="any" type="number" value={draft.latitude} onChange={(e) => setDraft((d) => ({ ...d, latitude: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-longitude">Längengrad<input id="offer-longitude" max="180" min="-180" step="any" type="number" value={draft.longitude} onChange={(e) => setDraft((d) => ({ ...d, longitude: e.target.value }))} /></label>
+          </div></fieldset>
+
+          <fieldset><legend>Quelle und Prüfung</legend><div className="admin-form-grid admin-form-grid--three">
+            <label className="field" htmlFor="offer-source-label">Quellenbezeichnung<input id="offer-source-label" required value={draft.source_label} onChange={(e) => setDraft((d) => ({ ...d, source_label: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-source-url">Quellenlink<input id="offer-source-url" type="url" value={draft.source_url} onChange={(e) => setDraft((d) => ({ ...d, source_url: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-expires">Geprüft bis<input id="offer-expires" required type="date" value={draft.expires_on} onChange={(e) => setDraft((d) => ({ ...d, expires_on: e.target.value }))} /></label>
+            {selectedId && <label className="field" htmlFor="offer-management">Verwaltung<select id="offer-management" value={draft.management_mode} onChange={(e) => setDraft((d) => ({ ...d, management_mode: e.target.value as Offer["management_mode"] }))}><option value="manual">Manuell geschützt</option><option value="source">Beim nächsten Import aus Quelle übernehmen</option></select></label>}
+          </div></fieldset>
+
+          <div className="admin-form-actions"><Button disabled={saving} type="submit">{saving ? "Wird gespeichert …" : "Entwurf speichern"}</Button>{selectedId && <><Button disabled={saving} onClick={() => changeLifecycle("published")} variant="secondary">Veröffentlichen</Button><Button disabled={saving} onClick={() => changeLifecycle("draft")} variant="ghost">Veröffentlichung zurückziehen</Button><Button disabled={saving} onClick={() => changeLifecycle("archived")} variant="ghost">Archivieren</Button></>}<Button onClick={startNew} variant="ghost">Eingaben verwerfen</Button></div>
+        </form>
+
+        {selectedId && <section aria-labelledby="offer-history-heading" className="admin-history"><h3 id="offer-history-heading">Änderungshistorie</h3>{changes.length ? <ol>{changes.map((change) => <li key={change.id}><time dateTime={change.created_at}>{new Date(change.created_at).toLocaleString("de-CH")}</time> · {change.admin_username} · {change.action}</li>)}</ol> : <p>Noch keine protokollierten Änderungen.</p>}</section>}
+      </section>
     </main>
   );
 }
