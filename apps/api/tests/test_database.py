@@ -156,10 +156,45 @@ class PostgresOfferMappingTest(unittest.TestCase):
         self.assertEqual(Availability.CONFIRMED, offer.availability)
         self.assertTrue(offer.access.accepts_dogs)
         self.assertEqual("Vorher anrufen.", offer.contact_note)
+        self.assertEqual("Muristrasse 6, 3006 Bern", offer.address)
         assert offer.location is not None
         self.assertEqual("Muristrasse 6, 3006 Bern", offer.location.address)
         self.assertAlmostEqual(46.944359, offer.location.latitude)
         self.assertEqual(expires_at, offer.source.expires_at)
+
+    def test_preserves_postal_address_without_coordinates(self) -> None:
+        verified_at = datetime(2026, 7, 25, tzinfo=UTC)
+
+        offer = _postgres_row_to_offer(
+            {
+                "id": "b63864bb-17ec-4286-bf9f-649f890e7ced",
+                "slug": "pluto-notschlafstelle-bern",
+                "name": "Notschlafstelle für junge Menschen in Bern",
+                "organization_name": "Pluto",
+                "summary": "Niederschwellige Notschlafstelle.",
+                "needs": ["sleep_tonight"],
+                "languages": ["de"],
+                "access_rules": {"minimum_age": 14, "maximum_age": 23},
+                "contact": {
+                    "note": "Vorher Kontakt aufnehmen.",
+                    "address": "Studerstrasse 44, 3004 Bern",
+                },
+                "latitude": None,
+                "longitude": None,
+                "availability": "call_to_confirm",
+                "source_label": "Pluto",
+                "source_url": "https://www.pluto-bern.ch/",
+                "verified_by": "admin",
+                "verified_at": verified_at,
+                "expires_at": datetime(2027, 1, 1, tzinfo=UTC),
+                "published": True,
+                "is_demo": False,
+                "updated_at": verified_at,
+            }
+        )
+
+        self.assertEqual("Studerstrasse 44, 3004 Bern", offer.address)
+        self.assertIsNone(offer.location)
 
 
 if __name__ == "__main__":

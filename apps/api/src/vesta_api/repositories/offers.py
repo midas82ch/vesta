@@ -53,6 +53,11 @@ class JsonOfferRepository:
         assert isinstance(access, dict)
         assert isinstance(source, dict)
         assert location is None or isinstance(location, dict)
+        address = (
+            str(location["address"])
+            if location is not None and location.get("address")
+            else None
+        )
 
         return Offer(
             id=str(item["id"]),
@@ -80,15 +85,12 @@ class JsonOfferRepository:
                 GeoPoint(
                     latitude=float(location["latitude"]),
                     longitude=float(location["longitude"]),
-                    address=(
-                        str(location["address"])
-                        if location.get("address")
-                        else None
-                    ),
+                    address=address,
                 )
                 if location is not None
                 else None
             ),
+            address=address,
             published=bool(item.get("published", False)),
             is_demo=bool(item.get("is_demo", False)),
             slug=str(item["slug"]) if item.get("slug") else None,
@@ -152,6 +154,7 @@ class AdminManagedOfferRepository:
                         verified_by=item.verified_by,
                     ),
                     location=location,
+                    address=item.address,
                     published=item.lifecycle == "published",
                     is_demo=item.is_demo,
                     updated_at=item.updated_at,
@@ -242,6 +245,7 @@ _LIST_OFFERS = text(
 def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
     access = row["access_rules"] or {}
     contact = row["contact"] or {}
+    address = str(contact["address"]) if contact.get("address") else None
 
     return Offer(
         id=str(row["id"]),
@@ -269,15 +273,12 @@ def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
             GeoPoint(
                 latitude=float(row["latitude"]),
                 longitude=float(row["longitude"]),
-                address=(
-                    str(contact["address"])
-                    if contact.get("address")
-                    else None
-                ),
+                address=address,
             )
             if row["latitude"] is not None and row["longitude"] is not None
             else None
         ),
+        address=address,
         published=bool(row["published"]),
         is_demo=bool(row["is_demo"]),
         slug=str(row["slug"]),

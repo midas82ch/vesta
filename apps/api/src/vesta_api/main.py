@@ -178,7 +178,7 @@ def create_admin_catalog_repository(
                 },
                 availability=offer.availability.value,
                 contact_note=offer.contact_note,
-                address=offer.location.address if offer.location else None,
+                address=offer.address,
                 latitude=offer.location.latitude if offer.location else None,
                 longitude=offer.location.longitude if offer.location else None,
                 source_label=offer.source.label,

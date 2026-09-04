@@ -22,8 +22,8 @@ Der bestehende klickfähige Prototyp wird in zwei Bereichen weiterentwickelt:
 - Eine freiwillige Standortfreigabe sortiert gleich geeignete Angebote nach
   ungefährer Luftliniendistanz; ohne Freigabe bleibt die Suche vollständig
   nutzbar.
-- Angebote mit verifiziertem Standort zeigen Distanz, Adresse und einen
-  externen Link zur Wegbeschreibung.
+- Angebote mit verifizierter Adresse zeigen diese und einen externen Link zur
+  Wegbeschreibung. Eine Distanz wird nur bei vorhandenen Koordinaten angezeigt.
 - Barrierefreiheit, Mehrsprachigkeit und PWA-Funktion bleiben erhalten.
 - Erklärende Inhalte bleiben in separaten Bereichen wie Impressum und Datenschutz.
 

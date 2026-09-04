@@ -94,6 +94,12 @@ def candidate_to_response(candidate: Candidate) -> CandidateResponse:
             f"{candidate.offer.location.latitude:.6f},"
             f"{candidate.offer.location.longitude:.6f}"
         )
+    elif candidate.offer.address:
+        destination = candidate.offer.address
+    else:
+        destination = None
+
+    if destination is not None:
         directions_url = (
             "https://www.google.com/maps/dir/?"
             + urlencode(
@@ -113,11 +119,7 @@ def candidate_to_response(candidate: Candidate) -> CandidateResponse:
             languages=list(candidate.offer.languages),
             availability=candidate.offer.availability,
             contact_note=candidate.offer.contact_note,
-            address=(
-                candidate.offer.location.address
-                if candidate.offer.location is not None
-                else None
-            ),
+            address=candidate.offer.address,
             directions_url=directions_url,
             source=OfferSourceResponse(
                 label=candidate.offer.source.label,

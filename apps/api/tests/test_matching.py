@@ -44,6 +44,7 @@ def offer(
     expires_at: datetime | None = None,
     availability: Availability = Availability.CALL_TO_CONFIRM,
     location: GeoPoint | None = None,
+    address: str | None = None,
     minimum_age: int | None = None,
     maximum_age: int | None = None,
     localizations: dict[str, OfferText] | None = None,
@@ -75,6 +76,7 @@ def offer(
             verified_by="automated-test",
         ),
         location=location,
+        address=address,
         published=True,
         is_demo=True,
         localizations=localizations or {},
@@ -407,6 +409,42 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertEqual("Muristrasse 6, 3006 Bern", response.offer.address)
         assert response.offer.directions_url is not None
         self.assertIn("destination=46.944359%2C7.459041", response.offer.directions_url)
+        self.assertIn("travelmode=walking", response.offer.directions_url)
+        self.assertNotIn("origin=", response.offer.directions_url)
+
+    def test_response_uses_postal_address_without_coordinates(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository(
+                (
+                    offer(
+                        offer_id="pluto",
+                        name="Notschlafstelle für junge Menschen in Bern",
+                        address="Studerstrasse 44, 3004 Bern",
+                        minimum_age=14,
+                        maximum_age=23,
+                    ),
+                )
+            )
+        )
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                is_adult=False,
+                at=NOW,
+                user_location=GeoPoint(latitude=46.948, longitude=7.447),
+            )
+        )
+
+        response = candidate_to_response(result.candidates[0])
+
+        self.assertEqual("Studerstrasse 44, 3004 Bern", response.offer.address)
+        self.assertIsNone(response.distance_meters)
+        assert response.offer.directions_url is not None
+        self.assertIn(
+            "destination=Studerstrasse+44%2C+3004+Bern",
+            response.offer.directions_url,
+        )
         self.assertIn("travelmode=walking", response.offer.directions_url)
         self.assertNotIn("origin=", response.offer.directions_url)
 

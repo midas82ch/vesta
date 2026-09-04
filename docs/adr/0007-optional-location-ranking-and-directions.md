@@ -27,11 +27,14 @@ Ausschlussgrund; bei gleicher Eignung folgen solche Angebote nach Angeboten
 mit berechenbarer Distanz. Seit ADR 0010 kann die öffentliche Auswahl dadurch
 auf einen tieferen Rang außerhalb der drei angezeigten Treffer fallen.
 
-Angebotsadressen und -koordinaten werden als verifizierte öffentliche
-Katalogdaten importiert. Die Distanz wird lokal im Matching-Service mit der
-Haversine-Formel berechnet; ein externer Routing-Dienst ist nicht erforderlich.
-Der Wegbeschreibungslink führt zu Google Maps und enthält nur den öffentlichen
-Zielpunkt des Angebots, nie den Ausgangspunkt der suchenden Person.
+Angebotsadressen und -koordinaten werden als getrennte verifizierte öffentliche
+Katalogdaten geführt. Eine vorhandene Adresse wird auch dann angezeigt, wenn
+noch keine Koordinaten hinterlegt sind. Die Distanz wird lokal im
+Matching-Service mit der Haversine-Formel berechnet und setzt Koordinaten voraus;
+ein externer Routing-Dienst ist nicht erforderlich. Der Wegbeschreibungslink
+führt zu Google Maps und verwendet bevorzugt den öffentlichen Zielpunkt, sonst
+die öffentliche Adresse des Angebots. Er enthält nie den Ausgangspunkt der
+suchenden Person.
 
 Standortkoordinaten und konkrete Distanzen werden weder an das AI-Modell
 übermittelt noch im AI- oder Workflow-Audit gespeichert. Das Workflow-Audit

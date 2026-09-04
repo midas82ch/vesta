@@ -101,6 +101,7 @@ class Offer:
     contact_note: str
     source: Source
     location: GeoPoint | None = None
+    address: str | None = None
     published: bool = False
     is_demo: bool = False
     slug: str | None = None
@@ -110,6 +111,10 @@ class Offer:
     localization_required: bool = False
     content_language: str = "de"
     localization_fallback: bool = False
+
+    def __post_init__(self) -> None:
+        if self.address is None and self.location is not None:
+            object.__setattr__(self, "address", self.location.address)
 
 
 @dataclass(frozen=True)
