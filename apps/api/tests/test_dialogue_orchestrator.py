@@ -60,12 +60,14 @@ class FakeDialogueCatalogRepository:
 
 def _offer(
     *,
+    offer_id: str = "test-offer",
+    name: str = "Testangebot",
     accepts_dogs: bool | None = False,
     location: GeoPoint | None = None,
 ) -> Offer:
     return Offer(
-        id="test-offer",
-        name="Testangebot",
+        id=offer_id,
+        name=name,
         summary="Nur für Tests.",
         needs=(Need.SLEEP_TONIGHT,),
         languages=("de",),
@@ -94,6 +96,27 @@ def _orchestrator(offers: tuple[Offer, ...]) -> DialogueOrchestrator:
 
 
 class DialogueOrchestratorTest(unittest.TestCase):
+    def test_final_result_is_limited_to_three_offers(self) -> None:
+        offers = tuple(
+            _offer(
+                offer_id=f"offer-{index}",
+                name=f"Angebot {index}",
+                accepts_dogs=None,
+            )
+            for index in range(4)
+        )
+        orchestrator = _orchestrator(offers)
+
+        result = orchestrator.start(locale="de", need=Need.SLEEP_TONIGHT, now=NOW)
+
+        self.assertIsNone(result.question)
+        assert result.match_result is not None
+        self.assertEqual(3, len(result.match_result.candidates))
+        self.assertEqual(
+            "lower_relevance_rank",
+            result.match_result.excluded_offers[-1].reason,
+        )
+
     def test_start_asks_the_first_relevant_question(self) -> None:
         orchestrator = _orchestrator((_offer(accepts_dogs=False),))
 

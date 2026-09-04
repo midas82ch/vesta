@@ -22,8 +22,10 @@ Datenbank gespeichert.
 
 Sicherheits-, Zugangs-, Veröffentlichungs- und Aktualitätsregeln bleiben
 vorrangig. Erst bei identischem Eignungsscore sortiert die deterministisch
-berechnete Luftliniendistanz. Angebote ohne Standort bleiben sichtbar und
-folgen bei gleicher Eignung nach Angeboten mit berechenbarer Distanz.
+berechnete Luftliniendistanz. Ein fehlender Standort ist kein fachlicher
+Ausschlussgrund; bei gleicher Eignung folgen solche Angebote nach Angeboten
+mit berechenbarer Distanz. Seit ADR 0010 kann die öffentliche Auswahl dadurch
+auf einen tieferen Rang außerhalb der drei angezeigten Treffer fallen.
 
 Angebotsadressen und -koordinaten werden als verifizierte öffentliche
 Katalogdaten importiert. Die Distanz wird lokal im Matching-Service mit der
@@ -37,7 +39,7 @@ merkt lediglich, ob die optionale Standortfunktion verwendet wurde.
 
 ## Konsequenzen
 
-- Ohne Standortfreigabe verhält sich das Matching wie bisher.
+- Ohne Standortfreigabe bleibt die fachliche Rangfolge unverändert.
 - Die angezeigte Distanz ist ausdrücklich eine ungefähre Luftlinie und keine
   Gehstrecke oder Zeitangabe.
 - Das bestehende PostGIS-Feld und `contact.address` genügen; es ist keine

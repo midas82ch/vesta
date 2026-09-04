@@ -16,6 +16,18 @@ class Availability(StrEnum):
     UNKNOWN = "unknown"
 
 
+class ServiceTopic(StrEnum):
+    FOOD = "food"
+    HYGIENE = "hygiene"
+    MEDICAL = "medical"
+    ADDICTION = "addiction"
+    HOUSING = "housing"
+    FINANCES = "finances"
+    LEGAL = "legal"
+    MENTAL_HEALTH = "mental_health"
+    VIOLENCE = "violence"
+
+
 class RiskFlag(StrEnum):
     UNCONSCIOUS_OR_NOT_BREATHING = "unconscious_or_not_breathing"
     POSSIBLE_OVERDOSE = "possible_overdose"
@@ -92,8 +104,8 @@ class MatchQuery:
     is_adult: bool | None = None
     user_location: GeoPoint | None = None
     risk_flags: tuple[RiskFlag, ...] = ()
-
     unknown_attributes: tuple[str, ...] = ()
+    service_topics: tuple[ServiceTopic, ...] = ()
 
 
 @dataclass(frozen=True)

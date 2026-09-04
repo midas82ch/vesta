@@ -10,6 +10,12 @@ Der bestehende klickfähige Prototyp wird in zwei Bereichen weiterentwickelt:
 ## Layout und Nutzerführung
 
 - Die Startseite bleibt schlank und führt unmittelbar zum passenden Angebot.
+- Ergebnisse zeigen höchstens drei priorisierte Angebote mit verständlicher
+  Beschreibung und direkten Kontakt- beziehungsweise Weglinks.
+- Im Freitext genannte Themen werden mehrsprachig und deterministisch mit den
+  geprüften Angebotstexten abgeglichen und beeinflussen die Priorisierung.
+- AI-, Matching-, Quellen- und Statusbegründungen werden nicht öffentlich
+  angezeigt; die vollständige technische Spur bleibt im Admin-Audit.
 - Inhalt, visuelle Hierarchie, Abstände und Typografie werden vereinheitlicht.
 - Der Dialog ist auf Mobilgeräten ebenso verständlich und bedienbar wie auf Desktop.
 - Lade-, Fehler-, Leer- und Erfolgszustände sind klar erkennbar.
@@ -131,5 +137,6 @@ mobile Admin-Nutzerführung ist jedoch keine Anforderung.
 - Der Browser fragt den Standort nur nach einem ausdrücklichen Klick ab.
 - Standort und konkrete Distanzen werden weder dauerhaft gespeichert noch an
   das AI-Modell oder den Audit-Log übermittelt.
-- Fachliche Eignung bleibt vor Nähe priorisiert; Angebote ohne Standort werden
-  nicht ausgeblendet.
+- Fachliche Eignung bleibt vor Nähe priorisiert. Ein fehlender Standort ist
+  kein Ausschlussgrund; bei gleicher Eignung kann ein Angebot jedoch hinter
+  näheren Angeboten außerhalb der öffentlichen Dreierauswahl liegen.

@@ -12,9 +12,11 @@ verlässliche Instanz für Notfallhandlungen oder den Zugang zu knappen Hilfen.
 
 - Sicherheitsregeln laufen vor Dialog- und Matching-Funktionen.
 - Harte Zugangskriterien werden versioniert und deterministisch ausgewertet.
-- Das Sprachmodell darf nur strukturierte Anfragen vorbereiten und geprüfte
-  Ergebnisse erklären.
-- Jede Empfehlung enthält Datenquelle und Aktualitätsstatus.
+- Das Sprachmodell darf strukturierte Anfragen vorbereiten und freigegebene
+  Fragen formulieren. Öffentliche Ergebnisbegründungen werden nicht generiert.
+- Jede Empfehlung führt, sofern vorhanden, direkt zur geprüften
+  Angebotsseite; technische Quellen- und Aktualitätsprüfungen bleiben im
+  Audit.
 - Unsicherheit führt zu transparenter Abklärung oder menschlicher Übergabe.
 
 ## Konsequenzen

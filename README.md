@@ -5,9 +5,10 @@ Sozial-Lotsen für Bern. Das System soll Menschen in schwierigen Lebenslagen
 schneller zu passenden Angeboten führen und Fachpersonen bei der Recherche
 entlasten.
 
-Der wichtigste Grundsatz: AI darf Sprache verstehen und erklären, aber nicht
-entscheiden, wer Hilfe erhält. Zugangskriterien, Aktualität und
-Sicherheitseskalationen bleiben nachvollziehbare Regeln.
+Der wichtigste Grundsatz: AI darf Sprache verstehen und bei der Aufbereitung
+geprüfter Inhalte helfen, aber nicht entscheiden, wer Hilfe erhält.
+Zugangskriterien, Aktualität und Sicherheitseskalationen bleiben
+nachvollziehbare Regeln.
 
 ## MVP
 

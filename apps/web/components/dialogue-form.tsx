@@ -34,16 +34,6 @@ type Offer = {
   };
 };
 
-type ExplanationReason = { text: string; supported_by: string[] };
-
-type Explanation = {
-  headline: string;
-  reasons: ExplanationReason[];
-  clarification: ExplanationReason | null;
-  next_action: string | null;
-  source: "ai" | "template";
-};
-
 type ExplainedCandidate = {
   candidate: {
     offer: Offer;
@@ -51,7 +41,7 @@ type ExplainedCandidate = {
     uncertainties: string[];
     distance_meters: number | null;
   };
-  explanation: Explanation | null;
+  explanation: null;
 };
 
 type QuestionOption = { value: string; label: string };
@@ -102,6 +92,7 @@ type InterpretResponse = {
   proposals: { key: string; value: unknown; confidence: string }[];
   requires_confirmation: string[];
   ambiguities: string[];
+  service_topics?: string[];
   source: "ai" | "template" | "deterministic_safety";
   outcome: "interpreted" | "safety";
   safety_turn: DialogueTurn | null;
@@ -470,7 +461,11 @@ export function DialogueForm() {
     setLocationStatus("idle");
   }
 
-  async function startWithNeed(need: Need, workflowId?: string) {
+  async function startWithNeed(
+    need: Need,
+    workflowId?: string,
+    serviceTopics: string[] = [],
+  ) {
     appendMessage(
       "person",
       t("dialogue.conversation.selectedNeed", {
@@ -484,6 +479,7 @@ export function DialogueForm() {
         need,
         language: locale,
         workflow_id: workflowId,
+        ...(serviceTopics.length > 0 ? { service_topics: serviceTopics } : {}),
         ...(userLocation ? { user_location: userLocation } : {}),
       });
       applyTurn(result);
@@ -789,7 +785,11 @@ export function DialogueForm() {
                 <ChoiceList
                   disabled={locationBusy}
                   onSelect={(value) =>
-                    startWithNeed(value as Need, interpretation.workflow_id)
+                    startWithNeed(
+                      value as Need,
+                      interpretation.workflow_id,
+                      interpretation.service_topics ?? [],
+                    )
                   }
                   options={interpretationOptions}
                   selectedValue={interpretation.need_key ?? undefined}
@@ -889,7 +889,6 @@ export function DialogueForm() {
         >
           <ConversationThread messages={conversation} />
           <div className="result-heading">
-            <p className="eyebrow">{t("dialogue.result.eyebrow")}</p>
             <h2
               id="dialogue-result-heading"
               ref={responseHeadingRef}
@@ -923,17 +922,25 @@ export function DialogueForm() {
             </section>
           )}
 
-          {turn.candidates.map(({ candidate, explanation }) => (
+          {turn.candidates.map(({ candidate }) => (
             <article className="result-card" key={candidate.offer.id}>
               {candidate.offer.is_demo && (
                 <p className="demo-badge">{t("results.demoBadge")}</p>
               )}
-              <div lang="de">
+              <div lang={candidate.offer.content_language}>
                 <h3>{candidate.offer.name}</h3>
               </div>
-              {(candidate.distance_meters !== null ||
-                candidate.offer.address ||
-                candidate.offer.directions_url) && (
+              <p className="result-summary" lang={candidate.offer.content_language}>
+                {candidate.offer.summary}
+              </p>
+              {candidate.offer.availability !== "confirmed" && (
+                <p className="availability">
+                  {candidate.offer.availability === "call_to_confirm"
+                    ? t("availability.call_to_confirm")
+                    : t("availability.unknown")}
+                </p>
+              )}
+              {(candidate.distance_meters !== null || candidate.offer.address) && (
                 <div className="result-location">
                   {candidate.distance_meters !== null && (
                     <p className="result-distance">
@@ -945,6 +952,32 @@ export function DialogueForm() {
                       <strong>{t("results.address")}:</strong>{" "}
                       {candidate.offer.address}
                     </address>
+                  )}
+                </div>
+              )}
+              {candidate.offer.localization_fallback && (
+                <p className="uncertainty">{t("results.originalLanguage")}</p>
+              )}
+              {candidate.offer.contact_note && (
+                <p className="contact-note" lang={candidate.offer.content_language}>
+                  {candidate.offer.contact_note}
+                </p>
+              )}
+              {(candidate.offer.source.url || candidate.offer.directions_url) && (
+                <div className="result-actions">
+                  {candidate.offer.source.url && (
+                    <a
+                      className="offer-link"
+                      href={candidate.offer.source.url}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {t("results.source")}
+                      <span className="visually-hidden">
+                        {" "}
+                        ({t("a11y.opensNewTab")})
+                      </span>
+                    </a>
                   )}
                   {candidate.offer.directions_url && (
                     <a
@@ -962,35 +995,6 @@ export function DialogueForm() {
                   )}
                 </div>
               )}
-              {explanation ? (
-                <>
-                  <p lang={explanation.source === "ai" ? locale : "de"}>
-                    {explanation.headline}
-                  </p>
-                  <ul>
-                    {explanation.reasons.map((reason) => (
-                      <li key={reason.text}>{reason.text}</li>
-                    ))}
-                  </ul>
-                  {explanation.clarification && (
-                    <p className="uncertainty">
-                      {explanation.clarification.text}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p lang={candidate.offer.content_language}>{candidate.offer.summary}</p>
-              )}
-              {candidate.offer.localization_fallback && (
-                <p className="uncertainty">{t("results.originalLanguage")}</p>
-              )}
-              <p className="contact-note" lang={candidate.offer.content_language}>
-                {candidate.offer.contact_note}
-              </p>
-              <p className="source">
-                {t("results.source")}:{" "}
-                <span lang="de">{candidate.offer.source.label}</span>
-              </p>
             </article>
           ))}
 

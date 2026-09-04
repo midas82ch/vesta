@@ -75,7 +75,7 @@ class RoutesTest(unittest.TestCase):
         self.assertIsNone(payload["candidates"][0]["distance_meters"])
         self.assertIsNone(payload["candidates"][0]["offer"]["address"])
         self.assertIsNone(payload["candidates"][0]["offer"]["directions_url"])
-        self.assertTrue(payload["disclaimer"].startswith("Les offres"))
+        self.assertTrue(payload["disclaimer"].startswith("Prends directement contact"))
 
     def test_match_can_return_an_explicit_no_offer_outcome(self) -> None:
         app.dependency_overrides[matching_service] = lambda: MatchingService(

@@ -9,6 +9,7 @@ from vesta_api.domain.models import (
     Candidate,
     GeoPoint,
     RiskFlag,
+    ServiceTopic,
 )
 
 
@@ -34,6 +35,7 @@ class MatchRequest(BaseModel):
     is_adult: StrictBool | None = None
     user_location: UserLocationInput | None = None
     risk_flags: list[RiskFlag] = Field(default_factory=list)
+    service_topics: list[ServiceTopic] = Field(default_factory=list, max_length=9)
 
 
 class OfferSourceResponse(BaseModel):

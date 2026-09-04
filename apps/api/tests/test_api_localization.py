@@ -14,11 +14,11 @@ class ApiLocalizationTest(unittest.TestCase):
 
         self.assertEqual(6, len(set(disclaimers.values())))
         self.assertIn("reserviert", disclaimers["de"])
-        self.assertIn("réservées", disclaimers["fr"])
-        self.assertIn("reserved", disclaimers["en"])
-        self.assertIn("reservan", disclaimers["es"])
-        self.assertIn("reservados", disclaimers["pt"])
-        self.assertIn("كيتحجزوش", disclaimers["ary"])
+        self.assertIn("réserve", disclaimers["fr"])
+        self.assertIn("reserve", disclaimers["en"])
+        self.assertIn("reserva", disclaimers["es"])
+        self.assertIn("reserva", disclaimers["pt"])
+        self.assertIn("ما كتحجز", disclaimers["ary"])
 
     def test_legacy_arabic_and_unknown_locale_fallbacks(self) -> None:
         self.assertEqual(disclaimer_for("ary"), disclaimer_for("ar"))

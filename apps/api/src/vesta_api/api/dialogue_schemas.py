@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from vesta_api.api.schemas import CandidateResponse, UserLocationInput
+from vesta_api.domain.models import ServiceTopic
 
 
 class InterpretRequest(BaseModel):
@@ -24,6 +25,7 @@ class InterpretResponse(BaseModel):
     proposals: list[AttributeProposalResponse]
     requires_confirmation: list[str]
     ambiguities: list[str]
+    service_topics: list[ServiceTopic] = Field(default_factory=list)
     source: str
     outcome: Literal["interpreted", "safety"] = "interpreted"
     safety_turn: DialogueTurnResponse | None = None
@@ -34,6 +36,7 @@ class StartDialogueRequest(BaseModel):
     language: str = Field(default="de", min_length=2, max_length=12)
     workflow_id: str | None = Field(default=None, min_length=8, max_length=200)
     user_location: UserLocationInput | None = None
+    service_topics: list[ServiceTopic] = Field(default_factory=list, max_length=9)
 
 
 class AnswerRequest(BaseModel):

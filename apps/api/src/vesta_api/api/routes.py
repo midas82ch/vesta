@@ -14,7 +14,7 @@ from vesta_api.api.schemas import (
 from vesta_api.domain.models import MatchQuery
 from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
 from vesta_api.repositories.offers import OfferRepository
-from vesta_api.services.matching import MatchingService
+from vesta_api.services.matching import MatchingService, shortlist_match_result
 
 router = APIRouter()
 
@@ -60,21 +60,24 @@ def create_match(
 ) -> MatchResponse:
     if payload.need not in {need.key for need in catalog.list_needs()}:
         raise HTTPException(status_code=422, detail="unknown_or_inactive_category")
-    result = service.match(
-        MatchQuery(
-            need=payload.need,
-            language=payload.language,
-            dog=payload.dog,
-            has_identity_document=payload.has_identity_document,
-            gender=payload.gender,
-            is_adult=payload.is_adult,
-            user_location=(
-                payload.user_location.to_domain()
-                if payload.user_location is not None
-                else None
-            ),
-            at=datetime.now(UTC),
-            risk_flags=tuple(payload.risk_flags),
+    result = shortlist_match_result(
+        service.match(
+            MatchQuery(
+                need=payload.need,
+                language=payload.language,
+                dog=payload.dog,
+                has_identity_document=payload.has_identity_document,
+                gender=payload.gender,
+                is_adult=payload.is_adult,
+                user_location=(
+                    payload.user_location.to_domain()
+                    if payload.user_location is not None
+                    else None
+                ),
+                at=datetime.now(UTC),
+                risk_flags=tuple(payload.risk_flags),
+                service_topics=tuple(payload.service_topics),
+            )
         )
     )
 

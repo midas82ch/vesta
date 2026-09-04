@@ -75,10 +75,17 @@ class DialogueStateTest(unittest.TestCase):
         self.assertTrue(state.is_expired(NOW + timedelta(hours=1)))
 
     def test_with_question_asked_is_idempotent(self) -> None:
-        state = self._state()
+        state = DialogueState(
+            session_id="s1",
+            locale="de",
+            created_at=NOW,
+            expires_at=NOW + timedelta(minutes=45),
+            service_topics=("housing",),
+        )
         state = state.with_question_asked("sleep.has_dog")
         state = state.with_question_asked("sleep.has_dog")
         self.assertEqual(("sleep.has_dog",), state.asked_question_keys)
+        self.assertEqual(("housing",), state.service_topics)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
+from vesta_api.domain.models import ServiceTopic
+
 AttributeStatus = Literal["proposed", "confirmed", "unknown", "declined"]
 AttributeSource = Literal["user", "ai", "derived"]
 
@@ -29,6 +31,7 @@ class DialogueState:
     created_at: datetime
     expires_at: datetime
     need: str | None = None
+    service_topics: tuple[ServiceTopic, ...] = field(default_factory=tuple)
     attributes: tuple[AttributeState, ...] = field(default_factory=tuple)
     safety_status: Literal["clear", "review", "handoff"] = "clear"
     declined_question_keys: tuple[str, ...] = field(default_factory=tuple)
@@ -48,6 +51,7 @@ class DialogueState:
             created_at=self.created_at,
             expires_at=self.expires_at,
             need=self.need,
+            service_topics=self.service_topics,
             attributes=(*remaining, attribute),
             safety_status=self.safety_status,
             declined_question_keys=self.declined_question_keys,
@@ -63,6 +67,7 @@ class DialogueState:
             created_at=self.created_at,
             expires_at=self.expires_at,
             need=self.need,
+            service_topics=self.service_topics,
             attributes=self.attributes,
             safety_status=self.safety_status,
             declined_question_keys=self.declined_question_keys,

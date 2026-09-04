@@ -204,6 +204,32 @@ class DialogueRoutesTest(unittest.TestCase):
         self.assertEqual([], payload["proposals"])
         self.assertIn("free_text_interpretation_unavailable", payload["ambiguities"])
 
+    def test_interpret_detects_a_service_topic_independently_of_ai(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/dialogue/interpret",
+                json={
+                    "free_text": "Ich brauche Beratung wegen meiner Schulden.",
+                    "language": "de",
+                },
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(["finances"], response.json()["service_topics"])
+
+    def test_start_rejects_unknown_service_topics(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/dialogue/start",
+                json={
+                    "need": "counselling",
+                    "language": "de",
+                    "service_topics": ["invented_topic"],
+                },
+            )
+
+        self.assertEqual(422, response.status_code)
+
     def test_interpretation_workflow_id_is_reused_by_dialogue(self) -> None:
         with TestClient(app) as client:
             interpreted = client.post(
@@ -281,7 +307,7 @@ class DialogueRoutesTest(unittest.TestCase):
         self.assertEqual([], response.json()["candidates"])
         self.assertFalse(response.json()["human_handoff_required"])
 
-    def test_full_turn_reaches_an_explained_result(self) -> None:
+    def test_full_turn_reaches_a_plain_public_result(self) -> None:
         with TestClient(app) as client:
             started = client.post(
                 "/v1/dialogue/start", json={"need": "sleep_tonight", "language": "de"}
@@ -290,7 +316,7 @@ class DialogueRoutesTest(unittest.TestCase):
             payload = started.json()
 
             # Decline every follow-up question until the orchestrator has
-            # enough information to return (explained) results.
+            # enough information to return a result.
             for _ in range(10):
                 if payload["question"] is None:
                     break
@@ -306,11 +332,8 @@ class DialogueRoutesTest(unittest.TestCase):
                 payload = response.json()
         self.assertGreaterEqual(len(payload["candidates"]), 1)
         self.assertEqual("matches", payload["outcome"])
-        explanation = payload["candidates"][0]["explanation"]
-        assert explanation is not None
-        self.assertEqual("template", explanation["source"])
-        for reason in explanation["reasons"]:
-            self.assertTrue(reason["supported_by"])
+        self.assertIsNone(payload["candidates"][0]["explanation"])
+        self.assertTrue(payload["candidates"][0]["candidate"]["offer"]["summary"])
 
     def test_answer_with_unknown_session_returns_404(self) -> None:
         with TestClient(app) as client:

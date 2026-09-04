@@ -56,19 +56,23 @@ Matching ist nachvollziehbar und ohne Sprachmodell testbar:
 
 1. abgelaufene oder nicht veröffentlichte Angebote ausschliessen
 2. Bedarf und Zielgruppe prüfen
-3. harte Zugangskriterien prüfen
-4. Öffnungs- und Statusinformationen berücksichtigen
-5. verbleibende Angebote nach fachlicher Eignung sortieren
-6. bei gleicher Eignung optional die Luftliniendistanz berücksichtigen
+3. bestätigte Zugangsangaben und Themen aus dem Freitext berücksichtigen
+4. harte Zugangskriterien prüfen
+5. Öffnungs- und Statusinformationen berücksichtigen
+6. verbleibende Angebote nach fachlicher Eignung sortieren
+7. bei gleicher Eignung optional die Luftliniendistanz berücksichtigen
+8. die drei bestplatzierten Angebote öffentlich ausgeben
 
 Der öffentliche Altersdialog verwendet nur `person.is_adult`. Ein bestätigtes
 Nein schließt Angebote mit Mindestalter 18 aus; unbekannte oder abgelehnte
 Angaben erzeugen einen sichtbaren Abklärungshinweis. Abweichende Altersgrenzen
 werden nicht aus dieser Ja-/Nein-Angabe abgeleitet (ADR 0009).
 
-Jedes Ergebnis enthält passende Gründe sowie Unsicherheiten. Der freiwillig
-freigegebene Standort verändert nie Sicherheits- oder Zugangskriterien und
-blendet weiter entfernte Angebote nicht aus (ADR 0007).
+Matching-Gründe, Unsicherheiten und tiefer rangierte Angebote werden im
+Workflow-Audit festgehalten, aber nicht in der öffentlichen Oberfläche
+angezeigt. Dort stehen die geprüfte Angebotsbeschreibung und der nächste
+Schritt im Vordergrund. Der freiwillig freigegebene Standort verändert nie
+Sicherheits- oder Zugangskriterien (ADR 0007, ADR 0010).
 
 ### Angebotsregister
 
@@ -108,9 +112,10 @@ veröffentlicht (ADR 0009).
 ### AI-Adapter
 
 Ein Sprachmodell wird erst hinter einer schmalen Schnittstelle ergänzt. Seine
-Ausgabe muss in ein strukturiertes Anfrageformat validiert werden. Antworten
-dürfen nur Inhalte aus freigegebenen Quellen erklären und müssen deren
-Aktualität sichtbar machen.
+Ausgabe muss in ein strukturiertes Anfrageformat validiert werden. Im
+öffentlichen Dialog unterstützt es das Sprachverständnis und erlaubte
+Frageformulierungen. Die Ergebnisansicht verwendet ausschließlich geprüfte
+Angebotstexte und keine generierte Begründung (ADR 0010).
 
 ## Datenschutz
 
@@ -124,7 +129,8 @@ Aktualität sichtbar machen.
   gespeichert noch an das AI-Modell übermittelt. Auch konkrete Distanzen
   werden nicht im Workflow-Audit abgelegt (ADR 0007).
 - Ausnahme: tatsächlich versuchte AI-Gateway-Interaktionen
-  (Freitext-Interpretation, Fragen-Formulierung, Ergebnis-Erklärung) werden
+  (Freitext-Interpretation, Fragen-Formulierung und Import-Aufbereitung; in
+  älteren Spuren auch Ergebnis-Erklärungen) werden
   im Volltext protokolliert, um den KI-Entscheidungsprozess prüfbar zu
   machen (ADR 0005). Zusätzlich verbindet eine Workflow-Spur Eingaben,
   deterministische Frageauswahl und Matching-Logik, AI-Aufrufe und die

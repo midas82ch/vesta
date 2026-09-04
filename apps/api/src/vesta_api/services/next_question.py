@@ -7,11 +7,10 @@ class NextQuestionPolicy:
     """Picks the next question to ask, derived from data rather than a stored
     decision tree.
 
-    Simplification documented on purpose: relevance is "does at least one
-    currently viable offer have an opinion on this attribute", ordered by
-    ``question_definitions.priority``. There is no information-gain ranking —
-    with today's five attributes that would be over-engineering; revisit if
-    the attribute catalog grows substantially.
+    A question is relevant only when its answer can exclude an offer or
+    resolve an access condition among the currently viable candidates. This
+    keeps the public dialogue short and avoids collecting details that cannot
+    change the result.
     """
 
     def __init__(self, questions: tuple[QuestionDefinition, ...]) -> None:
@@ -46,10 +45,12 @@ class NextQuestionPolicy:
     def _attribute_is_relevant(
         attribute_key: str, candidates: tuple[Candidate, ...]
     ) -> bool:
+        if attribute_key == "person.has_dog":
+            dog_rules = {candidate.offer.access.accepts_dogs for candidate in candidates}
+            return False in dog_rules or (True in dog_rules and None in dog_rules)
+
         for candidate in candidates:
             access = candidate.offer.access
-            if attribute_key == "person.has_dog" and access.accepts_dogs is not None:
-                return True
             if (
                 attribute_key == "person.has_identity_document"
                 and access.identity_document_required is True
@@ -58,7 +59,7 @@ class NextQuestionPolicy:
             if attribute_key == "person.gender" and access.accepted_genders:
                 return True
             if attribute_key == "person.is_adult" and (
-                access.minimum_age is not None or access.maximum_age is not None
+                access.minimum_age == 18 or access.maximum_age == 17
             ):
                 return True
         return False

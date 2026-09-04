@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
 from vesta_api.domain.dialogue_models import AttributeState, DialogueState
-from vesta_api.domain.models import GeoPoint, MatchQuery, MatchResult
+from vesta_api.domain.models import GeoPoint, MatchQuery, MatchResult, ServiceTopic
 from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
-from vesta_api.services.matching import MatchingService
+from vesta_api.services.matching import MatchingService, shortlist_match_result
 from vesta_api.services.next_question import NextQuestionPolicy
 
 SESSION_TTL = timedelta(minutes=45)
@@ -93,6 +93,7 @@ def _build_match_query(
         is_adult=values.get("person.is_adult"),
         user_location=user_location,
         unknown_attributes=unknown_attributes,
+        service_topics=state.service_topics,
     )
 
 
@@ -123,6 +124,7 @@ class DialogueOrchestrator:
         *,
         session_id: str | None = None,
         user_location: GeoPoint | None = None,
+        service_topics: tuple[ServiceTopic, ...] = (),
     ) -> DialogueTurnResult:
         created = self._session_store.create(locale, now, session_id=session_id)
         state = DialogueState(
@@ -131,6 +133,7 @@ class DialogueOrchestrator:
             created_at=created.created_at,
             expires_at=created.expires_at,
             need=need,
+            service_topics=service_topics,
         )
         self._session_store.save(state)
         return self._advance(state, now, user_location)
@@ -141,6 +144,7 @@ class DialogueOrchestrator:
         now: datetime,
         *,
         session_id: str | None = None,
+        service_topics: tuple[ServiceTopic, ...] = (),
     ) -> DialogueTurnResult:
         created = self._session_store.create(locale, now, session_id=session_id)
         state = DialogueState(
@@ -149,6 +153,7 @@ class DialogueOrchestrator:
             created_at=created.created_at,
             expires_at=created.expires_at,
             need="victim_support",
+            service_topics=service_topics,
             safety_status="review",
         )
         question = next(
@@ -168,6 +173,7 @@ class DialogueOrchestrator:
             created_at=state.created_at,
             expires_at=state.expires_at,
             need=state.need,
+            service_topics=state.service_topics,
             attributes=state.attributes,
             safety_status="handoff",
             declined_question_keys=state.declined_question_keys,
@@ -247,6 +253,7 @@ class DialogueOrchestrator:
             created_at=state.created_at,
             expires_at=state.expires_at,
             need="victim_support",
+            service_topics=state.service_topics,
             attributes=state.attributes,
             safety_status="handoff",
             declined_question_keys=state.declined_question_keys,
@@ -263,8 +270,8 @@ class DialogueOrchestrator:
                     handoff_reason="immediate_danger",
                 ),
             )
-        victim_support = self._matching_service.match(
-            _build_match_query(state, now)
+        victim_support = shortlist_match_result(
+            self._matching_service.match(_build_match_query(state, now))
         )
         return DialogueTurnResult(
             state=state,
@@ -328,4 +335,8 @@ class DialogueOrchestrator:
             self._session_store.save(state)
             return DialogueTurnResult(state=state, question=question, match_result=None)
 
-        return DialogueTurnResult(state=state, question=None, match_result=match_result)
+        return DialogueTurnResult(
+            state=state,
+            question=None,
+            match_result=shortlist_match_result(match_result),
+        )

@@ -1,21 +1,17 @@
 import json
 import logging
 import secrets
-from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from vesta_api.ai.fallback import TemplateGateway
 from vesta_api.ai.gateway import AiGateway
 from vesta_api.api.dialogue_schemas import (
     AnswerRequest,
     AttributeProposalResponse,
     DialogueTurnResponse,
     ExplainedCandidateResponse,
-    ExplanationReasonResponse,
-    ExplanationResponse,
     HandoffResourceResponse,
     InterpretRequest,
     InterpretResponse,
@@ -25,7 +21,6 @@ from vesta_api.api.dialogue_schemas import (
 )
 from vesta_api.api.localization import disclaimer_for
 from vesta_api.api.schemas import candidate_to_response
-from vesta_api.domain.ai_models import ExplanationResult
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
 from vesta_api.domain.models import MatchResult
 from vesta_api.domain.workflow_audit_models import (
@@ -35,8 +30,8 @@ from vesta_api.domain.workflow_audit_models import (
 from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.services.dialogue_orchestrator import DialogueOrchestrator, DialogueTurnResult
-from vesta_api.services.result_grounding import build_grounding_bundle
 from vesta_api.services.safety import detect_safety_signal, safety_resources
+from vesta_api.services.service_topics import detect_service_topics
 
 router = APIRouter(prefix="/v1/dialogue")
 logger = logging.getLogger(__name__)
@@ -121,6 +116,7 @@ def interpret(
         summary=f"Eingabe: {payload.free_text[:240]}",
         payload={"free_text": payload.free_text, "language": payload.language},
     )
+    service_topics = detect_service_topics(payload.free_text, payload.language)
     safety_signal = detect_safety_signal(payload.free_text, payload.language)
     if safety_signal is not None:
         _record_workflow_event(
@@ -138,6 +134,7 @@ def interpret(
             locale=payload.language,
             now=datetime.now(UTC),
             session_id=workflow_id,
+            service_topics=service_topics,
         )
         return InterpretResponse(
             workflow_id=workflow_id,
@@ -145,6 +142,7 @@ def interpret(
             proposals=[],
             requires_confirmation=[],
             ambiguities=[],
+            service_topics=list(service_topics),
             source="deterministic_safety",
             outcome="safety",
             safety_turn=_turn_response(
@@ -185,6 +183,7 @@ def interpret(
             ],
             "requires_confirmation": list(result.requires_confirmation),
             "ambiguities": list(result.ambiguities),
+            "service_topics": list(service_topics),
             "source": result.source,
         },
     )
@@ -197,6 +196,7 @@ def interpret(
         ],
         requires_confirmation=list(result.requires_confirmation),
         ambiguities=list(result.ambiguities),
+        service_topics=list(service_topics),
         source=result.source,
     )
 
@@ -238,117 +238,20 @@ def _render_question(
     )
 
 
-def _explain_candidates(
+def _public_candidates(
     match_result: MatchResult | None,
-    *,
-    gateway: AiGateway,
-    locale: str,
-    session_id: str,
 ) -> list[ExplainedCandidateResponse]:
+    """Serialize offers without generating customer-facing AI explanations."""
+
     if match_result is None:
         return []
-    if not match_result.candidates:
-        return []
-    bundles = [build_grounding_bundle(candidate) for candidate in match_result.candidates]
-
-    def cache_key(index: int) -> tuple[object, ...]:
-        return _grounding_cache_key(bundles[index], locale)
-
-    first_index_by_key: dict[tuple[object, ...], int] = {}
-    for index in range(len(bundles)):
-        first_index_by_key.setdefault(cache_key(index), index)
-
-    def explain_index(index: int) -> ExplanationResult:
-        return gateway.explain(
-            bundle=bundles[index], locale=locale, session_id=session_id
+    return [
+        ExplainedCandidateResponse(
+            candidate=candidate_to_response(candidate),
+            explanation=None,
         )
-
-    explanations: dict[tuple[object, ...], ExplanationResult] = {}
-    with ThreadPoolExecutor(max_workers=min(3, len(first_index_by_key))) as executor:
-        futures = {
-            key: executor.submit(explain_index, index)
-            for key, index in first_index_by_key.items()
-        }
-        for key, future in futures.items():
-            try:
-                explanations[key] = future.result()
-            except Exception:
-                logger.exception("candidate_explanation_failed: session_id=%s", session_id)
-                fallback_index = first_index_by_key[key]
-                explanations[key] = TemplateGateway().explain(
-                    bundle=bundles[fallback_index],
-                    locale=locale,
-                )
-
-    explained: list[ExplainedCandidateResponse] = []
-    for index, candidate in enumerate(match_result.candidates):
-        explanation = explanations[cache_key(index)]
-        explained.append(
-            ExplainedCandidateResponse(
-                candidate=candidate_to_response(candidate),
-                explanation=ExplanationResponse(
-                    headline=explanation.headline,
-                    reasons=[
-                        ExplanationReasonResponse(text=r.text, supported_by=list(r.supported_by))
-                        for r in explanation.reasons
-                    ],
-                    clarification=(
-                        ExplanationReasonResponse(
-                            text=explanation.clarification.text,
-                            supported_by=list(explanation.clarification.supported_by),
-                        )
-                        if explanation.clarification is not None
-                        else None
-                    ),
-                    next_action=explanation.next_action,
-                    source=explanation.source,
-                ),
-            )
-        )
-    return explained
-
-
-def _grounding_cache_key(bundle: object, locale: str) -> tuple[object, ...]:
-    return (
-        locale,
-        tuple(
-            (fact.id, fact.type, repr(fact.value))
-            for fact in bundle.facts  # type: ignore[attr-defined]
-        ),
-        bundle.match_reasons,  # type: ignore[attr-defined]
-        bundle.uncertainties,  # type: ignore[attr-defined]
-        bundle.allowed_next_actions,  # type: ignore[attr-defined]
-        bundle.forbidden_claims,  # type: ignore[attr-defined]
-    )
-
-
-def _record_explanation_deduplication(
-    match_result: MatchResult | None,
-    *,
-    locale: str,
-    workflow_log: WorkflowAuditLogRepository,
-    workflow_id: str,
-) -> None:
-    if match_result is None or len(match_result.candidates) < 2:
-        return
-    bundles = [build_grounding_bundle(candidate) for candidate in match_result.candidates]
-    unique_count = len({_grounding_cache_key(bundle, locale) for bundle in bundles})
-    if unique_count == len(bundles):
-        return
-    _record_workflow_event(
-        workflow_log,
-        workflow_id=workflow_id,
-        stage="system",
-        event_type="ai_explanations_deduplicated",
-        summary=(
-            f"Systemlogik fasst {len(bundles)} Faktenpakete zu "
-            f"{unique_count} AI-Erklärungen zusammen."
-        ),
-        payload={
-            "candidate_count": len(bundles),
-            "unique_fact_bundle_count": unique_count,
-        },
-    )
+        for candidate in match_result.candidates
+    ]
 
 
 def _question_text(question: QuestionDefinition, locale: str) -> str:
@@ -368,6 +271,7 @@ def _record_system_logic(
     workflow_id = turn.state.session_id
     state_payload: dict[str, object] = {
         "need": turn.state.need,
+        "service_topics": list(turn.state.service_topics),
         "locale": turn.state.locale,
         "attributes": [
             {
@@ -520,12 +424,6 @@ def _turn_response(
         locale=locale,
         location_used=location_used,
     )
-    _record_explanation_deduplication(
-        turn.match_result,
-        locale=locale,
-        workflow_log=workflow_log,
-        workflow_id=turn.state.session_id,
-    )
     handoff_reason = turn.match_result.handoff_reason if turn.match_result else None
     resources = (
         safety_resources(
@@ -554,12 +452,7 @@ def _turn_response(
             locale=locale,
             session_id=turn.state.session_id,
         ),
-        candidates=_explain_candidates(
-            turn.match_result,
-            gateway=gateway,
-            locale=locale,
-            session_id=turn.state.session_id,
-        ),
+        candidates=_public_candidates(turn.match_result),
         human_handoff_required=(
             turn.match_result.human_handoff_required if turn.match_result else False
         ),
@@ -598,6 +491,7 @@ def start(
             if payload.user_location is not None
             else None
         ),
+        service_topics=tuple(payload.service_topics),
     )
     _record_workflow_event(
         workflow_log,
@@ -605,7 +499,11 @@ def start(
         stage="input",
         event_type="need_selected",
         summary=f"Eingabe: Bedarf «{payload.need}» ausgewählt.",
-        payload={"need": payload.need, "language": payload.language},
+        payload={
+            "need": payload.need,
+            "language": payload.language,
+            "service_topics": list(payload.service_topics),
+        },
     )
     return _turn_response(
         turn,

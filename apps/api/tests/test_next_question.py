@@ -46,6 +46,14 @@ QUESTIONS = (
         need_keys=("sleep_tonight",),
         localizations={"de": {"canonical_text": "Zielgruppe?"}},
     ),
+    QuestionDefinition(
+        key="access.is_adult",
+        attribute_key="person.is_adult",
+        answer_type="yes_no_unknown",
+        priority=40,
+        ai_rephrasing_allowed=True,
+        localizations={"de": {"canonical_text": "Volljährig?"}},
+    ),
 )
 
 
@@ -54,6 +62,8 @@ def _candidate(
     accepts_dogs: bool | None = None,
     requires_id: bool | None = None,
     accepted_genders: tuple[str, ...] = (),
+    minimum_age: int | None = None,
+    maximum_age: int | None = None,
 ) -> Candidate:
     offer = Offer(
         id="test-offer",
@@ -65,6 +75,8 @@ def _candidate(
             accepts_dogs=accepts_dogs,
             identity_document_required=requires_id,
             accepted_genders=accepted_genders,
+            minimum_age=minimum_age,
+            maximum_age=maximum_age,
         ),
         availability=Availability.CONFIRMED,
         contact_note="Test",
@@ -112,6 +124,27 @@ class NextQuestionPolicyTest(unittest.TestCase):
         assert question is not None
         self.assertEqual("sleep.has_identity_document", question.key)
 
+    def test_does_not_ask_about_dog_when_every_offer_accepts_dogs(self) -> None:
+        policy = NextQuestionPolicy(QUESTIONS)
+        candidates = (_candidate(accepts_dogs=True, requires_id=True),)
+
+        question = policy.next_question(_state(), candidates)
+
+        assert question is not None
+        self.assertEqual("sleep.has_identity_document", question.key)
+
+    def test_asks_about_dog_when_it_can_change_the_ranking(self) -> None:
+        policy = NextQuestionPolicy(QUESTIONS)
+        candidates = (
+            _candidate(accepts_dogs=True),
+            _candidate(accepts_dogs=None),
+        )
+
+        question = policy.next_question(_state(), candidates)
+
+        assert question is not None
+        self.assertEqual("sleep.has_dog", question.key)
+
     def test_skips_already_answered_attribute(self) -> None:
         policy = NextQuestionPolicy(QUESTIONS)
         candidates = (_candidate(accepts_dogs=False, requires_id=True),)
@@ -151,6 +184,12 @@ class NextQuestionPolicyTest(unittest.TestCase):
     def test_returns_none_when_nothing_left_to_ask(self) -> None:
         policy = NextQuestionPolicy(QUESTIONS)
         candidates = (_candidate(),)  # no access opinions at all
+
+        self.assertIsNone(policy.next_question(_state(), candidates))
+
+    def test_does_not_ask_adult_question_for_an_unresolvable_age_rule(self) -> None:
+        policy = NextQuestionPolicy(QUESTIONS)
+        candidates = (_candidate(minimum_age=21),)
 
         self.assertIsNone(policy.next_question(_state(), candidates))
 

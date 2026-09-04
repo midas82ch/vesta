@@ -17,7 +17,11 @@ from vesta_api.domain.models import (  # noqa: E402
     RiskFlag,
     Source,
 )
-from vesta_api.services.matching import MatchingService, distance_in_meters  # noqa: E402
+from vesta_api.services.matching import (  # noqa: E402
+    MatchingService,
+    distance_in_meters,
+    shortlist_match_result,
+)
 
 NOW = datetime(2026, 7, 25, tzinfo=UTC)
 
@@ -44,13 +48,16 @@ def offer(
     maximum_age: int | None = None,
     localizations: dict[str, OfferText] | None = None,
     localization_required: bool = False,
+    languages: tuple[str, ...] = ("de", "fr"),
+    summary: str = "Nur für automatisierte Tests.",
+    needs: tuple[str, ...] = (Need.SLEEP_TONIGHT,),
 ) -> Offer:
     return Offer(
         id=offer_id,
         name=name,
-        summary="Nur für automatisierte Tests.",
-        needs=(Need.SLEEP_TONIGHT,),
-        languages=("de", "fr"),
+        summary=summary,
+        needs=needs,
+        languages=languages,
         access=AccessRules(
             accepts_dogs=accepts_dogs,
             identity_document_required=requires_id,
@@ -391,6 +398,91 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertEqual((), result.candidates)
         self.assertEqual(1, len(result.excluded_offers))
         self.assertEqual("adults_only", result.excluded_offers[0].reason)
+
+    def test_all_confirmed_access_criteria_contribute_to_ranking(self) -> None:
+        general = offer(
+            offer_id="general",
+            name="Allgemeines Angebot",
+            accepts_dogs=None,
+            requires_id=None,
+        )
+        tailored = offer(
+            offer_id="tailored",
+            name="Passendes Angebot",
+            accepts_dogs=True,
+            requires_id=False,
+            accepted_genders=("finta",),
+            minimum_age=18,
+        )
+        service = MatchingService(InMemoryOfferRepository((general, tailored)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                dog=True,
+                has_identity_document=False,
+                gender="finta",
+                is_adult=True,
+                at=NOW,
+            )
+        )
+
+        self.assertEqual(("tailored", "general"), tuple(c.offer.id for c in result.candidates))
+        self.assertGreater(result.candidates[0].score, result.candidates[1].score)
+        self.assertIn("dog_access_confirmed", result.candidates[0].reasons)
+        self.assertIn("identity_document_not_required", result.candidates[0].reasons)
+        self.assertIn("target_group_matches", result.candidates[0].reasons)
+        self.assertIn("adult_access_matches", result.candidates[0].reasons)
+
+    def test_requested_service_topic_prioritizes_the_relevant_offer(self) -> None:
+        addiction = offer(
+            offer_id="addiction",
+            name="Suchtberatung",
+            summary="Beratung bei Alkohol- und Drogenproblemen.",
+            needs=(Need.COUNSELLING,),
+        )
+        housing = offer(
+            offer_id="housing",
+            name="Wohnberatung",
+            summary="Beratung bei Wohnungs- und Mietfragen.",
+            needs=(Need.COUNSELLING,),
+        )
+        service = MatchingService(InMemoryOfferRepository((housing, addiction)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.COUNSELLING,
+                language="de",
+                at=NOW,
+                service_topics=("addiction",),
+            )
+        )
+
+        self.assertEqual("addiction", result.candidates[0].offer.id)
+        self.assertIn(
+            "service_topic_matches:addiction",
+            result.candidates[0].reasons,
+        )
+
+    def test_public_shortlist_keeps_three_best_and_audits_the_rest(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository(
+                tuple(
+                    offer(offer_id=letter.lower(), name=f"Angebot {letter}")
+                    for letter in ("A", "B", "C", "D")
+                )
+            )
+        )
+        complete = service.match(
+            MatchQuery(need=Need.SLEEP_TONIGHT, language="de", at=NOW)
+        )
+
+        selected = shortlist_match_result(complete)
+
+        self.assertEqual(("a", "b", "c"), tuple(c.offer.id for c in selected.candidates))
+        self.assertEqual("d", selected.excluded_offers[-1].offer_id)
+        self.assertEqual("lower_relevance_rank", selected.excluded_offers[-1].reason)
 
 
 if __name__ == "__main__":

@@ -1,28 +1,10 @@
 _DISCLAIMERS: dict[str, str] = {
-    "de": (
-        "Angebote werden nicht automatisch reserviert. "
-        "Aktualität und Kontaktangaben vor Ort bestätigen."
-    ),
-    "fr": (
-        "Les offres ne sont pas réservées automatiquement. "
-        "Confirmer sur place leur actualité et les coordonnées."
-    ),
-    "en": (
-        "Services are not reserved automatically. "
-        "Confirm current details and contact information directly."
-    ),
-    "es": (
-        "Los servicios no se reservan automáticamente. Confirma directamente "
-        "que la información y los datos de contacto estén actualizados."
-    ),
-    "pt": (
-        "Os serviços não são reservados automaticamente. Confirma diretamente "
-        "se as informações e os contactos estão atualizados."
-    ),
-    "ary": (
-        "الخدمات ما كيتحجزوش أوتوماتيكياً. تأكد مباشرة باللي المعلومات "
-        "وبيانات الاتصال مازال صحيحة."
-    ),
+    "de": "Bitte nimm direkt Kontakt auf. Vesta reserviert keinen Platz.",
+    "fr": "Prends directement contact avec le service. Vesta ne réserve pas de place.",
+    "en": "Please contact the service directly. Vesta does not reserve places.",
+    "es": "Contacta directamente con el servicio. Vesta no reserva plazas.",
+    "pt": "Contacta diretamente o serviço. A Vesta não reserva lugares.",
+    "ary": "تاصل مباشرة بالخدمة. فيستا ما كتحجز حتى بلاصة.",
 }
 
 
