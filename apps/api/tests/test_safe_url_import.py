@@ -42,6 +42,12 @@ class SafeUrlTest(unittest.TestCase):
             normalize_offer_url(" HTTPS://Example.ORG/offer?q=1#private "),
         )
 
+    def test_preserves_a_meaningful_trailing_slash(self) -> None:
+        self.assertEqual(
+            "https://example.org/offer/",
+            normalize_offer_url("https://example.org/offer/"),
+        )
+
     def test_rejects_unsafe_url_shapes(self) -> None:
         unsafe = (
             "http://example.org/",

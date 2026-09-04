@@ -80,7 +80,12 @@ def normalize_offer_url(value: str) -> str:
         literal = None
     if literal is not None and not literal.is_global:
         raise SafeUrlError("blocked_address")
-    normalized_path = quote(str(PurePosixPath(parsed.path or "/")), safe="/%:@-._~!$&'()*+,;=")
+    source_path = parsed.path or "/"
+    normalized_path = quote(
+        str(PurePosixPath(source_path)), safe="/%:@-._~!$&'()*+,;="
+    )
+    if source_path.endswith("/") and normalized_path != "/":
+        normalized_path = f"{normalized_path}/"
     normalized = SplitResult(
         scheme="https",
         netloc=f"[{hostname}]" if ":" in hostname else hostname,
