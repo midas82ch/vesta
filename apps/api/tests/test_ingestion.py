@@ -37,15 +37,15 @@ class OfferCatalogTest(unittest.TestCase):
             REPOSITORY_ROOT / "data" / "sources" / "bern_offers.json"
         )
 
-        self.assertEqual(7, len(catalog.offers))
-        self.assertEqual(7, len({offer.slug for offer in catalog.offers}))
+        self.assertEqual(9, len(catalog.offers))
+        self.assertEqual(9, len({offer.slug for offer in catalog.offers}))
         self.assertFalse(
             any(offer.slug.startswith("test-") for offer in catalog.offers)
         )
         self.assertTrue(
             all(str(offer.source.url).startswith("https://") for offer in catalog.offers)
         )
-        self.assertTrue(all(offer.location is not None for offer in catalog.offers))
+        self.assertEqual(2, sum(offer.location is None for offer in catalog.offers))
         self.assertEqual(
             6,
             len(

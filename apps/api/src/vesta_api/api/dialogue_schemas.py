@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -23,6 +25,8 @@ class InterpretResponse(BaseModel):
     requires_confirmation: list[str]
     ambiguities: list[str]
     source: str
+    outcome: Literal["interpreted", "safety"] = "interpreted"
+    safety_turn: DialogueTurnResponse | None = None
 
 
 class StartDialogueRequest(BaseModel):
@@ -71,6 +75,14 @@ class ExplanationResponse(BaseModel):
     source: str
 
 
+class HandoffResourceResponse(BaseModel):
+    kind: str
+    name: str
+    phone: str
+    url: str
+    description: str
+
+
 class ExplainedCandidateResponse(BaseModel):
     candidate: CandidateResponse
     explanation: ExplanationResponse | None
@@ -84,4 +96,5 @@ class DialogueTurnResponse(BaseModel):
     candidates: list[ExplainedCandidateResponse]
     human_handoff_required: bool
     handoff_reason: str | None
+    handoff_resources: list[HandoffResourceResponse] = Field(default_factory=list)
     disclaimer: str

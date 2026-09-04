@@ -2,6 +2,7 @@ import json
 import logging
 from contextvars import ContextVar
 
+from vesta_api.ai.fallback import TemplateGateway
 from vesta_api.ai.locales import ai_locale_name
 from vesta_api.domain.ai_models import (
     AttributeProposal,
@@ -9,7 +10,6 @@ from vesta_api.domain.ai_models import (
     ExplanationResult,
     GroundingBundle,
     InterpretationResult,
-    QuestionOption,
     RenderedQuestion,
 )
 from vesta_api.domain.audit_models import AiExchange
@@ -50,22 +50,8 @@ _QUESTION_SCHEMA = {
     "properties": {
         "text": {"type": "string"},
         "help_text": {"type": ["string", "null"]},
-        "unknown_label": {"type": "string"},
-        "decline_label": {"type": "string"},
-        "options": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "value": {"type": "string"},
-                    "label": {"type": "string"},
-                },
-                "required": ["value", "label"],
-                "additionalProperties": False,
-            },
-        },
     },
-    "required": ["text", "help_text", "unknown_label", "decline_label", "options"],
+    "required": ["text", "help_text"],
     "additionalProperties": False,
 }
 
@@ -104,7 +90,8 @@ _INTERPRETATION_SYSTEM = (
 
 _QUESTION_SYSTEM = (
     "Du formulierst eine bereits fachlich freigegebene Frage des Vesta-Sozial-Lotsen "
-    "verstaendlicher. Bedeutung und Antwortoptionen duerfen sich nicht aendern. "
+    "verstaendlicher. Du lieferst ausschliesslich Fragetext und Hilfetext. "
+    "Bedeutung und Antwortoptionen duerfen sich nicht aendern. "
     "Frage nicht nach zusaetzlichen Informationen. Antworte in der angegebenen Sprache."
 )
 
@@ -216,16 +203,10 @@ class AnthropicGateway:
         locale: str,
     ) -> RenderedQuestion:
         canonical = question.localizations.get(locale) or question.localizations["de"]
-        allowed_values = (
-            ", ".join(o.value for o in attribute.options)
-            if attribute.options
-            else "ja / nein / weiss nicht"
-        )
         user_content = (
             f"Sprache: {ai_locale_name(locale)}\n"
             f"Kanonischer Text: {canonical['canonical_text']}\n"
             f"Hilfetext: {canonical.get('help_text', '')}\n"
-            f"Erlaubte Antwortoptionen: {allowed_values}\n\n"
             "Formuliere nur die Frage verstaendlicher."
         )
         request_text = f"[system]\n{_QUESTION_SYSTEM}\n\n[user]\n{user_content}"
@@ -240,14 +221,15 @@ class AnthropicGateway:
         response_text = response.content[0].text
         self._last_exchange.set(AiExchange(request=request_text, response=response_text))
         payload = json.loads(response_text)
+        controls = TemplateGateway().render_question(
+            question=question, attribute=attribute, locale=locale
+        )
         return RenderedQuestion(
             text=payload["text"],
             help_text=payload["help_text"],
-            unknown_label=payload["unknown_label"],
-            decline_label=payload["decline_label"],
-            options=tuple(
-                QuestionOption(value=o["value"], label=o["label"]) for o in payload["options"]
-            ),
+            unknown_label=controls.unknown_label,
+            decline_label=controls.decline_label,
+            options=controls.options,
             source="ai",
         )
 

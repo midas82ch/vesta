@@ -13,6 +13,7 @@ from vesta_api.domain.models import (  # noqa: E402
     MatchQuery,
     Need,
     Offer,
+    OfferText,
     RiskFlag,
     Source,
 )
@@ -39,6 +40,10 @@ def offer(
     expires_at: datetime | None = None,
     availability: Availability = Availability.CALL_TO_CONFIRM,
     location: GeoPoint | None = None,
+    minimum_age: int | None = None,
+    maximum_age: int | None = None,
+    localizations: dict[str, OfferText] | None = None,
+    localization_required: bool = False,
 ) -> Offer:
     return Offer(
         id=offer_id,
@@ -50,6 +55,8 @@ def offer(
             accepts_dogs=accepts_dogs,
             identity_document_required=requires_id,
             accepted_genders=accepted_genders,
+            minimum_age=minimum_age,
+            maximum_age=maximum_age,
         ),
         availability=availability,
         contact_note="Test",
@@ -63,10 +70,90 @@ def offer(
         location=location,
         published=True,
         is_demo=True,
+        localizations=localizations or {},
+        localization_required=localization_required,
     )
 
 
 class MatchingServiceTest(unittest.TestCase):
+    def test_adult_true_satisfies_minimum_age_18(self) -> None:
+        service = MatchingService(InMemoryOfferRepository((offer(minimum_age=18),)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                is_adult=True,
+                at=NOW,
+            )
+        )
+
+        self.assertEqual(1, len(result.candidates))
+
+    def test_adult_false_excludes_minimum_age_18(self) -> None:
+        service = MatchingService(InMemoryOfferRepository((offer(minimum_age=18),)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                is_adult=False,
+                at=NOW,
+            )
+        )
+
+        self.assertEqual((), result.candidates)
+
+    def test_unknown_adult_status_keeps_offer_with_uncertainty(self) -> None:
+        service = MatchingService(InMemoryOfferRepository((offer(minimum_age=18),)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                unknown_attributes=("person.is_adult",),
+                at=NOW,
+            )
+        )
+
+        self.assertIn("adult_status_must_be_confirmed", result.candidates[0].uncertainties)
+
+    def test_non_binary_age_rule_is_not_used_for_exclusion(self) -> None:
+        service = MatchingService(InMemoryOfferRepository((offer(minimum_age=21),)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                is_adult=False,
+                at=NOW,
+            )
+        )
+
+        self.assertEqual(1, len(result.candidates))
+        self.assertIn("age_rule_requires_contact", result.candidates[0].uncertainties)
+
+    def test_uses_reviewed_locale_or_german_fallback(self) -> None:
+        localized_offer = offer(
+            localizations={
+                "de": OfferText("Deutscher Name", "Beschreibung", "Kontakt"),
+                "fr": OfferText("Nom français", "Description", "Contact"),
+            },
+            localization_required=True,
+        )
+        service = MatchingService(InMemoryOfferRepository((localized_offer,)))
+
+        french = service.match(
+            MatchQuery(need=Need.SLEEP_TONIGHT, language="fr", at=NOW)
+        )
+        spanish = service.match(
+            MatchQuery(need=Need.SLEEP_TONIGHT, language="es", at=NOW)
+        )
+
+        self.assertEqual("Nom français", french.candidates[0].offer.name)
+        self.assertFalse(french.candidates[0].offer.localization_fallback)
+        self.assertEqual("Deutscher Name", spanish.candidates[0].offer.name)
+        self.assertTrue(spanish.candidates[0].offer.localization_fallback)
     def test_returns_current_accessible_offer(self) -> None:
         service = MatchingService(InMemoryOfferRepository((offer(),)))
 
@@ -287,6 +374,23 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertIn("destination=46.944359%2C7.459041", response.offer.directions_url)
         self.assertIn("travelmode=walking", response.offer.directions_url)
         self.assertNotIn("origin=", response.offer.directions_url)
+
+    def test_records_a_deterministic_exclusion_reason(self) -> None:
+        adults_only = offer(minimum_age=18)
+        service = MatchingService(InMemoryOfferRepository((adults_only,)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                at=NOW,
+                is_adult=False,
+            )
+        )
+
+        self.assertEqual((), result.candidates)
+        self.assertEqual(1, len(result.excluded_offers))
+        self.assertEqual("adults_only", result.excluded_offers[0].reason)
 
 
 if __name__ == "__main__":

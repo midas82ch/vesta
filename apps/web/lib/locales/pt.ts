@@ -32,6 +32,8 @@ export const pt: Record<MessageKey, string> = {
   "need.basic.detail": "Comida, duche ou primeiros socorros",
   "need.counselling.title": "Aconselhamento",
   "need.counselling.detail": "Ajuda com dependências, habitação ou dinheiro",
+  "need.victimSupport.title": "Apoio à vítima",
+  "need.victimSupport.detail": "Ajuda após violência, ameaças ou um crime",
   "form.targetGroup.label": "Grupo-alvo",
   "form.targetGroup.hint":
     "Esta informação ajuda a classificar corretamente os serviços com condições de acesso específicas.",
@@ -111,7 +113,7 @@ export const pt: Record<MessageKey, string> = {
   "about.pilot.eyebrow": "Projeto-piloto",
   "about.pilot.title": "Começar pequeno. Aprender em conjunto.",
   "about.pilot.text":
-    "O primeiro protótipo concentra-se em alojamento noturno, necessidades básicas e aconselhamento. Funciona sem conta nem processo pessoal. As pessoas afetadas, profissionais e organizações devem participar na definição do que é útil e seguro.",
+    "O primeiro protótipo concentra-se em alojamento noturno, necessidades básicas, aconselhamento e apoio à vítima. Funciona sem conta nem processo pessoal. As pessoas afetadas, profissionais e organizações devem participar na definição do que é útil e seguro.",
   "about.pilot.link": "Ver o projeto no GitHub",
   "about.pilot.note":
     "O protótipo técnico está disponível publicamente. Agradecemos comentários e colaboração.",
@@ -165,7 +167,7 @@ export const pt: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "IA",
   "privacy.ai.title": "Modelo de linguagem de IA em fase de teste",
   "privacy.ai.text":
-    "Os textos livres, as perguntas aprovadas e determinados dados dos serviços são transmitidos à OpenAI para interpretação e formulação compreensível. A IA não decide sobre o acesso nem atribui lugares. Não introduzas nomes, moradas ou contactos. As entradas, os pedidos e respostas da IA, a lógica intermédia do sistema Vesta e a resposta apresentada são guardados como um fluxo de trabalho relacionado até serem eliminados manualmente e só são acessíveis a pessoas administradoras autorizadas.",
+    "Os sinais de segurança são primeiro verificados localmente por regras fixas; os casos de segurança detetados não são enviados à OpenAI para interpretação. Os restantes textos livres, as perguntas aprovadas e determinados dados dos serviços são transmitidos à OpenAI para interpretação e formulação compreensível. A IA não decide sobre o acesso nem atribui lugares. Não introduzas nomes, moradas ou contactos. As entradas, os pedidos e respostas da IA, a lógica intermédia do sistema Vesta e a resposta apresentada são guardados como um fluxo de trabalho relacionado até serem eliminados manualmente e só são acessíveis a pessoas administradoras autorizadas.",
   "privacy.hosting.eyebrow": "Alojamento",
   "privacy.hosting.title": "Infraestrutura suíça prevista",
   "privacy.hosting.text":
@@ -247,6 +249,15 @@ export const pt: Record<MessageKey, string> = {
     "Determinamos o próximo passo adequado e depois verificamos os possíveis serviços.",
   "dialogue.error.title": "Algo correu mal",
   "dialogue.error": "O diálogo não está disponível neste momento.",
+  "dialogue.safety.detected":
+    "Reconheço um possível sinal de violência ou ameaça. Primeiro verificamos a tua segurança.",
+  "dialogue.safety.immediate": "Liga imediatamente para a emergência.",
+  "dialogue.safety.support":
+    "Aqui encontras apoio confidencial à vítima e serviços especializados.",
+  "dialogue.safety.immediateTitle": "Ligar agora para a emergência",
+  "dialogue.safety.supportTitle": "Apoio confidencial à vítima",
+  "dialogue.safety.resources": "Ajuda disponível agora",
+  "dialogue.safety.openWebsite": "Abrir site",
   "dialogue.question.eyebrow": "Mais uma pergunta",
   "dialogue.question.answerLegend": "A tua resposta",
   "dialogue.question.yes": "Sim",
@@ -259,9 +270,10 @@ export const pt: Record<MessageKey, string> = {
     "Alguns alojamentos destinam-se exclusivamente a mulheres e pessoas FINTA.",
   "dialogue.fit.gender.yes": "Sim, é adequado para mim",
   "dialogue.fit.gender.no": "Não, procuro um serviço de acesso geral",
-  "dialogue.fit.age.question": "A pesquisa é para uma pessoa adulta?",
+  "dialogue.fit.age.question":
+    "A pessoa para quem procuras ajuda tem 18 anos ou mais?",
   "dialogue.fit.age.help":
-    "Alguns alojamentos noturnos só estão disponíveis a partir dos 18 anos.",
+    "Alguns serviços destinam-se apenas a pessoas adultas.",
   "dialogue.fit.age.adult": "Sim, 18 anos ou mais",
   "dialogue.fit.age.minor": "Não, menos de 18 anos",
   "dialogue.fit.decline": "Prefiro não indicar",

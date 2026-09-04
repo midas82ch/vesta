@@ -38,6 +38,19 @@
         "pt": { "title": "Aconselhamento", "description": "Ajuda com dependências, habitação ou dinheiro" },
         "ary": { "title": "الاستشارة", "description": "مساعدة فالإدمان، السكن ولا الفلوس" }
       }
+    },
+    {
+      "key": "victim_support",
+      "icon": "support",
+      "sort_order": 4,
+      "localizations": {
+        "de": { "title": "Opferhilfe", "description": "Hilfe nach Gewalt, Drohungen oder einer Straftat" },
+        "fr": { "title": "Aide aux victimes", "description": "Aide après des violences, des menaces ou une infraction" },
+        "en": { "title": "Victim support", "description": "Help after violence, threats or a crime" },
+        "es": { "title": "Ayuda a víctimas", "description": "Ayuda tras violencia, amenazas o un delito" },
+        "pt": { "title": "Apoio à vítima", "description": "Ajuda após violência, ameaças ou um crime" },
+        "ary": { "title": "مساعدة الضحايا", "description": "مساعدة من بعد العنف، التهديد ولا شي جريمة" }
+      }
     }
   ],
   "attributes": [
@@ -88,8 +101,15 @@
       ]
     },
     {
-      "key": "person.age",
-      "value_type": "integer",
+      "key": "person.is_adult",
+      "value_type": "boolean",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": []
+    },
+    {
+      "key": "safety.immediate_danger",
+      "value_type": "boolean",
       "confirmation_required": true,
       "skippable": true,
       "options": []
@@ -98,6 +118,7 @@
   "questions": [
     {
       "key": "sleep.has_dog",
+      "need_keys": ["sleep_tonight"],
       "attribute_key": "person.has_dog",
       "answer_type": "yes_no_unknown",
       "priority": 10,
@@ -142,7 +163,8 @@
       }
     },
     {
-      "key": "sleep.has_identity_document",
+      "key": "access.has_identity_document",
+      "need_keys": ["sleep_tonight", "basic_needs", "counselling", "victim_support"],
       "attribute_key": "person.has_identity_document",
       "answer_type": "yes_no_unknown",
       "priority": 20,
@@ -188,6 +210,7 @@
     },
     {
       "key": "sleep.gender",
+      "need_keys": ["sleep_tonight"],
       "attribute_key": "person.gender",
       "answer_type": "single_choice",
       "priority": 30,
@@ -232,48 +255,65 @@
       }
     },
     {
-      "key": "sleep.age",
-      "attribute_key": "person.age",
-      "answer_type": "number",
+      "key": "access.is_adult",
+      "need_keys": ["sleep_tonight", "basic_needs", "counselling", "victim_support"],
+      "attribute_key": "person.is_adult",
+      "answer_type": "yes_no_unknown",
       "priority": 40,
       "ai_rephrasing_allowed": true,
       "localizations": {
         "de": {
-          "canonical_text": "Geht es um eine volljährige Person?",
-          "help_text": "Einige Schlafangebote sind erst ab 18 Jahren zugänglich.",
-          "unknown_label": "Weiss nicht",
-          "decline_label": "Möchte ich nicht sagen"
+          "canonical_text": "Ist die Person, für die Sie Hilfe suchen, 18 Jahre oder älter?",
+          "help_text": "Einige Angebote sind nur für volljährige Personen zugänglich.",
+          "unknown_label": "Weiss ich nicht",
+          "decline_label": "Möchte ich nicht angeben"
         },
         "fr": {
-          "canonical_text": "La recherche concerne-t-elle une personne majeure ?",
-          "help_text": "Certains hébergements ne sont accessibles qu’à partir de 18 ans.",
+          "canonical_text": "La personne pour laquelle vous cherchez de l’aide a-t-elle 18 ans ou plus ?",
+          "help_text": "Certaines offres sont réservées aux personnes majeures.",
           "unknown_label": "Je ne sais pas",
           "decline_label": "Je préfère ne pas dire"
         },
         "en": {
-          "canonical_text": "Is the search for an adult?",
-          "help_text": "Some overnight services are only available from the age of 18.",
+          "canonical_text": "Is the person you are seeking help for 18 or older?",
+          "help_text": "Some services are only available to adults.",
           "unknown_label": "Don't know",
           "decline_label": "Prefer not to say"
         },
         "es": {
-          "canonical_text": "¿La búsqueda es para una persona adulta?",
-          "help_text": "Algunos alojamientos nocturnos solo están disponibles a partir de los 18 años.",
+          "canonical_text": "¿La persona para la que buscas ayuda tiene 18 años o más?",
+          "help_text": "Algunos servicios solo están disponibles para personas adultas.",
           "unknown_label": "No lo sé",
           "decline_label": "Prefiero no indicarlo"
         },
         "pt": {
-          "canonical_text": "A pesquisa é para uma pessoa adulta?",
-          "help_text": "Alguns alojamentos noturnos só estão disponíveis a partir dos 18 anos.",
+          "canonical_text": "A pessoa para quem procuras ajuda tem 18 anos ou mais?",
+          "help_text": "Alguns serviços destinam-se apenas a pessoas adultas.",
           "unknown_label": "Não sei",
           "decline_label": "Prefiro não indicar"
         },
         "ary": {
-          "canonical_text": "واش البحث على شخص راشد؟",
-          "help_text": "شي خدمات المبيت متوفرين غير للناس اللي عندهم 18 عام ولا كثر.",
+          "canonical_text": "واش الشخص اللي كتقلب ليه على المساعدة عندو 18 عام ولا كثر؟",
+          "help_text": "شي خدمات مخصصين غير للناس الراشدين.",
           "unknown_label": "ما عارفش",
           "decline_label": "ما بغيتش نجاوب"
         }
+      }
+    },
+    {
+      "key": "safety.immediate_danger",
+      "need_keys": [],
+      "attribute_key": "safety.immediate_danger",
+      "answer_type": "yes_no_unknown",
+      "priority": 1,
+      "ai_rephrasing_allowed": false,
+      "localizations": {
+        "de": { "canonical_text": "Sind Sie gerade in unmittelbarer Gefahr?", "help_text": "Wenn Sie akut bedroht oder verletzt sind, rufen Sie sofort Hilfe.", "unknown_label": "Weiss ich nicht", "decline_label": "Möchte ich nicht angeben" },
+        "fr": { "canonical_text": "Êtes-vous actuellement en danger immédiat ?", "help_text": "Si vous êtes menacé·e ou blessé·e, appelez immédiatement les secours.", "unknown_label": "Je ne sais pas", "decline_label": "Je préfère ne pas l’indiquer" },
+        "en": { "canonical_text": "Are you in immediate danger right now?", "help_text": "If you are being threatened or are injured, call for help immediately.", "unknown_label": "I don’t know", "decline_label": "Prefer not to say" },
+        "es": { "canonical_text": "¿Estás en peligro inmediato en este momento?", "help_text": "Si estás amenazado o herido, llama inmediatamente a emergencias.", "unknown_label": "No lo sé", "decline_label": "Prefiero no indicarlo" },
+        "pt": { "canonical_text": "Estás em perigo imediato neste momento?", "help_text": "Se estiveres sob ameaça ou ferido, liga imediatamente para a emergência.", "unknown_label": "Não sei", "decline_label": "Prefiro não indicar" },
+        "ary": { "canonical_text": "واش نتا دابا فخطر مباشر؟", "help_text": "إلا كنت مهدد ولا مجروح، عيط للمساعدة دابا.", "unknown_label": "ما عارفش", "decline_label": "ما بغيتش نجاوب" }
       }
     }
   ]

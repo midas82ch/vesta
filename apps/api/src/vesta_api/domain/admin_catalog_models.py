@@ -6,6 +6,7 @@ CategoryStatus = Literal["draft", "published", "archived"]
 OfferOrigin = Literal["imported", "manual"]
 OfferManagementMode = Literal["source", "manual"]
 OfferLifecycle = Literal["draft", "published", "archived"]
+OfferLocalizationStatus = Literal["machine_draft", "reviewed"]
 
 SUPPORTED_CATEGORY_LOCALES = ("de", "fr", "en", "es", "pt", "ary")
 SUPPORTED_CATEGORY_ICONS = (
@@ -68,6 +69,29 @@ class AdminOffer:
     revision: int
     is_demo: bool
     updated_at: datetime
+    localizations: dict[str, "OfferLocalization"] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class OfferLocalization:
+    locale: str
+    name: str
+    summary: str
+    contact_note: str
+    status: OfferLocalizationStatus
+    revision: int
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+@dataclass(frozen=True)
+class OfferLocalizationWrite:
+    name: str
+    summary: str
+    contact_note: str
+    status: OfferLocalizationStatus
+    revision: int | None = None
 
 
 @dataclass(frozen=True)

@@ -16,7 +16,7 @@ einem tatsächlichen Kontakt mit einer passenden Hilfe führt.
 
 - Mobile, installierbare Weboberfläche ohne Konto
 - Strukturierte Abfrage von Bedarf, Ort, Sprache und Zugangsbedingungen
-- Drei Hilfebereiche: Übernachtung, Grundversorgung und Beratung
+- Vier Hilfebereiche: Übernachtung, Grundversorgung, Beratung und Opferhilfe
 - Nachvollziehbares Matching gegen ein verifiziertes Angebotsregister
 - Quelle, Prüfdatum und Ablaufdatum bei jedem Ergebnis
 - Sicherheitseskalation vor dem normalen Matching

@@ -78,6 +78,31 @@
       },
       "published": true,
       "is_demo": true
+    },
+    {
+      "id": "demo-victim-support",
+      "name": "Demo-Angebot Opferhilfe (nicht real)",
+      "summary": "Beispieldatensatz für eine vertrauliche Opferhilfe-Beratung.",
+      "needs": ["victim_support"],
+      "languages": ["de", "fr", "en", "es", "pt", "ary"],
+      "access": {
+        "accepts_dogs": null,
+        "identity_document_required": false,
+        "accepted_genders": [],
+        "minimum_age": null,
+        "maximum_age": null
+      },
+      "availability": "confirmed",
+      "contact_note": "Dies ist ein Testdatensatz. Für echte Hilfe die Nummer 142 verwenden.",
+      "source": {
+        "label": "Vesta Testfixture",
+        "url": "https://www.opferhilfe-schweiz.ch/",
+        "verified_at": "2026-09-02T00:00:00Z",
+        "expires_at": "2027-01-01T00:00:00Z",
+        "verified_by": "development-team"
+      },
+      "published": true,
+      "is_demo": true
     }
   ]
 }

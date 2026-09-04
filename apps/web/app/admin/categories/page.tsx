@@ -168,6 +168,8 @@ export default function CategoriesPage() {
       setError(
         detail === "category_still_has_offers"
           ? "Die Kategorie kann erst archiviert werden, wenn ihr keine Angebote mehr zugeordnet sind."
+          : detail === "category_requires_reviewed_offer_before_publish"
+            ? "Vor der Aktivierung muss mindestens ein zugeordnetes Angebot aktuell geprüft sein und eine geprüfte deutsche Fassung besitzen."
           : detail === "category_was_modified"
             ? "Die Kategorie wurde zwischenzeitlich geändert. Bitte laden Sie sie neu."
             : "Kategorie konnte nicht gespeichert werden. Bitte prüfen Sie alle Übersetzungen.",
@@ -249,7 +251,7 @@ export default function CategoriesPage() {
                 <input id="category-order" min="0" type="number" value={draft.sort_order} onChange={(event) => setDraft((current) => ({ ...current, sort_order: Number(event.target.value) }))} />
               </label>
               <label className="field" htmlFor="category-status">Status
-                <select id="category-status" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as Category["status"] }))}>
+                <select disabled={!selectedKey} id="category-status" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as Category["status"] }))}>
                   <option value="draft">Entwurf</option>
                   <option value="published">Aktiv</option>
                   <option value="archived">Archiviert</option>

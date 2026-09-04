@@ -42,7 +42,48 @@ type Offer = {
   verified_at: string;
   expires_at: string;
   updated_at: string;
+  localizations: Record<string, OfferLocalization>;
 };
+
+type OfferLocalization = {
+  locale: string;
+  name: string;
+  summary: string;
+  contact_note: string;
+  status: "machine_draft" | "reviewed";
+  revision: number;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  updated_at: string | null;
+};
+
+type LocalizationDraft = {
+  name: string;
+  summary: string;
+  contact_note: string;
+  revision?: number;
+};
+
+const OFFER_LOCALES = [
+  ["de", "Deutsch"],
+  ["fr", "Français"],
+  ["en", "English"],
+  ["es", "Español"],
+  ["pt", "Português"],
+  ["ary", "الدارجة"],
+] as const;
+
+function localizationDraft(offer: Offer, locale: string): LocalizationDraft {
+  const existing = offer.localizations[locale];
+  return existing
+    ? {
+        name: existing.name,
+        summary: existing.summary,
+        contact_note: existing.contact_note,
+        revision: existing.revision,
+      }
+    : { name: "", summary: "", contact_note: "" };
+}
 
 type Change = {
   id: string;
@@ -203,7 +244,13 @@ export default function AdminOffersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const activeCategories = categories.filter((item) => item.status === "published");
+  const [activeLocale, setActiveLocale] = useState("de");
+  const [translation, setTranslation] = useState<LocalizationDraft>({
+    name: "",
+    summary: "",
+    contact_note: "",
+  });
+  const activeCategories = categories.filter((item) => item.status !== "archived");
 
   const loadData = useCallback(async () => {
     const [offersResponse, categoriesResponse] = await Promise.all([
@@ -241,6 +288,14 @@ export default function AdminOffersPage() {
         if (!data) return;
         setOffers(data.offers);
         setCategories(data.categories);
+        const requestedId = new URLSearchParams(window.location.search).get("offer");
+        const requestedOffer = data.offers.find((offer) => offer.id === requestedId);
+        if (requestedOffer) {
+          setSelectedId(requestedOffer.id);
+          setDraft(offerDraft(requestedOffer));
+          setTranslation(localizationDraft(requestedOffer, "de"));
+          loadChanges(requestedOffer.id).catch(() => setChanges([]));
+        }
       })
       .catch(() => setError("Angebote konnten nicht geladen werden."))
       .finally(() => setLoading(false));
@@ -261,6 +316,7 @@ export default function AdminOffersPage() {
     setChanges([]);
     setError(null);
     setNotice(null);
+    setTranslation({ name: "", summary: "", contact_note: "" });
   }
 
   function selectOffer(offer: Offer) {
@@ -268,6 +324,8 @@ export default function AdminOffersPage() {
     setDraft(offerDraft(offer));
     setError(null);
     setNotice(null);
+    setActiveLocale("de");
+    setTranslation(localizationDraft(offer, "de"));
     loadChanges(offer.id).catch(() => setChanges([]));
   }
 
@@ -361,7 +419,58 @@ export default function AdminOffersPage() {
       setNotice(`Status wurde auf „${lifecycleLabel(lifecycle)}“ gesetzt.`);
     } catch (lifecycleError) {
       const detail = lifecycleError instanceof Error ? lifecycleError.message : "";
-      setError(detail === "offer_verification_expired" ? "Das Angebot kann erst nach einer erneuten Prüfung mit zukünftigem Ablaufdatum veröffentlicht werden." : "Status konnte nicht geändert werden.");
+      setError(
+        detail === "offer_verification_expired"
+          ? "Das Angebot kann erst nach einer erneuten Prüfung mit zukünftigem Ablaufdatum veröffentlicht werden."
+          : detail === "reviewed_german_localization_required"
+            ? "Vor der Veröffentlichung muss die deutsche Sprachfassung geprüft werden."
+            : detail === "offer_requires_published_categories"
+              ? "Vor der Veröffentlichung müssen alle zugeordneten Kategorien aktiv sein."
+              : "Status konnte nicht geändert werden.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function selectLocale(locale: string) {
+    const offer = offers.find((item) => item.id === selectedId);
+    if (!offer) return;
+    setActiveLocale(locale);
+    setTranslation(localizationDraft(offer, locale));
+  }
+
+  async function saveLocalization(status: OfferLocalization["status"]) {
+    const offer = offers.find((item) => item.id === selectedId);
+    if (!offer) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(
+        `/api/admin/offers/${offer.id}/localizations/${activeLocale}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...translation, status }),
+        },
+      );
+      if (response.status === 401) {
+        window.location.replace("/admin/login");
+        return;
+      }
+      const payload = (await response.json()) as Offer & { detail?: string };
+      if (!response.ok) throw new Error(payload.detail ?? "localization_failed");
+      await loadData();
+      setDraft(offerDraft(payload));
+      setTranslation(localizationDraft(payload, activeLocale));
+      setNotice(
+        status === "reviewed"
+          ? "Sprachfassung wurde geprüft."
+          : "Sprachfassung wurde als Maschinenentwurf gespeichert.",
+      );
+    } catch {
+      setError("Die Sprachfassung konnte nicht gespeichert werden. Bitte laden Sie die Seite neu.");
     } finally {
       setSaving(false);
     }
@@ -433,6 +542,27 @@ export default function AdminOffersPage() {
 
           <div className="admin-form-actions"><Button disabled={saving} type="submit">{saving ? "Wird gespeichert …" : "Entwurf speichern"}</Button>{selectedId && <><Button disabled={saving} onClick={() => changeLifecycle("published")} variant="secondary">Veröffentlichen</Button><Button disabled={saving} onClick={() => changeLifecycle("draft")} variant="ghost">Veröffentlichung zurückziehen</Button><Button disabled={saving} onClick={() => changeLifecycle("archived")} variant="ghost">Archivieren</Button></>}<Button onClick={startNew} variant="ghost">Eingaben verwerfen</Button></div>
         </form>
+
+        {selectedId && <section aria-labelledby="offer-localizations-heading" className="admin-history admin-offer-localizations">
+          <h3 id="offer-localizations-heading">Sprachfassungen</h3>
+          <p>Maschinenentwürfe sind nie öffentlich. Mit „Geprüft speichern“ geben Sie nur diese Sprachfassung frei.</p>
+          <div aria-label="Sprache auswählen" className="admin-language-tabs" role="group">
+            {OFFER_LOCALES.map(([locale, label]) => {
+              const offer = offers.find((item) => item.id === selectedId);
+              const state = offer?.localizations[locale]?.status;
+              return <button aria-pressed={activeLocale === locale} className={activeLocale === locale ? "active" : ""} key={locale} onClick={() => selectLocale(locale)} type="button">{label}<span>{state === "reviewed" ? "Geprüft" : state === "machine_draft" ? "Maschinenentwurf" : "Fehlt"}</span></button>;
+            })}
+          </div>
+          <div className="admin-translation" dir={activeLocale === "ary" ? "rtl" : "ltr"}>
+            <label className="field" htmlFor="localization-name">Name<input id="localization-name" maxLength={200} onChange={(event) => setTranslation((value) => ({ ...value, name: event.target.value }))} required value={translation.name} /></label>
+            <label className="field" htmlFor="localization-summary">Beschreibung<textarea id="localization-summary" maxLength={1000} onChange={(event) => setTranslation((value) => ({ ...value, summary: event.target.value }))} required rows={3} value={translation.summary} /></label>
+            <label className="field" htmlFor="localization-contact">Kontakthinweis<textarea id="localization-contact" maxLength={2000} onChange={(event) => setTranslation((value) => ({ ...value, contact_note: event.target.value }))} required rows={3} value={translation.contact_note} /></label>
+          </div>
+          <div className="admin-form-actions">
+            <Button disabled={saving || !translation.name || !translation.summary || !translation.contact_note} onClick={() => saveLocalization("machine_draft")} variant="ghost">Als Maschinenentwurf speichern</Button>
+            <Button disabled={saving || !translation.name || !translation.summary || !translation.contact_note} onClick={() => saveLocalization("reviewed")} variant="secondary">Geprüft speichern</Button>
+          </div>
+        </section>}
 
         {selectedId && <section aria-labelledby="offer-history-heading" className="admin-history"><h3 id="offer-history-heading">Änderungshistorie</h3>{changes.length ? <ol>{changes.map((change) => <li key={change.id}><time dateTime={change.created_at}>{new Date(change.created_at).toLocaleString("de-CH")}</time> · {change.admin_username} · {change.action}</li>)}</ol> : <p>Noch keine protokollierten Änderungen.</p>}</section>}
       </section>

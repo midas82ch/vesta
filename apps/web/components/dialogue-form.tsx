@@ -10,7 +10,7 @@ import {
 
 import { useI18n } from "@/components/i18n-provider";
 import { NeedSymbol } from "@/components/need-symbol";
-import { Button, ChoiceList, NumberField, TextAreaField, type ChoiceOption } from "@/components/ui";
+import { Button, ChoiceList, TextAreaField, type ChoiceOption } from "@/components/ui";
 import { localeTags, type Locale, type MessageKey } from "@/lib/i18n";
 import { needs, type Need, type NeedIcon } from "@/lib/needs";
 
@@ -23,6 +23,8 @@ type Offer = {
   address: string | null;
   directions_url: string | null;
   is_demo: boolean;
+  content_language: string;
+  localization_fallback: boolean;
   source: {
     label: string;
     url: string | null;
@@ -75,7 +77,16 @@ type DialogueTurn = {
   candidates: ExplainedCandidate[];
   human_handoff_required: boolean;
   handoff_reason: string | null;
+  handoff_resources: HandoffResource[];
   disclaimer: string;
+};
+
+type HandoffResource = {
+  kind: "emergency" | "victim_support";
+  name: string;
+  phone: string;
+  url: string;
+  description: string;
 };
 
 type PublicCategory = {
@@ -91,7 +102,9 @@ type InterpretResponse = {
   proposals: { key: string; value: unknown; confidence: string }[];
   requires_confirmation: string[];
   ambiguities: string[];
-  source: "ai" | "template";
+  source: "ai" | "template" | "deterministic_safety";
+  outcome: "interpreted" | "safety";
+  safety_turn: DialogueTurn | null;
 };
 
 type EntryMode = "pick" | "other";
@@ -113,9 +126,6 @@ type ConversationMessage = {
 const OTHER_NEED_VALUE = "__other__";
 const UNKNOWN_ANSWER_VALUE = "__unknown__";
 const DECLINED_ANSWER_VALUE = "__declined__";
-const MINIMUM_PERSON_AGE = 6;
-const MAXIMUM_PERSON_AGE = 120;
-const ADULT_AGE_THRESHOLD = 18;
 
 function formatDistance(
   meters: number,
@@ -345,7 +355,6 @@ export function DialogueForm() {
   const [interpretation, setInterpretation] = useState<InterpretResponse | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [turn, setTurn] = useState<DialogueTurn | null>(null);
-  const [numberValue, setNumberValue] = useState("");
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -504,6 +513,12 @@ export function DialogueForm() {
         free_text: submittedText,
         language: locale,
       });
+      if (result.outcome === "safety" && result.safety_turn) {
+        setInterpretation(null);
+        appendMessage("vesta", t("dialogue.safety.detected"));
+        applyTurn(result.safety_turn);
+        return;
+      }
       setInterpretation(result);
       appendMessage(
         "vesta",
@@ -521,13 +536,16 @@ export function DialogueForm() {
 
   function applyTurn(result: DialogueTurn) {
     setTurn(result);
-    setNumberValue("");
     const responseMessage = appendMessage(
       "vesta",
       result.question
         ? controlledQuestionText(result.question)
         : result.outcome === "no_match"
           ? t("dialogue.conversation.noMatch")
+          : result.handoff_reason === "immediate_danger"
+            ? t("dialogue.safety.immediate")
+            : result.handoff_reason === "victim_support_recommended"
+              ? t("dialogue.safety.support")
           : t("dialogue.conversation.resultsReady"),
     );
     setActiveQuestionId(result.question ? responseMessage.id : null);
@@ -574,8 +592,7 @@ export function DialogueForm() {
 
   function skipOptions(question: RenderedQuestion): ChoiceOption[] {
     if (
-      question.attribute_key === "person.gender" ||
-      question.attribute_key === "person.age"
+      question.attribute_key === "person.gender"
     ) {
       return [
         {
@@ -595,7 +612,7 @@ export function DialogueForm() {
     if (question.attribute_key === "person.gender") {
       return t("dialogue.fit.gender.question");
     }
-    if (question.attribute_key === "person.age") {
+    if (question.attribute_key === "person.is_adult") {
       return t("dialogue.fit.age.question");
     }
     return question.text;
@@ -605,7 +622,7 @@ export function DialogueForm() {
     if (question.attribute_key === "person.gender") {
       return t("dialogue.fit.gender.help");
     }
-    if (question.attribute_key === "person.age") {
+    if (question.attribute_key === "person.is_adult") {
       return t("dialogue.fit.age.help");
     }
     return question.help_text;
@@ -620,10 +637,10 @@ export function DialogueForm() {
         { value: "other", label: t("dialogue.fit.gender.no") },
       ];
     }
-    if (question.attribute_key === "person.age") {
+    if (question.attribute_key === "person.is_adult") {
       return [
-        { value: "adult", label: t("dialogue.fit.age.adult") },
-        { value: "minor", label: t("dialogue.fit.age.minor") },
+        { value: "yes", label: t("dialogue.fit.age.adult") },
+        { value: "no", label: t("dialogue.fit.age.minor") },
       ];
     }
     return null;
@@ -644,21 +661,6 @@ export function DialogueForm() {
         value === "yes"
           ? t("dialogue.question.yes")
           : t("dialogue.question.no"),
-      );
-      return;
-    }
-    if (turn?.question?.attribute_key === "person.age") {
-      const selectedOption = controlledQuestionOptions(turn.question)?.find(
-        (option) => option.value === value,
-      );
-      submitAnswer(
-        {
-          value:
-            value === "adult"
-              ? ADULT_AGE_THRESHOLD
-              : ADULT_AGE_THRESHOLD - 1,
-        },
-        typeof selectedOption?.label === "string" ? selectedOption.label : value,
       );
       return;
     }
@@ -876,39 +878,6 @@ export function DialogueForm() {
               />
               )}
 
-            {turn.question.answer_type === "number" &&
-              !controlledQuestionOptions(turn.question) && (
-              <>
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (numberValue.trim() !== "") {
-                      submitAnswer(
-                        { value: Number(numberValue) },
-                        numberValue.trim(),
-                      );
-                    }
-                  }}
-                >
-                  <NumberField
-                    id="dialogue-number-answer"
-                    label={t("dialogue.question.numberLabel")}
-                    max={MAXIMUM_PERSON_AGE}
-                    min={MINIMUM_PERSON_AGE}
-                    onChange={(event) => setNumberValue(event.target.value)}
-                    required
-                    value={numberValue}
-                  />
-                  <Button type="submit">
-                    {t("dialogue.question.numberSubmit")}
-                  </Button>
-                </form>
-                <ChoiceList
-                  onSelect={handleAnswerSelect}
-                  options={skipOptions(turn.question)}
-                />
-              </>
-              )}
           </fieldset>
         </section>
       )}
@@ -928,9 +897,31 @@ export function DialogueForm() {
             >
               {turn.outcome === "no_match"
                 ? t("results.noMatch.title")
+                : turn.handoff_reason === "immediate_danger"
+                  ? t("dialogue.safety.immediateTitle")
+                  : turn.handoff_reason === "victim_support_recommended"
+                    ? t("dialogue.safety.supportTitle")
                 : t("dialogue.result.title")}
             </h2>
           </div>
+
+          {turn.handoff_resources.length > 0 && (
+            <section
+              aria-label={t("dialogue.safety.resources")}
+              className={`safety-resources safety-resources--${turn.handoff_reason}`}
+              role={turn.handoff_reason === "immediate_danger" ? "alert" : "region"}
+            >
+              {turn.handoff_resources.map((resource) => (
+                <article className="safety-resource" key={`${resource.kind}-${resource.url}`}>
+                  <h3>{resource.name}</h3>
+                  <p>{resource.description}</p>
+                  <a className="safety-resource-link" href={resource.url}>
+                    {resource.phone || t("dialogue.safety.openWebsite")}
+                  </a>
+                </article>
+              ))}
+            </section>
+          )}
 
           {turn.candidates.map(({ candidate, explanation }) => (
             <article className="result-card" key={candidate.offer.id}>
@@ -988,9 +979,12 @@ export function DialogueForm() {
                   )}
                 </>
               ) : (
-                <p>{candidate.offer.summary}</p>
+                <p lang={candidate.offer.content_language}>{candidate.offer.summary}</p>
               )}
-              <p className="contact-note" lang="de">
+              {candidate.offer.localization_fallback && (
+                <p className="uncertainty">{t("results.originalLanguage")}</p>
+              )}
+              <p className="contact-note" lang={candidate.offer.content_language}>
                 {candidate.offer.contact_note}
               </p>
               <p className="source">
@@ -1000,7 +994,7 @@ export function DialogueForm() {
             </article>
           ))}
 
-          {turn.human_handoff_required && (
+          {turn.human_handoff_required && turn.handoff_resources.length === 0 && (
             <p className="handoff-message">{t("results.handoff")}</p>
           )}
           {turn.outcome === "no_match" && (

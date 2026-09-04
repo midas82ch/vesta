@@ -10,12 +10,15 @@ from uuid import uuid4
 from sqlalchemy import Connection, Engine, text
 
 from vesta_api.domain.admin_catalog_models import (
+    SUPPORTED_CATEGORY_LOCALES,
     AdminCatalogState,
     AdminCategory,
     AdminChange,
     AdminOffer,
     CategoryWrite,
     ImportSettings,
+    OfferLocalization,
+    OfferLocalizationWrite,
     OfferWrite,
 )
 from vesta_api.domain.admin_models import AdminUser
@@ -61,6 +64,14 @@ class AdminCatalogRepository(Protocol):
         admin: AdminUser,
     ) -> AdminOffer: ...
 
+    def put_offer_localization(
+        self,
+        offer_id: str,
+        locale: str,
+        write: OfferLocalizationWrite,
+        admin: AdminUser,
+    ) -> AdminOffer: ...
+
     def get_import_settings(self) -> ImportSettings: ...
 
     def update_import_settings(
@@ -99,6 +110,20 @@ def _offer_from_row(row: Mapping[str, Any]) -> AdminOffer:
     contact = row["contact"] or {}
     archived_at = row["archived_at"]
     lifecycle = "archived" if archived_at else "published" if row["published"] else "draft"
+    localizations = {
+        locale: OfferLocalization(
+            locale=locale,
+            name=str(values["name"]),
+            summary=str(values["summary"]),
+            contact_note=str(values["contact_note"]),
+            status=values["status"],
+            revision=int(values["revision"]),
+            reviewed_by=(str(values["reviewed_by"]) if values.get("reviewed_by") else None),
+            reviewed_at=values.get("reviewed_at"),
+            updated_at=values.get("updated_at"),
+        )
+        for locale, values in (row.get("localizations") or {}).items()
+    }
     return AdminOffer(
         id=str(row["id"]),
         slug=str(row["slug"]),
@@ -124,6 +149,7 @@ def _offer_from_row(row: Mapping[str, Any]) -> AdminOffer:
         revision=int(row["revision"]),
         is_demo=bool(row["is_demo"]),
         updated_at=row["updated_at"],
+        localizations=localizations,
     )
 
 
@@ -155,6 +181,7 @@ _LIST_ADMIN_OFFERS = text(
            ST_X(o.location::geometry) AS longitude,
            org.name AS organization_name,
            COALESCE(c.needs, ARRAY[]::text[]) AS needs,
+           COALESCE(l.localizations, '{}'::jsonb) AS localizations,
            v.source_label, v.source_url, v.verified_by,
            COALESCE(v.verified_at, o.created_at) AS verified_at,
            COALESCE(v.expires_at, o.created_at) AS expires_at
@@ -164,6 +191,23 @@ _LIST_ADMIN_OFFERS = text(
         SELECT array_agg(category ORDER BY category) AS needs
         FROM offer_categories WHERE offer_id = o.id
     ) c ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT jsonb_object_agg(
+            ol.locale, jsonb_build_object(
+                'name', ol.name,
+                'summary', ol.summary,
+                'contact_note', ol.contact_note,
+                'status', ol.status,
+                'revision', ol.revision,
+                'reviewed_by', reviewer.username,
+                'reviewed_at', ol.reviewed_at,
+                'updated_at', ol.updated_at
+            )
+        ) AS localizations
+        FROM offer_localizations ol
+        LEFT JOIN admin_users reviewer ON reviewer.id = ol.reviewed_by
+        WHERE ol.offer_id = o.id
+    ) l ON TRUE
     LEFT JOIN LATERAL (
         SELECT source_label, source_url, verified_by, verified_at, expires_at
         FROM offer_verifications WHERE offer_id = o.id
@@ -275,6 +319,8 @@ class PostgresAdminCatalogRepository:
         )
 
     def create_category(self, write: CategoryWrite, admin: AdminUser) -> AdminCategory:
+        if write.status != "draft":
+            raise CatalogValidationError("new_category_must_start_as_draft")
         with self._engine.begin() as connection:
             key = self._unique_key(connection, write.localizations["de"]["title"])
             need_id = uuid4()
@@ -327,6 +373,30 @@ class PostgresAdminCatalogRepository:
                 raise CatalogConflictError("category_was_modified")
             if write.status == "archived" and before.offer_count:
                 raise CatalogValidationError("category_still_has_offers")
+            if write.status == "published" and before.status != "published":
+                eligible_offer = connection.execute(
+                    text(
+                        """
+                        SELECT 1
+                        FROM offer_categories oc
+                        JOIN offers o ON o.id = oc.offer_id
+                        JOIN offer_verifications v ON v.offer_id = o.id
+                        JOIN offer_localizations l
+                          ON l.offer_id = o.id
+                         AND l.locale = 'de'
+                         AND l.status = 'reviewed'
+                        WHERE oc.category = :key
+                          AND o.archived_at IS NULL
+                          AND v.expires_at > now()
+                        LIMIT 1
+                        """
+                    ),
+                    {"key": key},
+                ).scalar_one_or_none()
+                if eligible_offer is None:
+                    raise CatalogValidationError(
+                        "category_requires_reviewed_offer_before_publish"
+                    )
             result = connection.execute(
                 text(
                     """
@@ -377,6 +447,37 @@ class PostgresAdminCatalogRepository:
         return _offer_from_row(row) if row is not None else None
 
     @staticmethod
+    def _upsert_german_localization(
+        connection: Connection, offer_id: object, write: OfferWrite, admin: AdminUser
+    ) -> None:
+        connection.execute(
+            text(
+                """
+                INSERT INTO offer_localizations (
+                    offer_id, locale, name, summary, contact_note, status,
+                    revision, reviewed_by, reviewed_at, updated_at
+                ) VALUES (
+                    :offer_id, 'de', :name, :summary, :contact_note, 'reviewed',
+                    1, CAST(:admin_id AS uuid), now(), now()
+                )
+                ON CONFLICT (offer_id, locale) DO UPDATE SET
+                    name = EXCLUDED.name, summary = EXCLUDED.summary,
+                    contact_note = EXCLUDED.contact_note, status = 'reviewed',
+                    revision = offer_localizations.revision + 1,
+                    reviewed_by = EXCLUDED.reviewed_by, reviewed_at = now(),
+                    updated_at = now()
+                """
+            ),
+            {
+                "offer_id": offer_id,
+                "name": write.name,
+                "summary": write.summary,
+                "contact_note": write.contact_note,
+                "admin_id": admin.id,
+            },
+        )
+
+    @staticmethod
     def _organization_id(connection: Connection, name: str) -> object:
         existing = connection.execute(
             text("SELECT id FROM organizations WHERE lower(name) = lower(:name) LIMIT 1"),
@@ -408,7 +509,7 @@ class PostgresAdminCatalogRepository:
             text(
                 """
                 SELECT key FROM need_definitions
-                WHERE key = ANY(:keys) AND status = 'published'
+                WHERE key = ANY(:keys) AND status <> 'archived'
                 """
             ),
             {"keys": list(categories)},
@@ -514,6 +615,7 @@ class PostgresAdminCatalogRepository:
             )
             self._write_categories(connection, offer_id, write.needs)
             self._write_verification(connection, offer_id, write, admin)
+            self._upsert_german_localization(connection, offer_id, write, admin)
             row = connection.execute(
                 _GET_ADMIN_OFFER, {"offer_id": str(offer_id)}
             ).mappings().one()
@@ -576,6 +678,7 @@ class PostgresAdminCatalogRepository:
                 raise CatalogConflictError("offer_was_modified")
             self._write_categories(connection, result, write.needs)
             self._write_verification(connection, result, write, admin)
+            self._upsert_german_localization(connection, result, write, admin)
             after = _offer_from_row(
                 connection.execute(
                     _GET_ADMIN_OFFER, {"offer_id": offer_id}
@@ -615,6 +718,20 @@ class PostgresAdminCatalogRepository:
                     raise CatalogValidationError("offer_requires_category")
                 if before.expires_at <= datetime.now(UTC):
                     raise CatalogValidationError("offer_verification_expired")
+                german = before.localizations.get("de")
+                if german is None or german.status != "reviewed":
+                    raise CatalogValidationError("reviewed_german_localization_required")
+                published_categories = set(
+                    connection.execute(
+                        text(
+                            "SELECT key FROM need_definitions "
+                            "WHERE key = ANY(:keys) AND status = 'published'"
+                        ),
+                        {"keys": list(before.needs)},
+                    ).scalars()
+                )
+                if published_categories != set(before.needs):
+                    raise CatalogValidationError("offer_requires_published_categories")
             result = connection.execute(
                 text(
                     """
@@ -648,6 +765,91 @@ class PostgresAdminCatalogRepository:
                 action=f"lifecycle_{lifecycle}",
                 before=before,
                 after=after,
+            )
+        return after
+
+    def put_offer_localization(
+        self,
+        offer_id: str,
+        locale: str,
+        write: OfferLocalizationWrite,
+        admin: AdminUser,
+    ) -> AdminOffer:
+        if locale not in SUPPORTED_CATEGORY_LOCALES:
+            raise CatalogValidationError("unsupported_offer_locale")
+        with self._engine.begin() as connection:
+            before_row = connection.execute(
+                _GET_ADMIN_OFFER, {"offer_id": offer_id}
+            ).mappings().first()
+            if before_row is None:
+                raise CatalogNotFoundError("offer_not_found")
+            before = _offer_from_row(before_row)
+            existing = before.localizations.get(locale)
+            if existing is not None and write.revision != existing.revision:
+                raise CatalogConflictError("offer_localization_was_modified")
+            if existing is None and write.revision is not None:
+                raise CatalogConflictError("offer_localization_was_modified")
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO offer_localizations (
+                        offer_id, locale, name, summary, contact_note, status,
+                        revision, reviewed_by, reviewed_at, updated_at
+                    ) VALUES (
+                        CAST(:offer_id AS uuid), :locale, :name, :summary,
+                        :contact_note, :status, 1,
+                        CASE WHEN :reviewed THEN CAST(:admin_id AS uuid) ELSE NULL END,
+                        CASE WHEN :reviewed THEN now() ELSE NULL END, now()
+                    )
+                    ON CONFLICT (offer_id, locale) DO UPDATE SET
+                        name = EXCLUDED.name, summary = EXCLUDED.summary,
+                        contact_note = EXCLUDED.contact_note, status = EXCLUDED.status,
+                        revision = offer_localizations.revision + 1,
+                        reviewed_by = EXCLUDED.reviewed_by,
+                        reviewed_at = EXCLUDED.reviewed_at, updated_at = now()
+                    """
+                ),
+                {
+                    "offer_id": offer_id,
+                    "locale": locale,
+                    "name": write.name,
+                    "summary": write.summary,
+                    "contact_note": write.contact_note,
+                    "status": write.status,
+                    "reviewed": write.status == "reviewed",
+                    "admin_id": admin.id,
+                },
+            )
+            if locale == "de":
+                connection.execute(
+                    text(
+                        """
+                        UPDATE offers SET name = :name, summary = :summary,
+                            contact = jsonb_set(contact, '{note}', to_jsonb(CAST(:note AS text))),
+                            revision = revision + 1, updated_at = now()
+                        WHERE id = CAST(:offer_id AS uuid)
+                        """
+                    ),
+                    {
+                        "offer_id": offer_id,
+                        "name": write.name,
+                        "summary": write.summary,
+                        "note": write.contact_note,
+                    },
+                )
+            after = _offer_from_row(
+                connection.execute(
+                    _GET_ADMIN_OFFER, {"offer_id": offer_id}
+                ).mappings().one()
+            )
+            _record_change(
+                connection,
+                admin=admin,
+                entity_type="offer_localization",
+                entity_id=f"{offer_id}:{locale}",
+                action="reviewed" if write.status == "reviewed" else "machine_draft_saved",
+                before=existing,
+                after=after.localizations[locale],
             )
         return after
 
@@ -804,6 +1006,8 @@ class InMemoryAdminCatalogRepository:
         return tuple(sorted(self.state.categories.values(), key=lambda item: item.sort_order))
 
     def create_category(self, write: CategoryWrite, admin: AdminUser) -> AdminCategory:
+        if write.status != "draft":
+            raise CatalogValidationError("new_category_must_start_as_draft")
         key = _slugify(write.localizations["de"]["title"])
         if key in self.state.categories:
             raise CatalogConflictError("category_already_exists")
@@ -838,6 +1042,19 @@ class InMemoryAdminCatalogRepository:
             raise CatalogConflictError("category_was_modified")
         if write.status == "archived" and before.offer_count:
             raise CatalogValidationError("category_still_has_offers")
+        if write.status == "published" and before.status != "published":
+            eligible_offer = any(
+                key in offer.needs
+                and offer.lifecycle != "archived"
+                and offer.expires_at > datetime.now(UTC)
+                and offer.localizations.get("de") is not None
+                and offer.localizations["de"].status == "reviewed"
+                for offer in self.state.offers.values()
+            )
+            if not eligible_offer:
+                raise CatalogValidationError(
+                    "category_requires_reviewed_offer_before_publish"
+                )
         category = AdminCategory(
             key=key,
             icon=write.icon,
@@ -868,7 +1085,7 @@ class InMemoryAdminCatalogRepository:
 
     def create_offer(self, write: OfferWrite, admin: AdminUser) -> AdminOffer:
         unknown = set(write.needs) - {
-            item.key for item in self.state.categories.values() if item.status == "published"
+            item.key for item in self.state.categories.values() if item.status != "archived"
         }
         if unknown:
             raise CatalogValidationError("unknown_or_inactive_category")
@@ -899,6 +1116,19 @@ class InMemoryAdminCatalogRepository:
             revision=1,
             is_demo=False,
             updated_at=now,
+            localizations={
+                "de": OfferLocalization(
+                    locale="de",
+                    name=write.name,
+                    summary=write.summary,
+                    contact_note=write.contact_note,
+                    status="reviewed",
+                    revision=1,
+                    reviewed_by=admin.username,
+                    reviewed_at=now,
+                    updated_at=now,
+                )
+            },
         )
         self.state.offers[offer_id] = offer
         self._refresh_offer_counts()
@@ -921,7 +1151,7 @@ class InMemoryAdminCatalogRepository:
         if write.revision != before.revision:
             raise CatalogConflictError("offer_was_modified")
         unknown = set(write.needs) - {
-            item.key for item in self.state.categories.values() if item.status == "published"
+            item.key for item in self.state.categories.values() if item.status != "archived"
         }
         if unknown:
             raise CatalogValidationError("unknown_or_inactive_category")
@@ -946,6 +1176,24 @@ class InMemoryAdminCatalogRepository:
             management_mode=write.management_mode,
             revision=before.revision + 1,
             updated_at=datetime.now(UTC),
+            localizations={
+                **before.localizations,
+                "de": OfferLocalization(
+                    locale="de",
+                    name=write.name,
+                    summary=write.summary,
+                    contact_note=write.contact_note,
+                    status="reviewed",
+                    revision=before.localizations.get(
+                        "de",
+                        OfferLocalization("de", "", "", "", "reviewed", 0),
+                    ).revision
+                    + 1,
+                    reviewed_by=admin.username,
+                    reviewed_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC),
+                ),
+            },
         )
         self.state.offers[offer_id] = updated
         self._refresh_offer_counts()
@@ -971,6 +1219,18 @@ class InMemoryAdminCatalogRepository:
             raise CatalogConflictError("offer_was_modified")
         if lifecycle == "published" and before.expires_at <= datetime.now(UTC):
             raise CatalogValidationError("offer_verification_expired")
+        if lifecycle == "published":
+            german = before.localizations.get("de")
+            if german is None or german.status != "reviewed":
+                raise CatalogValidationError("reviewed_german_localization_required")
+            unpublished = {
+                need
+                for need in before.needs
+                if self.state.categories.get(need) is None
+                or self.state.categories[need].status != "published"
+            }
+            if unpublished:
+                raise CatalogValidationError("offer_requires_published_categories")
         updated = replace(
             before,
             lifecycle=lifecycle,
@@ -987,6 +1247,58 @@ class InMemoryAdminCatalogRepository:
             after=updated,
         )
         return updated
+
+    def put_offer_localization(
+        self,
+        offer_id: str,
+        locale: str,
+        write: OfferLocalizationWrite,
+        admin: AdminUser,
+    ) -> AdminOffer:
+        if locale not in SUPPORTED_CATEGORY_LOCALES:
+            raise CatalogValidationError("unsupported_offer_locale")
+        before = self.state.offers.get(offer_id)
+        if before is None:
+            raise CatalogNotFoundError("offer_not_found")
+        existing = before.localizations.get(locale)
+        if existing is not None and write.revision != existing.revision:
+            raise CatalogConflictError("offer_localization_was_modified")
+        if existing is None and write.revision is not None:
+            raise CatalogConflictError("offer_localization_was_modified")
+        now = datetime.now(UTC)
+        localization = OfferLocalization(
+            locale=locale,
+            name=write.name,
+            summary=write.summary,
+            contact_note=write.contact_note,
+            status=write.status,
+            revision=(existing.revision + 1) if existing else 1,
+            reviewed_by=admin.username if write.status == "reviewed" else None,
+            reviewed_at=now if write.status == "reviewed" else None,
+            updated_at=now,
+        )
+        changes: dict[str, object] = {
+            "localizations": {**before.localizations, locale: localization},
+            "revision": before.revision + (1 if locale == "de" else 0),
+            "updated_at": now,
+        }
+        if locale == "de":
+            changes.update(
+                name=write.name,
+                summary=write.summary,
+                contact_note=write.contact_note,
+            )
+        after = replace(before, **changes)
+        self.state.offers[offer_id] = after
+        self._record_memory_change(
+            admin=admin,
+            entity_type="offer_localization",
+            entity_id=f"{offer_id}:{locale}",
+            action="reviewed" if write.status == "reviewed" else "machine_draft_saved",
+            before=existing,
+            after=localization,
+        )
+        return after
 
     def get_import_settings(self) -> ImportSettings:
         return self._import_settings

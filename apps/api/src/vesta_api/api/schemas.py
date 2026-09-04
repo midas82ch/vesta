@@ -2,11 +2,9 @@ from datetime import datetime
 from typing import Literal
 from urllib.parse import urlencode
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StrictBool, field_validator
 
 from vesta_api.domain.models import (
-    MAXIMUM_PERSON_AGE,
-    MINIMUM_PERSON_AGE,
     Availability,
     Candidate,
     GeoPoint,
@@ -33,11 +31,7 @@ class MatchRequest(BaseModel):
     dog: bool | None = None
     has_identity_document: bool | None = None
     gender: str | None = Field(default=None, max_length=40)
-    age: int | None = Field(
-        default=None,
-        ge=MINIMUM_PERSON_AGE,
-        le=MAXIMUM_PERSON_AGE,
-    )
+    is_adult: StrictBool | None = None
     user_location: UserLocationInput | None = None
     risk_flags: list[RiskFlag] = Field(default_factory=list)
 
@@ -61,6 +55,8 @@ class OfferResponse(BaseModel):
     directions_url: str | None
     source: OfferSourceResponse
     is_demo: bool
+    content_language: str
+    localization_fallback: bool
 
 
 class CandidateResponse(BaseModel):
@@ -129,6 +125,8 @@ def candidate_to_response(candidate: Candidate) -> CandidateResponse:
                 verified_by=candidate.offer.source.verified_by,
             ),
             is_demo=candidate.offer.is_demo,
+            content_language=candidate.offer.content_language,
+            localization_fallback=candidate.offer.localization_fallback,
         ),
         reasons=list(candidate.reasons),
         uncertainties=list(candidate.uncertainties),

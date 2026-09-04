@@ -30,7 +30,14 @@ class ReleaseConfigurationTest(unittest.TestCase):
     def test_api_migration_and_ingest_use_the_same_release_image(self) -> None:
         compose = (REPOSITORY_ROOT / "compose.prod.yaml").read_text(encoding="utf-8")
 
-        self.assertEqual(3, compose.count("image: vesta-api:latest"))
+        self.assertEqual(4, compose.count("image: vesta-api:latest"))
+        self.assertEqual(
+            2,
+            compose.count(
+                "VESTA_OFFER_URL_IMPORT_ENABLED: "
+                "${VESTA_OFFER_URL_IMPORT_ENABLED:-false}"
+            ),
+        )
 
     def test_public_locales_replace_standard_arabic_with_darija(self) -> None:
         i18n = (REPOSITORY_ROOT / "apps" / "web" / "lib" / "i18n.ts").read_text(

@@ -21,16 +21,25 @@ from vesta_api.api.admin_schemas import (
     ImportSettingsUpdateRequest,
     IngestionRunListResponse,
     IngestionRunResponse,
+    OfferImportJobCreateRequest,
+    OfferImportJobListResponse,
+    OfferImportJobResponse,
+    OfferLocalizationWriteRequest,
     WorkflowAuditDetailResponse,
     WorkflowAuditListResponse,
     WorkflowAuditStepResponse,
     WorkflowAuditSummaryResponse,
 )
 from vesta_api.config import settings
-from vesta_api.domain.admin_catalog_models import CategoryWrite, OfferWrite
+from vesta_api.domain.admin_catalog_models import (
+    CategoryWrite,
+    OfferLocalizationWrite,
+    OfferWrite,
+)
 from vesta_api.domain.admin_models import AdminUser
 from vesta_api.domain.audit_models import AiOutcome, AiPort
 from vesta_api.domain.ingestion_models import IngestionStatus
+from vesta_api.ingestion.safe_url import SafeUrlError, normalize_offer_url
 from vesta_api.repositories.admin_catalog import (
     AdminCatalogRepository,
     CatalogConflictError,
@@ -40,6 +49,7 @@ from vesta_api.repositories.admin_catalog import (
 from vesta_api.repositories.admin_users import AdminUserRepository
 from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
 from vesta_api.repositories.ingestion_runs import IngestionRunRepository
+from vesta_api.repositories.offer_import_jobs import OfferImportJobRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.security import (
     SESSION_COOKIE_NAME,
@@ -80,6 +90,10 @@ def ingestion_run_repository(request: Request) -> IngestionRunRepository:
 
 def admin_offer_repository(request: Request) -> AdminCatalogRepository:
     return request.app.state.admin_catalog
+
+
+def offer_import_job_repository(request: Request) -> OfferImportJobRepository:
+    return request.app.state.offer_import_jobs
 
 
 def _raise_catalog_http_error(error: Exception) -> NoReturn:
@@ -605,6 +619,101 @@ def set_admin_offer_lifecycle(
     return _offer_response(offer)
 
 
+@router.put(
+    "/offers/{offer_id}/localizations/{locale}",
+    response_model=AdminOfferResponse,
+)
+def put_admin_offer_localization(
+    offer_id: str,
+    locale: str,
+    payload: OfferLocalizationWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminOfferResponse:
+    try:
+        offer = catalog.put_offer_localization(
+            offer_id,
+            locale,
+            OfferLocalizationWrite(
+                name=payload.name,
+                summary=payload.summary,
+                contact_note=payload.contact_note,
+                status=payload.status,
+                revision=payload.revision,
+            ),
+            admin,
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _offer_response(offer)
+
+
+@router.post(
+    "/offer-import-jobs",
+    response_model=OfferImportJobResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def create_offer_import_job(
+    payload: OfferImportJobCreateRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    jobs: Annotated[OfferImportJobRepository, Depends(offer_import_job_repository)],
+) -> OfferImportJobResponse:
+    try:
+        normalized = normalize_offer_url(payload.url)
+    except SafeUrlError as error:
+        raise HTTPException(status_code=422, detail=error.code) from error
+    job = jobs.create(payload.url.strip(), normalized, admin)
+    return OfferImportJobResponse.model_validate(job, from_attributes=True)
+
+
+@router.get("/offer-import-jobs", response_model=OfferImportJobListResponse)
+def list_offer_import_jobs(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    jobs: Annotated[OfferImportJobRepository, Depends(offer_import_job_repository)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> OfferImportJobListResponse:
+    return OfferImportJobListResponse(
+        jobs=[
+            OfferImportJobResponse.model_validate(job, from_attributes=True)
+            for job in jobs.list(limit=limit, offset=offset)
+        ],
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/offer-import-jobs/{job_id}", response_model=OfferImportJobResponse)
+def get_offer_import_job(
+    job_id: str,
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    jobs: Annotated[OfferImportJobRepository, Depends(offer_import_job_repository)],
+) -> OfferImportJobResponse:
+    job = jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="offer_import_job_not_found")
+    return OfferImportJobResponse.model_validate(job, from_attributes=True)
+
+
+@router.post(
+    "/offer-import-jobs/{job_id}/retry",
+    response_model=OfferImportJobResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def retry_offer_import_job(
+    job_id: str,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    jobs: Annotated[OfferImportJobRepository, Depends(offer_import_job_repository)],
+) -> OfferImportJobResponse:
+    job = jobs.retry(job_id, admin)
+    if job is None:
+        existing = jobs.get(job_id)
+        if existing is None:
+            raise HTTPException(status_code=404, detail="offer_import_job_not_found")
+        raise HTTPException(status_code=409, detail="offer_import_job_not_retryable")
+    return OfferImportJobResponse.model_validate(job, from_attributes=True)
+
+
 @router.get("/import-settings", response_model=ImportSettingsResponse)
 def get_admin_import_settings(
     _admin: Annotated[AdminUser, Depends(require_admin_session)],
@@ -635,7 +744,14 @@ def list_admin_changes(
     _admin: Annotated[AdminUser, Depends(require_admin_session)],
     catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
     entity_type: Annotated[
-        Literal["category", "offer", "import_settings"], Query()
+        Literal[
+            "category",
+            "offer",
+            "import_settings",
+            "offer_import",
+            "offer_localization",
+        ],
+        Query(),
     ],
     entity_id: Annotated[str, Query(min_length=1, max_length=200)],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,

@@ -44,6 +44,12 @@ Die Sicherheitsprüfung läuft vor jeder Angebotssuche. Kritische Hinweise
 führen in einen freigegebenen, nicht-generativen Übergabeprozess. Inhalte und
 Kontakte dieses Prozesses müssen lokal fachlich geprüft werden.
 
+Gewalt-, Bedrohungs- und Akutformulierungen werden in allen sechs unterstützten
+Sprachen deterministisch erkannt, bevor ein AI-Aufruf stattfindet. Der
+anschließende Sicherheitsdialog ist ebenfalls nicht-generativ: unmittelbare
+Gefahr führt zu 117 und 144; sonst werden 142 und ausschließlich geprüfte
+Opferhilfe-Angebote angezeigt (ADR 0009).
+
 ### Matching
 
 Matching ist nachvollziehbar und ohne Sprachmodell testbar:
@@ -54,6 +60,11 @@ Matching ist nachvollziehbar und ohne Sprachmodell testbar:
 4. Öffnungs- und Statusinformationen berücksichtigen
 5. verbleibende Angebote nach fachlicher Eignung sortieren
 6. bei gleicher Eignung optional die Luftliniendistanz berücksichtigen
+
+Der öffentliche Altersdialog verwendet nur `person.is_adult`. Ein bestätigtes
+Nein schließt Angebote mit Mindestalter 18 aus; unbekannte oder abgelehnte
+Angaben erzeugen einen sichtbaren Abklärungshinweis. Abweichende Altersgrenzen
+werden nicht aus dieser Ja-/Nein-Angabe abgeleitet (ADR 0009).
 
 Jedes Ergebnis enthält passende Gründe sowie Unsicherheiten. Der freiwillig
 freigegebene Standort verändert nie Sicherheits- oder Zugangskriterien und
@@ -85,6 +96,14 @@ separat veröffentlicht. Eine manuelle Übernahme (`management_mode = manual`)
 schützt Felder, Mapping und Verifikation vor nachfolgenden Quellenimporten.
 Der automatische Import kann über eine revisionierte, protokollierte
 Schalter-Einstellung deaktiviert werden (ADR 0008).
+
+Zusätzlich können Admins einzelne HTTPS-Quellen als persistente URL-Aufträge
+erfassen. Ein eigener Worker prüft Netzwerkziel und Redirects gegen SSRF,
+beachtet `robots.txt`, extrahiert einen Angebotsentwurf und erzeugt sechs
+maschinelle Übersetzungsentwürfe. Erst eine aktuelle Quellenprüfung, eine
+geprüfte deutsche Sprachfassung und ein separater Freigabeschritt machen ein
+Angebot öffentlich. Maschinelle Übersetzungen werden nie automatisch
+veröffentlicht (ADR 0009).
 
 ### AI-Adapter
 
@@ -129,7 +148,7 @@ und nicht als Sicherheits-Weiterleitung ausgegeben (ADR 0008).
 
 ## Geplante Ausbaustufen
 
-1. Verifiziertes Register und drei MVP-Situationen
+1. Verifiziertes Register und vier MVP-Situationen
 2. Pflegeportal mit Verantwortlichkeiten und Prüfworkflow
 3. Kontrollierte Mehrsprachigkeit sowie Sprach-Ein-/Ausgabe
 4. Freiwilliger pseudonymer Begleitmodus nach eigener Datenschutzprüfung

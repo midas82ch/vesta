@@ -14,6 +14,7 @@ from vesta_api.domain.admin_catalog_models import (
     AdminCatalogState,
     AdminCategory,
     AdminOffer,
+    OfferLocalization,
 )
 from vesta_api.repositories.admin_catalog import (
     AdminCatalogRepository,
@@ -40,6 +41,11 @@ from vesta_api.repositories.ingestion_runs import (
     IngestionRunRepository,
     InMemoryIngestionRunRepository,
     PostgresIngestionRunRepository,
+)
+from vesta_api.repositories.offer_import_jobs import (
+    InMemoryOfferImportJobRepository,
+    OfferImportJobRepository,
+    PostgresOfferImportJobRepository,
 )
 from vesta_api.repositories.offers import (
     AdminManagedOfferRepository,
@@ -186,11 +192,36 @@ def create_admin_catalog_repository(
                 revision=1,
                 is_demo=offer.is_demo,
                 updated_at=offer.updated_at or offer.source.verified_at,
+                localizations={
+                    "de": OfferLocalization(
+                        locale="de",
+                        name=offer.name,
+                        summary=offer.summary,
+                        contact_note=offer.contact_note,
+                        status="reviewed",
+                        revision=1,
+                        reviewed_by=offer.source.verified_by,
+                        reviewed_at=offer.source.verified_at,
+                        updated_at=offer.updated_at or offer.source.verified_at,
+                    )
+                },
             )
             for offer in offers.list_offers()
         },
     )
     return InMemoryAdminCatalogRepository(state)
+
+
+def create_offer_import_job_repository() -> OfferImportJobRepository:
+    database_url = settings.get_admin_database_url()
+    if database_url is not None:
+        return PostgresOfferImportJobRepository(database_url)
+    if settings.environment.lower() == "production":
+        raise RuntimeError("ADMIN_DATABASE_URL is required when VESTA_ENV=production")
+    development_database_url = settings.get_database_url()
+    if development_database_url is not None:
+        return PostgresOfferImportJobRepository(development_database_url)
+    return InMemoryOfferImportJobRepository()
 
 
 def create_ai_gateway(audit_log: AiAuditLogRepository) -> AiGateway:
@@ -277,6 +308,10 @@ async def lifespan(app: FastAPI):
     admin_catalog = create_admin_catalog_repository(catalog, repository)
     admin_catalog.healthcheck()
     app.state.admin_catalog = admin_catalog
+
+    offer_import_jobs = create_offer_import_job_repository()
+    offer_import_jobs.healthcheck()
+    app.state.offer_import_jobs = offer_import_jobs
     if isinstance(admin_catalog, InMemoryAdminCatalogRepository):
         catalog = AdminManagedDialogueCatalogRepository(catalog, admin_catalog)
         app.state.dialogue_catalog = catalog
@@ -299,6 +334,7 @@ async def lifespan(app: FastAPI):
         workflow_audit_log.close()
         ingestion_runs.close()
         admin_catalog.close()
+        offer_import_jobs.close()
 
 
 app = FastAPI(

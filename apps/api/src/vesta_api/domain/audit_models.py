@@ -4,7 +4,13 @@ from typing import Literal
 
 from vesta_api.domain.audit_clock import monotonic_audit_time
 
-AiPort = Literal["interpret", "render_question", "explain"]
+AiPort = Literal[
+    "interpret",
+    "render_question",
+    "explain",
+    "offer_import_extract",
+    "offer_import_translate",
+]
 AiOutcome = Literal["ai", "fallback_validation", "fallback_error"]
 
 

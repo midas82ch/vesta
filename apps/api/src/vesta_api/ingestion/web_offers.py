@@ -353,6 +353,26 @@ _INSERT_RUN = text(
     """
 )
 
+_UPSERT_GERMAN_LOCALIZATION = text(
+    """
+    INSERT INTO offer_localizations (
+        offer_id, locale, name, summary, contact_note,
+        status, revision, reviewed_at, updated_at
+    ) VALUES (
+        :offer_id, 'de', :name, :summary, :contact_note,
+        'reviewed', 1, :reviewed_at, now()
+    )
+    ON CONFLICT (offer_id, locale) DO UPDATE SET
+        name = EXCLUDED.name,
+        summary = EXCLUDED.summary,
+        contact_note = EXCLUDED.contact_note,
+        status = 'reviewed',
+        revision = offer_localizations.revision + 1,
+        reviewed_at = EXCLUDED.reviewed_at,
+        updated_at = now()
+    """
+)
+
 
 def _record_failed_run(
     engine: Engine,
@@ -469,6 +489,16 @@ def _store_offer(
                         "Automatisch anhand der öffentlichen Quelle geprüft; "
                         f"content_sha256={page.content_sha256}"
                     ),
+                },
+            )
+            connection.execute(
+                _UPSERT_GERMAN_LOCALIZATION,
+                {
+                    "offer_id": offer_id,
+                    "name": offer.name,
+                    "summary": offer.summary,
+                    "contact_note": offer.contact_note,
+                    "reviewed_at": checked_at,
                 },
             )
         connection.execute(

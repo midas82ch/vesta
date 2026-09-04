@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     openai_api_key_file: Path | None = Field(
         default=None, validation_alias="OPENAI_API_KEY_FILE"
     )
+    offer_url_import_enabled: bool = Field(
+        default=False,
+        validation_alias="VESTA_OFFER_URL_IMPORT_ENABLED",
+    )
     # Dev-only convenience: seeds a single admin user into the in-memory
     # repository when no DATABASE_URL is configured, so the admin area is
     # locally testable without Postgres. Never used in production - there,

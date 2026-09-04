@@ -26,6 +26,7 @@ QUESTIONS = (
         answer_type="yes_no_unknown",
         priority=10,
         ai_rephrasing_allowed=True,
+        need_keys=("sleep_tonight",),
         localizations={"de": {"canonical_text": "Hund?"}},
     ),
     QuestionDefinition(
@@ -42,6 +43,7 @@ QUESTIONS = (
         answer_type="single_choice",
         priority=30,
         ai_rephrasing_allowed=True,
+        need_keys=("sleep_tonight",),
         localizations={"de": {"canonical_text": "Zielgruppe?"}},
     ),
 )
@@ -85,6 +87,7 @@ def _state(**kwargs: object) -> DialogueState:
         "locale": "de",
         "created_at": NOW,
         "expires_at": NOW + timedelta(minutes=45),
+        "need": "sleep_tonight",
     }
     defaults.update(kwargs)
     return DialogueState(**defaults)  # type: ignore[arg-type]
@@ -135,6 +138,15 @@ class NextQuestionPolicyTest(unittest.TestCase):
         policy = NextQuestionPolicy(QUESTIONS)
 
         self.assertIsNone(policy.next_question(_state(), ()))
+
+    def test_sleep_only_questions_are_not_asked_for_counselling(self) -> None:
+        policy = NextQuestionPolicy(QUESTIONS)
+        candidates = (_candidate(accepts_dogs=False, requires_id=True),)
+
+        question = policy.next_question(_state(need="counselling"), candidates)
+
+        assert question is not None
+        self.assertEqual("sleep.has_identity_document", question.key)
 
     def test_returns_none_when_nothing_left_to_ask(self) -> None:
         policy = NextQuestionPolicy(QUESTIONS)

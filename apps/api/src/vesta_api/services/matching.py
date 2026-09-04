@@ -1,8 +1,10 @@
+from dataclasses import replace
 from math import atan2, cos, radians, sin, sqrt
 
 from vesta_api.domain.models import (
     Availability,
     Candidate,
+    ExcludedOffer,
     GeoPoint,
     MatchQuery,
     MatchResult,
@@ -45,10 +47,22 @@ class MatchingService:
             )
 
         candidates: list[Candidate] = []
+        excluded_offers: list[ExcludedOffer] = []
         for offer in self._repository.list_offers():
-            candidate = self._evaluate(offer, query)
-            if candidate is not None:
-                candidates.append(candidate)
+            localized = self._localize_offer(offer, query.language)
+            if localized is None:
+                excluded_offers.append(
+                    ExcludedOffer(offer.id, offer.name, "reviewed_localization_missing")
+                )
+                continue
+            exclusion_reason = self._exclusion_reason(localized, query)
+            if exclusion_reason is not None:
+                excluded_offers.append(
+                    ExcludedOffer(localized.id, localized.name, exclusion_reason)
+                )
+                continue
+            candidate = self._evaluate(localized, query)
+            candidates.append(candidate)
 
         if query.user_location is None:
             candidates.sort(key=lambda candidate: (-candidate.score, candidate.offer.name))
@@ -65,29 +79,61 @@ class MatchingService:
             candidates=tuple(candidates),
             human_handoff_required=False,
             handoff_reason=None,
+            excluded_offers=tuple(excluded_offers),
         )
 
     @staticmethod
-    def _evaluate(offer: Offer, query: MatchQuery) -> Candidate | None:
-        if not offer.published or offer.source.expires_at <= query.at:
-            return None
+    def _exclusion_reason(offer: Offer, query: MatchQuery) -> str | None:
+        if not offer.published:
+            return "offer_not_published"
+        if offer.source.expires_at <= query.at:
+            return "source_verification_expired"
         if query.need not in offer.needs:
-            return None
-
+            return "need_does_not_match"
         access = offer.access
         if query.dog is True and access.accepts_dogs is False:
-            return None
+            return "dog_not_accepted"
         if query.has_identity_document is False and access.identity_document_required is True:
-            return None
-        if query.gender and access.accepted_genders:
-            if query.gender not in access.accepted_genders:
+            return "identity_document_required"
+        if query.gender and access.accepted_genders and query.gender not in access.accepted_genders:
+            return "target_group_not_accepted"
+        if access.minimum_age == 18 and query.is_adult is False:
+            return "adults_only"
+        if access.maximum_age == 17 and query.is_adult is True:
+            return "minors_only"
+        return None
+
+    @staticmethod
+    def _localize_offer(offer: Offer, locale: str) -> Offer | None:
+        requested = locale.lower()
+        localization = offer.localizations.get(requested)
+        fallback = False
+        content_language = requested
+        if localization is None:
+            localization = offer.localizations.get("de")
+            fallback = requested != "de"
+            content_language = "de"
+        if localization is None:
+            if offer.localization_required:
                 return None
+            return replace(
+                offer,
+                content_language="de",
+                localization_fallback=requested != "de",
+            )
+        return replace(
+            offer,
+            name=localization.name,
+            summary=localization.summary,
+            contact_note=localization.contact_note,
+            content_language=content_language,
+            localization_fallback=fallback,
+        )
+
+    @staticmethod
+    def _evaluate(offer: Offer, query: MatchQuery) -> Candidate:
+        access = offer.access
         target_group_unknown = not query.gender and bool(access.accepted_genders)
-        if query.age is not None:
-            if access.minimum_age is not None and query.age < access.minimum_age:
-                return None
-            if access.maximum_age is not None and query.age > access.maximum_age:
-                return None
 
         score = 100
         reasons = ["need_matches", "source_is_current"]
@@ -117,6 +163,21 @@ class MatchingService:
             uncertainties.append("identity_document_rule_unknown")
         if target_group_unknown:
             uncertainties.append("target_group_must_be_confirmed")
+        if (
+            "person.has_identity_document" in query.unknown_attributes
+            and access.identity_document_required is True
+        ):
+            uncertainties.append("identity_document_must_be_confirmed")
+        has_age_rule = access.minimum_age is not None or access.maximum_age is not None
+        if "person.is_adult" in query.unknown_attributes and has_age_rule:
+            uncertainties.append("adult_status_must_be_confirmed")
+        if query.is_adult is not None and has_age_rule:
+            exactly_resolved = access.minimum_age in (None, 18) and access.maximum_age in (
+                None,
+                17,
+            )
+            if not exactly_resolved:
+                uncertainties.append("age_rule_requires_contact")
 
         distance_meters = (
             distance_in_meters(query.user_location, offer.location)

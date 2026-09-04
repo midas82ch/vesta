@@ -28,10 +28,12 @@ class NextQuestionPolicy:
         answered_attribute_keys = {
             attribute.key
             for attribute in dialogue_state.attributes
-            if attribute.status in ("confirmed", "declined")
+            if attribute.status in ("confirmed", "unknown", "declined")
         }
 
         for question in self._questions:
+            if question.need_keys and dialogue_state.need not in question.need_keys:
+                continue
             if question.key in asked_or_declined:
                 continue
             if question.attribute_key in answered_attribute_keys:
@@ -50,12 +52,12 @@ class NextQuestionPolicy:
                 return True
             if (
                 attribute_key == "person.has_identity_document"
-                and access.identity_document_required is not None
+                and access.identity_document_required is True
             ):
                 return True
             if attribute_key == "person.gender" and access.accepted_genders:
                 return True
-            if attribute_key == "person.age" and (
+            if attribute_key == "person.is_adult" and (
                 access.minimum_age is not None or access.maximum_age is not None
             ):
                 return True

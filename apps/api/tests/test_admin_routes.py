@@ -15,6 +15,7 @@ from vesta_api.api.admin_routes import (  # noqa: E402
     admin_user_repository,
     ai_audit_log_repository,
     ingestion_run_repository,
+    offer_import_job_repository,
     workflow_audit_log_repository,
 )
 from vesta_api.config import settings  # noqa: E402
@@ -28,6 +29,9 @@ from vesta_api.repositories.admin_users import InMemoryAdminUserRepository  # no
 from vesta_api.repositories.ai_audit_log import InMemoryAiAuditLogRepository  # noqa: E402
 from vesta_api.repositories.ingestion_runs import (  # noqa: E402
     InMemoryIngestionRunRepository,
+)
+from vesta_api.repositories.offer_import_jobs import (  # noqa: E402
+    InMemoryOfferImportJobRepository,
 )
 from vesta_api.repositories.offers import JsonOfferRepository  # noqa: E402
 from vesta_api.repositories.workflow_audit_log import (  # noqa: E402
@@ -55,6 +59,7 @@ class AdminRoutesTest(unittest.TestCase):
         )
         self.sessions = AdminSessionStore()
         self.attempts = AdminLoginAttemptStore()
+        self.import_jobs = InMemoryOfferImportJobRepository()
 
         app.dependency_overrides[admin_user_repository] = lambda: self.users
         app.dependency_overrides[admin_session_store] = lambda: self.sessions
@@ -64,6 +69,7 @@ class AdminRoutesTest(unittest.TestCase):
             lambda: self.workflow_log
         )
         app.dependency_overrides[ingestion_run_repository] = lambda: self.ingestion_runs
+        app.dependency_overrides[offer_import_job_repository] = lambda: self.import_jobs
 
     def tearDown(self) -> None:
         app.dependency_overrides.clear()
@@ -455,10 +461,10 @@ class AdminRoutesTest(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         payload = response.json()
-        self.assertEqual(3, payload["total"])
+        self.assertEqual(4, payload["total"])
         self.assertEqual(50, payload["limit"])
         self.assertEqual(0, payload["offset"])
-        self.assertEqual(3, len(payload["offers"]))
+        self.assertEqual(4, len(payload["offers"]))
         offer = payload["offers"][0]
         self.assertEqual("demo-sleep", offer["id"])
         self.assertEqual(["sleep_tonight"], offer["needs"])
@@ -477,7 +483,7 @@ class AdminRoutesTest(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         payload = response.json()
-        self.assertEqual(3, payload["total"])
+        self.assertEqual(4, payload["total"])
         self.assertEqual(1, payload["limit"])
         self.assertEqual(1, payload["offset"])
         self.assertEqual(1, len(payload["offers"]))
@@ -522,6 +528,25 @@ class AdminRoutesTest(unittest.TestCase):
             self.assertEqual("rechtsberatung-de", category["key"])
             self.assertEqual("draft", category["status"])
 
+            offer = client.post(
+                "/v1/admin/offers",
+                json={
+                    "name": "Rechtsberatung im Entwurf",
+                    "organization_name": "Verein Hilfe",
+                    "summary": "Geprüfte Erstberatung.",
+                    "needs": [category["key"]],
+                    "languages": ["de"],
+                    "access_rules": {},
+                    "availability": "call_to_confirm",
+                    "contact_note": "Bitte vorher anrufen.",
+                    "source_label": "Manuelle Prüfung",
+                    "source_url": "https://example.org/rechtsberatung-entwurf",
+                    "expires_at": "2027-09-01T23:59:59Z",
+                    "management_mode": "manual",
+                },
+            )
+            self.assertEqual(201, offer.status_code, offer.text)
+
             published = client.put(
                 f"/v1/admin/categories/{category['key']}",
                 json={
@@ -549,6 +574,42 @@ class AdminRoutesTest(unittest.TestCase):
         self.assertIn(
             category["key"],
             [entry["key"] for entry in public_catalog.json()["categories"]],
+        )
+
+    def test_category_cannot_be_published_without_a_reviewed_offer(self) -> None:
+        localizations = {
+            locale: {
+                "title": f"Neue Kategorie {locale}",
+                "description": f"Noch ohne geprüftes Angebot ({locale}).",
+            }
+            for locale in ("de", "fr", "en", "es", "pt", "ary")
+        }
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            created = client.post(
+                "/v1/admin/categories",
+                json={
+                    "icon": "support",
+                    "status": "draft",
+                    "sort_order": 50,
+                    "localizations": localizations,
+                },
+            ).json()
+            response = client.put(
+                f"/v1/admin/categories/{created['key']}",
+                json={
+                    **created,
+                    "status": "published",
+                },
+            )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual(
+            "category_requires_reviewed_offer_before_publish",
+            response.json()["detail"],
         )
 
     def test_category_requires_all_supported_localizations(self) -> None:
@@ -699,6 +760,87 @@ class AdminRoutesTest(unittest.TestCase):
         self.assertFalse(disabled.json()["automatic_enabled"])
         self.assertEqual(TEST_USERNAME, disabled.json()["updated_by"])
         self.assertEqual(409, conflict.status_code)
+
+    def test_admin_can_queue_and_list_manual_url_import(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            created = client.post(
+                "/v1/admin/offer-import-jobs",
+                json={"url": "https://Example.org/help#section"},
+            )
+            listing = client.get("/v1/admin/offer-import-jobs")
+
+        self.assertEqual(202, created.status_code, created.text)
+        self.assertEqual("https://example.org/help", created.json()["normalized_url"])
+        self.assertEqual("queued", created.json()["status"])
+        self.assertEqual(created.json()["id"], listing.json()["jobs"][0]["id"])
+
+    def test_url_import_rejects_private_and_non_https_targets(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            private = client.post(
+                "/v1/admin/offer-import-jobs",
+                json={"url": "https://127.0.0.1/private"},
+            )
+            insecure = client.post(
+                "/v1/admin/offer-import-jobs",
+                json={"url": "http://example.org/help"},
+            )
+
+        self.assertEqual(422, private.status_code)
+        self.assertEqual("blocked_address", private.json()["detail"])
+        self.assertEqual(422, insecure.status_code)
+        self.assertEqual("https_required", insecure.json()["detail"])
+
+    def test_offer_localization_can_be_saved_and_reviewed(self) -> None:
+        payload = {
+            "name": "Beratung Bern",
+            "organization_name": "Verein Hilfe",
+            "summary": "Kostenlose Beratung.",
+            "needs": ["counselling"],
+            "languages": ["de"],
+            "access_rules": {},
+            "availability": "call_to_confirm",
+            "contact_note": "Vorher anrufen.",
+            "source_label": "Manuelle Prüfung",
+            "expires_at": "2027-09-01T23:59:59Z",
+        }
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            offer = client.post("/v1/admin/offers", json=payload).json()
+            machine = client.put(
+                f"/v1/admin/offers/{offer['id']}/localizations/fr",
+                json={
+                    "name": "Conseil Berne",
+                    "summary": "Conseil gratuit.",
+                    "contact_note": "Appeler avant.",
+                    "status": "machine_draft",
+                },
+            )
+            reviewed = client.put(
+                f"/v1/admin/offers/{offer['id']}/localizations/fr",
+                json={
+                    "name": "Conseil Berne",
+                    "summary": "Conseil gratuit.",
+                    "contact_note": "Appeler avant.",
+                    "status": "reviewed",
+                    "revision": machine.json()["localizations"]["fr"]["revision"],
+                },
+            )
+
+        self.assertEqual(200, machine.status_code, machine.text)
+        self.assertEqual("machine_draft", machine.json()["localizations"]["fr"]["status"])
+        self.assertEqual(200, reviewed.status_code, reviewed.text)
+        self.assertEqual("reviewed", reviewed.json()["localizations"]["fr"]["status"])
 
     def test_new_admin_catalog_endpoints_require_a_session(self) -> None:
         with TestClient(app) as client:

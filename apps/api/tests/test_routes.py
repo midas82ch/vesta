@@ -111,15 +111,15 @@ class RoutesTest(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         categories = response.json()["categories"]
-        self.assertEqual(3, len(categories))
+        self.assertEqual(4, len(categories))
         self.assertEqual(
-            {"sleep_tonight", "basic_needs", "counselling"},
+            {"sleep_tonight", "basic_needs", "counselling", "victim_support"},
             {category["key"] for category in categories},
         )
         self.assertTrue(all(category["title"] for category in categories))
         self.assertTrue(all(category["description"] for category in categories))
         self.assertEqual(
-            {"home", "food", "book"},
+            {"home", "food", "book", "support"},
             {category["icon"] for category in categories},
         )
 
@@ -169,29 +169,29 @@ class RoutesTest(unittest.TestCase):
 
         self.assertEqual(422, response.status_code)
 
-    def test_rejects_age_below_six(self) -> None:
+    def test_rejects_non_boolean_adult_status(self) -> None:
         with TestClient(app) as client:
-            for age in (-1, 0, 5):
-                with self.subTest(age=age):
+            for value in (-1, 0, 18, "yes"):
+                with self.subTest(value=value):
                     response = client.post(
                         "/v1/matches",
                         json={
                             "need": "sleep_tonight",
                             "language": "de",
-                            "age": age,
+                            "is_adult": value,
                         },
                     )
 
                     self.assertEqual(422, response.status_code)
 
-    def test_accepts_age_six(self) -> None:
+    def test_accepts_boolean_adult_status(self) -> None:
         with TestClient(app) as client:
             response = client.post(
                 "/v1/matches",
                 json={
                     "need": "sleep_tonight",
                     "language": "de",
-                    "age": 6,
+                    "is_adult": True,
                 },
             )
 

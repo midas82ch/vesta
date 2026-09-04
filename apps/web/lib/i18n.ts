@@ -38,6 +38,8 @@ const de = {
   "need.basic.detail": "Essen, Dusche oder Ersthilfe",
   "need.counselling.title": "Beratung",
   "need.counselling.detail": "Hilfe bei Sucht, Wohnen oder Geld",
+  "need.victimSupport.title": "Opferhilfe",
+  "need.victimSupport.detail": "Hilfe nach Gewalt, Drohungen oder einer Straftat",
   "form.targetGroup.label": "Zielgruppe",
   "form.targetGroup.hint":
     "Die Angabe hilft, Angebote mit besonderen Zugangsbedingungen korrekt einzuordnen.",
@@ -117,7 +119,7 @@ const de = {
   "about.pilot.eyebrow": "Pilotprojekt",
   "about.pilot.title": "Klein starten. Gemeinsam lernen.",
   "about.pilot.text":
-    "Der erste Prototyp konzentriert sich auf Übernachtung, Grundversorgung und Beratung. Er arbeitet ohne Konto und ohne Personendossier. Betroffene, Fachpersonen und Organisationen sollen mitbestimmen, was nützlich und sicher ist.",
+    "Der erste Prototyp konzentriert sich auf Übernachtung, Grundversorgung, Beratung und Opferhilfe. Er arbeitet ohne Konto und ohne Personendossier. Betroffene, Fachpersonen und Organisationen sollen mitbestimmen, was nützlich und sicher ist.",
   "about.pilot.link": "Projekt auf GitHub ansehen",
   "about.pilot.note":
     "Der technische Prototyp ist öffentlich einsehbar. Rückmeldungen und Mitwirkung sind willkommen.",
@@ -171,7 +173,7 @@ const de = {
   "privacy.ai.eyebrow": "AI",
   "privacy.ai.title": "AI-Sprachmodell im Testbetrieb",
   "privacy.ai.text":
-    "Freitexte, freigegebene Fragen und begrenzte Angebotsfakten werden zur Interpretation und verständlichen Formulierung an OpenAI übermittelt. Die AI entscheidet weder über den Zugang noch über Plätze. Bitte keine Namen, Adressen oder Kontaktdaten eingeben. Eingaben, AI-Anfragen und -Antworten, die dazwischenliegende Vesta-Systemlogik und die ausgegebene Antwort werden als zusammenhängender Workflow bis zur manuellen Löschung gespeichert und sind nur für berechtigte Administratorinnen und Administratoren einsehbar.",
+    "Sicherheitshinweise werden zuerst lokal durch feste Regeln geprüft; erkannte Sicherheitsfälle werden nicht zur Interpretation an OpenAI gesendet. Andere Freitexte, freigegebene Fragen und begrenzte Angebotsfakten werden zur Interpretation und verständlichen Formulierung an OpenAI übermittelt. Die AI entscheidet weder über den Zugang noch über Plätze. Bitte keine Namen, Adressen oder Kontaktdaten eingeben. Eingaben, AI-Anfragen und -Antworten, die dazwischenliegende Vesta-Systemlogik und die ausgegebene Antwort werden als zusammenhängender Workflow bis zur manuellen Löschung gespeichert und sind nur für berechtigte Administratorinnen und Administratoren einsehbar.",
   "privacy.hosting.eyebrow": "Hosting",
   "privacy.hosting.title": "Schweizer Infrastruktur vorgesehen",
   "privacy.hosting.text":
@@ -251,6 +253,14 @@ const de = {
     "Wir bestimmen den nächsten passenden Schritt und prüfen danach mögliche Angebote.",
   "dialogue.error.title": "Das hat nicht geklappt",
   "dialogue.error": "Der Dialog ist gerade nicht erreichbar.",
+  "dialogue.safety.detected":
+    "Ich erkenne einen möglichen Hinweis auf Gewalt oder Bedrohung. Wir klären zuerst deine Sicherheit.",
+  "dialogue.safety.immediate": "Bitte ruf jetzt unmittelbar Hilfe.",
+  "dialogue.safety.support": "Hier findest du vertrauliche Opferhilfe und passende Fachstellen.",
+  "dialogue.safety.immediateTitle": "Jetzt Hilfe rufen",
+  "dialogue.safety.supportTitle": "Vertrauliche Opferhilfe",
+  "dialogue.safety.resources": "Sofort erreichbare Hilfe",
+  "dialogue.safety.openWebsite": "Website öffnen",
   "dialogue.question.eyebrow": "Eine Frage noch",
   "dialogue.question.answerLegend": "Deine Antwort",
   "dialogue.question.yes": "Ja",
@@ -264,9 +274,10 @@ const de = {
   "dialogue.fit.gender.yes": "Ja, das passt für mich",
   "dialogue.fit.gender.no":
     "Nein, ich suche ein allgemein zugängliches Angebot",
-  "dialogue.fit.age.question": "Geht es um eine volljährige Person?",
+  "dialogue.fit.age.question":
+    "Ist die Person, für die du Hilfe suchst, 18 Jahre oder älter?",
   "dialogue.fit.age.help":
-    "Einige Schlafangebote sind erst ab 18 Jahren zugänglich.",
+    "Einige Angebote sind nur für volljährige Personen zugänglich.",
   "dialogue.fit.age.adult": "Ja, 18 Jahre oder älter",
   "dialogue.fit.age.minor": "Nein, unter 18 Jahre",
   "dialogue.fit.decline": "Möchte ich nicht angeben",
@@ -313,6 +324,9 @@ const fr: Record<MessageKey, string> = {
   "need.basic.detail": "Repas, douche ou premiers soins",
   "need.counselling.title": "Conseil",
   "need.counselling.detail": "Aide pour la dépendance, le logement ou l’argent",
+  "need.victimSupport.title": "Aide aux victimes",
+  "need.victimSupport.detail":
+    "Aide après des violences, des menaces ou une infraction",
   "form.targetGroup.label": "Groupe cible",
   "form.targetGroup.hint":
     "Cette indication aide à classer correctement les offres avec des conditions d’accès particulières.",
@@ -392,7 +406,7 @@ const fr: Record<MessageKey, string> = {
   "about.pilot.eyebrow": "Projet pilote",
   "about.pilot.title": "Commencer petit. Apprendre ensemble.",
   "about.pilot.text":
-    "Le premier prototype se concentre sur l’hébergement, les besoins essentiels et le conseil. Il fonctionne sans compte ni dossier personnel. Les personnes concernées, les spécialistes et les organisations doivent participer aux décisions sur son utilité et sa sécurité.",
+    "Le premier prototype se concentre sur l’hébergement, les besoins essentiels, le conseil et l’aide aux victimes. Il fonctionne sans compte ni dossier personnel. Les personnes concernées, les spécialistes et les organisations doivent participer aux décisions sur son utilité et sa sécurité.",
   "about.pilot.link": "Voir le projet sur GitHub",
   "about.pilot.note":
     "Le prototype technique est consultable publiquement. Les retours et la participation sont les bienvenus.",
@@ -446,7 +460,7 @@ const fr: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "IA",
   "privacy.ai.title": "Modèle d’IA en phase de test",
   "privacy.ai.text":
-    "Les textes libres, les questions validées et des informations limitées sur les offres sont transmis à OpenAI pour interprétation et reformulation. L’IA ne décide ni de l’accès ni de l’attribution de places. Ne saisis aucun nom, adresse ou coordonnée. Les saisies, les requêtes et réponses de l’IA, la logique système intermédiaire de Vesta et la réponse affichée sont conservées sous forme d’un workflow cohérent jusqu’à leur suppression manuelle et ne sont consultables que par les administratrices et administrateurs autorisés.",
+    "Les indices liés à la sécurité sont d’abord vérifiés localement par des règles fixes ; les cas de sécurité détectés ne sont pas envoyés à OpenAI pour interprétation. Les autres textes libres, les questions validées et des informations limitées sur les offres sont transmis à OpenAI pour interprétation et reformulation. L’IA ne décide ni de l’accès ni de l’attribution de places. Ne saisis aucun nom, adresse ou coordonnée. Les saisies, les requêtes et réponses de l’IA, la logique système intermédiaire de Vesta et la réponse affichée sont conservées sous forme d’un workflow cohérent jusqu’à leur suppression manuelle et ne sont consultables que par les administratrices et administrateurs autorisés.",
   "privacy.hosting.eyebrow": "Hébergement",
   "privacy.hosting.title": "Infrastructure suisse prévue",
   "privacy.hosting.text":
@@ -528,6 +542,15 @@ const fr: Record<MessageKey, string> = {
     "Nous déterminons la prochaine étape appropriée, puis vérifions les offres possibles.",
   "dialogue.error.title": "Une erreur s’est produite",
   "dialogue.error": "Le dialogue n’est pas disponible actuellement.",
+  "dialogue.safety.detected":
+    "Je reconnais un possible signe de violence ou de menace. Vérifions d’abord ta sécurité.",
+  "dialogue.safety.immediate": "Appelle immédiatement les secours.",
+  "dialogue.safety.support":
+    "Tu trouveras ici une aide confidentielle aux victimes et des services spécialisés.",
+  "dialogue.safety.immediateTitle": "Appeler les secours maintenant",
+  "dialogue.safety.supportTitle": "Aide confidentielle aux victimes",
+  "dialogue.safety.resources": "Aide immédiatement disponible",
+  "dialogue.safety.openWebsite": "Ouvrir le site web",
   "dialogue.question.eyebrow": "Encore une question",
   "dialogue.question.answerLegend": "Ta réponse",
   "dialogue.question.yes": "Oui",
@@ -541,9 +564,9 @@ const fr: Record<MessageKey, string> = {
   "dialogue.fit.gender.yes": "Oui, cela me convient",
   "dialogue.fit.gender.no": "Non, je cherche une offre accessible à tous",
   "dialogue.fit.age.question":
-    "La recherche concerne-t-elle une personne majeure ?",
+    "La personne pour laquelle tu cherches de l’aide a-t-elle 18 ans ou plus ?",
   "dialogue.fit.age.help":
-    "Certains hébergements ne sont accessibles qu’à partir de 18 ans.",
+    "Certaines offres sont réservées aux personnes majeures.",
   "dialogue.fit.age.adult": "Oui, 18 ans ou plus",
   "dialogue.fit.age.minor": "Non, moins de 18 ans",
   "dialogue.fit.decline": "Je préfère ne pas l’indiquer",
@@ -588,6 +611,8 @@ const en: Record<MessageKey, string> = {
   "need.basic.detail": "Food, a shower or first aid",
   "need.counselling.title": "Advice",
   "need.counselling.detail": "Help with addiction, housing or money",
+  "need.victimSupport.title": "Victim support",
+  "need.victimSupport.detail": "Help after violence, threats or a crime",
   "form.targetGroup.label": "Target group",
   "form.targetGroup.hint":
     "This helps classify services with specific access conditions correctly.",
@@ -667,7 +692,7 @@ const en: Record<MessageKey, string> = {
   "about.pilot.eyebrow": "Pilot project",
   "about.pilot.title": "Start small. Learn together.",
   "about.pilot.text":
-    "The first prototype focuses on overnight shelter, basic needs and advice. It works without an account or case file. People with lived experience, professionals and organisations should help determine what is useful and safe.",
+    "The first prototype focuses on overnight shelter, basic needs, advice and victim support. It works without an account or case file. People with lived experience, professionals and organisations should help determine what is useful and safe.",
   "about.pilot.link": "View the project on GitHub",
   "about.pilot.note":
     "The technical prototype is publicly available. Feedback and participation are welcome.",
@@ -721,7 +746,7 @@ const en: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "AI",
   "privacy.ai.title": "AI language model in test operation",
   "privacy.ai.text":
-    "Free text, approved questions and limited service facts are sent to OpenAI for interpretation and plain-language wording. AI does not decide access or allocate places. Do not enter names, addresses or contact details. Inputs, AI requests and responses, the intervening Vesta system logic and the displayed response are stored as one connected workflow until manually deleted and are only accessible to authorized administrators.",
+    "Safety indicators are first checked locally using fixed rules; detected safety cases are not sent to OpenAI for interpretation. Other free text, approved questions and limited service facts are sent to OpenAI for interpretation and plain-language wording. AI does not decide access or allocate places. Do not enter names, addresses or contact details. Inputs, AI requests and responses, the intervening Vesta system logic and the displayed response are stored as one connected workflow until manually deleted and are only accessible to authorized administrators.",
   "privacy.hosting.eyebrow": "Hosting",
   "privacy.hosting.title": "Swiss infrastructure planned",
   "privacy.hosting.text":
@@ -802,6 +827,15 @@ const en: Record<MessageKey, string> = {
     "We are determining the next appropriate step and then checking possible services.",
   "dialogue.error.title": "Something went wrong",
   "dialogue.error": "The dialogue is currently unavailable.",
+  "dialogue.safety.detected":
+    "I recognise a possible sign of violence or a threat. Let’s check your safety first.",
+  "dialogue.safety.immediate": "Please call for help immediately.",
+  "dialogue.safety.support":
+    "Here you can find confidential victim support and specialist services.",
+  "dialogue.safety.immediateTitle": "Call for help now",
+  "dialogue.safety.supportTitle": "Confidential victim support",
+  "dialogue.safety.resources": "Help available right now",
+  "dialogue.safety.openWebsite": "Open website",
   "dialogue.question.eyebrow": "One more question",
   "dialogue.question.answerLegend": "Your answer",
   "dialogue.question.yes": "Yes",
@@ -814,9 +848,10 @@ const en: Record<MessageKey, string> = {
     "Some shelters are exclusively available to women and FINTA people.",
   "dialogue.fit.gender.yes": "Yes, that suits me",
   "dialogue.fit.gender.no": "No, I need a generally accessible service",
-  "dialogue.fit.age.question": "Is the search for an adult?",
+  "dialogue.fit.age.question":
+    "Is the person you are seeking help for 18 or older?",
   "dialogue.fit.age.help":
-    "Some overnight services are only available from the age of 18.",
+    "Some services are only available to adults.",
   "dialogue.fit.age.adult": "Yes, aged 18 or older",
   "dialogue.fit.age.minor": "No, under 18",
   "dialogue.fit.decline": "Prefer not to say",

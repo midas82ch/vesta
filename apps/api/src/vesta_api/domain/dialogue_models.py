@@ -30,7 +30,7 @@ class DialogueState:
     expires_at: datetime
     need: str | None = None
     attributes: tuple[AttributeState, ...] = field(default_factory=tuple)
-    safety_status: Literal["clear", "handoff"] = "clear"
+    safety_status: Literal["clear", "review", "handoff"] = "clear"
     declined_question_keys: tuple[str, ...] = field(default_factory=tuple)
     asked_question_keys: tuple[str, ...] = field(default_factory=tuple)
 

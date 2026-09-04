@@ -21,6 +21,7 @@ DIALOGUE_CATALOG_TABLES = frozenset(
         "attribute_option_localizations",
         "question_definitions",
         "question_localizations",
+        "question_need_definitions",
     }
 )
 
@@ -93,6 +94,16 @@ class DatabaseRolePrivilegesTest(unittest.TestCase):
         )
         self.assertNotIn("DELETE", vesta_admin.table_privileges["offers"])
         self.assertNotIn("UPDATE", vesta_admin.table_privileges["organizations"])
+
+    def test_url_import_worker_has_no_publish_update_or_delete_privileges(self) -> None:
+        worker = next(role for role in ROLES if role.username == "vesta_worker")
+        app = next(role for role in ROLES if role.username == "vesta_app")
+
+        self.assertEqual(("SELECT", "UPDATE"), worker.table_privileges["offer_import_jobs"])
+        self.assertEqual(("SELECT", "INSERT"), worker.table_privileges["offers"])
+        self.assertNotIn("UPDATE", worker.table_privileges["offers"])
+        self.assertNotIn("DELETE", worker.table_privileges["offers"])
+        self.assertNotIn("offer_import_jobs", app.table_privileges)
 
 
 class DatabaseRoleUrlTest(unittest.TestCase):

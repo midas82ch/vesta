@@ -140,6 +140,20 @@ class DialogueOrchestratorTest(unittest.TestCase):
         assert result.match_result is not None
         self.assertEqual(1, len(result.match_result.candidates))
 
+    def test_unknown_answer_is_persisted_as_unknown(self) -> None:
+        orchestrator = _orchestrator((_offer(accepts_dogs=True),))
+        started = orchestrator.start(locale="de", need=Need.SLEEP_TONIGHT, now=NOW)
+
+        result = orchestrator.mark_attribute_unknown(
+            session_id=started.state.session_id,
+            key="person.has_dog",
+            now=NOW,
+        )
+
+        attribute = next(item for item in result.state.attributes if item.key == "person.has_dog")
+        self.assertEqual("unknown", attribute.status)
+        self.assertIsNone(attribute.value)
+
     def test_safety_handoff_short_circuits_without_matching(self) -> None:
         orchestrator = _orchestrator((_offer(accepts_dogs=False),))
         started = orchestrator.start(locale="de", need=Need.SLEEP_TONIGHT, now=NOW)

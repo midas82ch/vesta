@@ -37,4 +37,10 @@ export const needs: NeedOption[] = [
     detail: "need.counselling.detail",
     icon: "book",
   },
+  {
+    value: "victim_support",
+    title: "need.victimSupport.title",
+    detail: "need.victimSupport.detail",
+    icon: "support",
+  },
 ];

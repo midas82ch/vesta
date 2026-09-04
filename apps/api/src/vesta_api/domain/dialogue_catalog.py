@@ -40,3 +40,4 @@ class QuestionDefinition:
     priority: int
     ai_rephrasing_allowed: bool
     localizations: Localizations
+    need_keys: tuple[str, ...] = field(default_factory=tuple)

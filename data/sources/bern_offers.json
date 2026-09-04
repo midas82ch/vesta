@@ -232,6 +232,63 @@
           "031 380 84 84"
         ]
       }
+    },
+    {
+      "slug": "opferhilfe-schweiz-142",
+      "organization_key": "opferhilfe-schweiz",
+      "organization_name": "Opferhilfe Schweiz",
+      "name": "Opferhilfe Schweiz – Beratung 142",
+      "summary": "Kostenlose und vertrauliche Beratung für Opfer von Gewalt oder Straftaten sowie nahestehende Personen.",
+      "needs": ["victim_support"],
+      "languages": ["de", "fr", "it", "en"],
+      "access": {
+        "accepts_dogs": null,
+        "identity_document_required": null,
+        "accepted_genders": [],
+        "minimum_age": null,
+        "maximum_age": null
+      },
+      "availability": "confirmed",
+      "contact_note": "Die Opferhilfe ist in der ganzen Schweiz rund um die Uhr unter der Kurznummer 142 erreichbar. Die Beratung ist kostenlos und vertraulich.",
+      "location": null,
+      "source": {
+        "label": "Opferhilfe Schweiz – Beratung",
+        "url": "https://www.opferhilfe-schweiz.ch/de/was-ist-opferhilfe/beratung/",
+        "evidence": [
+          "Kurznummer 142",
+          "rund um die Uhr",
+          "kostenlos",
+          "vertraulich"
+        ]
+      }
+    },
+    {
+      "slug": "opferhilfe-bern",
+      "organization_key": "opferhilfe-bern",
+      "organization_name": "Stiftung Opferhilfe Bern",
+      "name": "Opferhilfe Bern",
+      "summary": "Beratung und Begleitung für von Gewalt oder Straftaten betroffene Personen im Kanton Bern.",
+      "needs": ["victim_support"],
+      "languages": ["de", "fr"],
+      "access": {
+        "accepts_dogs": null,
+        "identity_document_required": null,
+        "accepted_genders": [],
+        "minimum_age": null,
+        "maximum_age": null
+      },
+      "availability": "call_to_confirm",
+      "contact_note": "Beratung unter 031 370 30 70. Die Beratung ist kostenlos, vertraulich und auf Wunsch anonym.",
+      "location": null,
+      "source": {
+        "label": "Opferhilfe Schweiz – Beratungsstellen Kanton Bern",
+        "url": "https://www.opferhilfe-schweiz.ch/de/wo-finde-ich-hilfe/",
+        "evidence": [
+          "Opferhilfe Bern",
+          "031 370 30 70",
+          "Kanton Bern"
+        ]
+      }
     }
   ]
 }

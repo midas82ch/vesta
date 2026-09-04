@@ -84,6 +84,17 @@ class InterpretationEvalSetTest(unittest.TestCase):
                     result = self.gateway.interpret_case(case)
                     self.assertTrue(result.ambiguities)
 
+    def test_eight_anonymized_audit_regressions_are_retained(self) -> None:
+        fixture = _load("dialogue_regression_cases.json")
+        cases = fixture["cases"]
+
+        self.assertEqual(8, len(cases))
+        self.assertEqual(8, len({case["id"] for case in cases}))
+        serialized = json.dumps(fixture).lower()
+        self.assertNotIn("workflow_id", serialized)
+        self.assertNotIn("session_id", serialized)
+        self.assertTrue(any(case.get("expected_outcome") == "safety" for case in cases))
+
 
 class ExplanationEvalSetTest(unittest.TestCase):
     def setUp(self) -> None:

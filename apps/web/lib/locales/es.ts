@@ -32,6 +32,8 @@ export const es: Record<MessageKey, string> = {
   "need.basic.detail": "Comida, ducha o primeros auxilios",
   "need.counselling.title": "Asesoramiento",
   "need.counselling.detail": "Ayuda con adicciones, vivienda o dinero",
+  "need.victimSupport.title": "Ayuda a víctimas",
+  "need.victimSupport.detail": "Ayuda tras violencia, amenazas o un delito",
   "form.targetGroup.label": "Grupo destinatario",
   "form.targetGroup.hint":
     "Esta información ayuda a clasificar correctamente los servicios con condiciones de acceso específicas.",
@@ -111,7 +113,7 @@ export const es: Record<MessageKey, string> = {
   "about.pilot.eyebrow": "Proyecto piloto",
   "about.pilot.title": "Empezar poco a poco. Aprender juntos.",
   "about.pilot.text":
-    "El primer prototipo se centra en alojamiento nocturno, necesidades básicas y asesoramiento. Funciona sin cuenta ni expediente personal. Las personas afectadas, profesionales y organizaciones deben participar en la decisión de qué resulta útil y seguro.",
+    "El primer prototipo se centra en alojamiento nocturno, necesidades básicas, asesoramiento y ayuda a víctimas. Funciona sin cuenta ni expediente personal. Las personas afectadas, profesionales y organizaciones deben participar en la decisión de qué resulta útil y seguro.",
   "about.pilot.link": "Ver el proyecto en GitHub",
   "about.pilot.note":
     "El prototipo técnico es público. Agradecemos los comentarios y la colaboración.",
@@ -165,7 +167,7 @@ export const es: Record<MessageKey, string> = {
   "privacy.ai.eyebrow": "IA",
   "privacy.ai.title": "Modelo de lenguaje de IA en fase de prueba",
   "privacy.ai.text":
-    "Los textos libres, las preguntas aprobadas y determinados datos de los servicios se transmiten a OpenAI para su interpretación y formulación comprensible. La IA no decide sobre el acceso ni asigna plazas. No introduzcas nombres, direcciones ni datos de contacto. Las entradas, las solicitudes y respuestas de la IA, la lógica intermedia del sistema Vesta y la respuesta mostrada se guardan como un flujo de trabajo relacionado hasta su eliminación manual y solo son accesibles para las personas administradoras autorizadas.",
+    "Los indicios de seguridad se comprueban primero de forma local mediante reglas fijas; los casos de seguridad detectados no se envían a OpenAI para su interpretación. Los demás textos libres, las preguntas aprobadas y determinados datos de los servicios se transmiten a OpenAI para su interpretación y formulación comprensible. La IA no decide sobre el acceso ni asigna plazas. No introduzcas nombres, direcciones ni datos de contacto. Las entradas, las solicitudes y respuestas de la IA, la lógica intermedia del sistema Vesta y la respuesta mostrada se guardan como un flujo de trabajo relacionado hasta su eliminación manual y solo son accesibles para las personas administradoras autorizadas.",
   "privacy.hosting.eyebrow": "Alojamiento",
   "privacy.hosting.title": "Infraestructura suiza prevista",
   "privacy.hosting.text":
@@ -247,6 +249,15 @@ export const es: Record<MessageKey, string> = {
     "Determinamos el siguiente paso adecuado y después comprobamos los posibles servicios.",
   "dialogue.error.title": "Algo ha salido mal",
   "dialogue.error": "El diálogo no está disponible en este momento.",
+  "dialogue.safety.detected":
+    "Reconozco una posible señal de violencia o amenaza. Primero comprobaremos tu seguridad.",
+  "dialogue.safety.immediate": "Llama inmediatamente a emergencias.",
+  "dialogue.safety.support":
+    "Aquí encontrarás ayuda confidencial para víctimas y servicios especializados.",
+  "dialogue.safety.immediateTitle": "Llamar a emergencias ahora",
+  "dialogue.safety.supportTitle": "Ayuda confidencial a víctimas",
+  "dialogue.safety.resources": "Ayuda disponible ahora",
+  "dialogue.safety.openWebsite": "Abrir sitio web",
   "dialogue.question.eyebrow": "Una pregunta más",
   "dialogue.question.answerLegend": "Tu respuesta",
   "dialogue.question.yes": "Sí",
@@ -259,9 +270,10 @@ export const es: Record<MessageKey, string> = {
     "Algunos alojamientos son accesibles exclusivamente para mujeres y personas FINTA.",
   "dialogue.fit.gender.yes": "Sí, me conviene",
   "dialogue.fit.gender.no": "No, busco un servicio de acceso general",
-  "dialogue.fit.age.question": "¿La búsqueda es para una persona adulta?",
+  "dialogue.fit.age.question":
+    "¿La persona para la que buscas ayuda tiene 18 años o más?",
   "dialogue.fit.age.help":
-    "Algunos alojamientos nocturnos solo están disponibles a partir de los 18 años.",
+    "Algunos servicios solo están disponibles para personas adultas.",
   "dialogue.fit.age.adult": "Sí, 18 años o más",
   "dialogue.fit.age.minor": "No, menos de 18 años",
   "dialogue.fit.decline": "Prefiero no indicarlo",

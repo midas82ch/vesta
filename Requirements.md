@@ -60,6 +60,19 @@ mobile Admin-Nutzerführung ist jedoch keine Anforderung.
 - Eine menschliche Notfall-Weiterleitung bleibt davon getrennt und wird nur
   durch Sicherheitsregeln ausgelöst.
 
+### Opferhilfe und Sicherheitsdialog
+
+- `victim_support` ist eine eigene Bedarfskategorie mit Texten in Deutsch,
+  Französisch, Englisch, Spanisch, Portugiesisch und Darija.
+- Hinweise auf Gewalt, Drohungen oder akute Gefahr werden vor jedem AI-Aufruf
+  durch versionierte Regeln erkannt.
+- Bei unmittelbarer Gefahr werden ausschließlich 117 und 144 angeboten; in
+  allen anderen Sicherheitsfällen 142 und geprüfte Opferhilfe-Angebote.
+- Die öffentliche Altersfrage fragt nur, ob die Person 18 Jahre oder älter ist.
+  Eine konkrete Zahl wird nicht erhoben.
+- Unbekannte und abgelehnte Angaben bleiben sichtbar und führen zu einer
+  Abklärungsunsicherheit statt zu einem stillen Ausschluss.
+
 ### Quellen und Import
 
 - Quellen anlegen, bearbeiten, aktivieren und deaktivieren.
@@ -70,6 +83,12 @@ mobile Admin-Nutzerführung ist jedoch keine Anforderung.
 - Der automatische Import kann im Adminbereich zentral ein- und ausgeschaltet
   werden. Ein deaktivierter geplanter Lauf wird als übersprungen protokolliert;
   bestehende Angebote bleiben unverändert.
+- Einzelne HTTPS-URLs können unabhängig vom Automatikschalter als persistente
+  Importaufträge erfasst und bei vorübergehenden Fehlern wiederholt werden.
+- URL-Abrufe blockieren private und reservierte IPv4-/IPv6-Ziele, prüfen jedes
+  Redirect-Ziel, beachten `robots.txt` und begrenzen Zeit sowie Datenmenge.
+- Extraktion und Übersetzungen erzeugen nur unveröffentlichte Entwürfe;
+  vollständiges HTML wird nicht gespeichert.
 
 ### Mapping und Datenqualität
 
@@ -87,6 +106,10 @@ mobile Admin-Nutzerführung ist jedoch keine Anforderung.
 - Angebote werden erst nach ausdrücklicher Freigabe veröffentlicht.
 - Quelle, Prüfzeitpunkt, prüfende Person und Datenqualität bleiben am Angebot sichtbar.
 - Jede Änderung und Veröffentlichung wird in einer Historie protokolliert.
+- Angebotstexte werden getrennt in sechs Sprachfassungen gepflegt.
+  Maschinenentwürfe dürfen erst nach expliziter Prüfung veröffentlicht werden.
+- Fehlt eine geprüfte Übersetzung, wird die geprüfte deutsche Fassung mit einem
+  lokalisierten Fallback-Hinweis angezeigt.
 
 ## Sicherheits- und Betriebsanforderungen
 

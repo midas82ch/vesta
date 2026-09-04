@@ -11,11 +11,12 @@ Sicherheitseskalationen bleiben nachvollziehbare Regeln.
 
 ## MVP
 
-Der erste Pilot konzentriert sich auf drei Situationen:
+Der erste Pilot konzentriert sich auf vier Situationen:
 
 1. Einen Schlafplatz für heute Nacht finden.
 2. Essen, Dusche oder medizinische Ersthilfe finden.
 3. Beratung zu Sucht, Wohnen oder finanziellen Problemen finden.
+4. Opferhilfe nach Gewalt, Drohungen oder einer Straftat finden.
 
 Es werden keine Personendossiers, automatischen Zuteilungen oder medizinischen
 Diagnosen erstellt.
@@ -23,8 +24,8 @@ Diagnosen erstellt.
 ## Web-Oberfläche
 
 Die Oberfläche ist mobile-first aufgebaut und unterstützt Deutsch,
-Französisch, Englisch und Arabisch. Die Sprachwahl bleibt in der URL und – wo
-vom Browser erlaubt – lokal gespeichert. Arabisch wird mit
+Französisch, Englisch, Spanisch, Portugiesisch und Darija. Die Sprachwahl
+bleibt in der URL und – wo vom Browser erlaubt – lokal gespeichert. Darija wird mit
 Rechts-nach-links-Layout dargestellt; Datumsangaben und Ergebniszahlen werden
 sprachabhängig formatiert.
 
@@ -150,6 +151,26 @@ Katalogfunktionen im geschützten Adminbereich verwenden die separat erzeugte
 Rolle `vesta_admin` aus `secrets/database-admin-write-url`; sie darf
 Kategorien, Zuordnungen, Angebote, Verifikationen, Importsteuerung und
 Änderungsprotokoll bearbeiten, besitzt aber keine allgemeinen Datenbankrechte.
+Der persistente URL-Import läuft als eigener Compose-Service unter
+`vesta_worker`. Diese Rolle darf neue Entwürfe, Sprachfassungen und
+Importstatus schreiben, aber bestehende Angebote weder aktualisieren noch
+löschen.
+
+## Einzelne Angebots-URL importieren
+
+Unter `/admin/offer-imports` kann ein Admin eine HTTPS-URL als manuellen
+Importauftrag erfassen. Der Worker verarbeitet die Warteschlange unabhängig
+vom Schalter für geplante Katalogläufe, erstellt ein unveröffentlichtes Angebot
+und erzeugt Maschinenentwürfe für Deutsch, Französisch, Englisch, Spanisch,
+Portugiesisch und Darija. Quellenbelege, mögliche Dubletten und Fehler sind im
+Adminbereich sichtbar. Vor einer Veröffentlichung müssen Quelle, Zugang,
+Verfügbarkeit und deutsche Sprachfassung geprüft sowie ein zukünftiges
+Prüfdatum gesetzt werden.
+
+Der Worker startet im ersten Rollout technisch pausiert. Nach einem
+kontrollierten Test wird `VESTA_OFFER_URL_IMPORT_ENABLED=true` gesetzt und nur
+der Service `offer-import-worker` neu erstellt. Der Schalter für die geplante
+Angebotsprüfung bleibt davon unabhängig.
 
 ## Öffentliche Testangebote aktualisieren
 

@@ -71,6 +71,7 @@ services:
       VESTA_AI_ENABLED: ${VESTA_AI_ENABLED:-false}
       VESTA_AI_PROVIDER: ${VESTA_AI_PROVIDER:-openai}
       VESTA_OPENAI_MODEL: ${VESTA_OPENAI_MODEL:-gpt-5.4-mini-2026-03-17}
+      VESTA_OFFER_URL_IMPORT_ENABLED: ${VESTA_OFFER_URL_IMPORT_ENABLED:-false}
       VESTA_ENV: production
     secrets:
       - database-url
@@ -137,6 +138,28 @@ services:
       - no-new-privileges:true
     logging: *default-logging
 
+  offer-import-worker:
+    image: vesta-api:latest
+    command: ["python", "-m", "vesta_api.cli.process_offer_imports"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database-worker-url
+      OPENAI_API_KEY_FILE: /run/secrets/openai-api-key
+      VESTA_OPENAI_MODEL: ${VESTA_OPENAI_MODEL:-gpt-5.4-mini-2026-03-17}
+      VESTA_OFFER_URL_IMPORT_ENABLED: ${VESTA_OFFER_URL_IMPORT_ENABLED:-false}
+      VESTA_ENV: production
+    secrets:
+      - database-worker-url
+      - openai-api-key
+    networks:
+      - egress
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
 networks:
   frontend:
   backend:
@@ -156,5 +179,7 @@ secrets:
     file: ${DATABASE_INGEST_URL_FILE:-./secrets/database-ingest-url}
   database-admin-write-url:
     file: ${DATABASE_ADMIN_WRITE_URL_FILE:-./secrets/database-admin-write-url}
+  database-worker-url:
+    file: ${DATABASE_WORKER_URL_FILE:-./secrets/database-worker-url}
   openai-api-key:
     file: ${OPENAI_API_KEY_FILE:-./secrets/openai-api-key}

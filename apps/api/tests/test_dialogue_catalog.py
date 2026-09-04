@@ -16,7 +16,8 @@ EXPECTED_ATTRIBUTE_KEYS = {
     "person.has_dog",
     "person.has_identity_document",
     "person.gender",
-    "person.age",
+    "person.is_adult",
+    "safety.immediate_danger",
 }
 EXPECTED_LOCALES = {"de", "fr", "en", "es", "pt", "ary"}
 
@@ -25,11 +26,11 @@ class DialogueCatalogTest(unittest.TestCase):
     def setUp(self) -> None:
         self.repository = JsonDialogueCatalogRepository(CATALOG_PATH)
 
-    def test_lists_three_needs_in_sort_order(self) -> None:
+    def test_lists_four_needs_in_sort_order(self) -> None:
         needs = self.repository.list_needs()
 
         self.assertEqual(
-            ["sleep_tonight", "basic_needs", "counselling"],
+            ["sleep_tonight", "basic_needs", "counselling", "victim_support"],
             [need.key for need in needs],
         )
         for need in needs:

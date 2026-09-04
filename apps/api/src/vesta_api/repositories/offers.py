@@ -11,6 +11,7 @@ from vesta_api.domain.models import (
     Availability,
     GeoPoint,
     Offer,
+    OfferText,
     Source,
 )
 from vesta_api.repositories.admin_catalog import AdminCatalogRepository
@@ -154,6 +155,16 @@ class AdminManagedOfferRepository:
                     published=item.lifecycle == "published",
                     is_demo=item.is_demo,
                     updated_at=item.updated_at,
+                    localizations={
+                        locale: OfferText(
+                            name=localization.name,
+                            summary=localization.summary,
+                            contact_note=localization.contact_note,
+                        )
+                        for locale, localization in item.localizations.items()
+                        if localization.status == "reviewed"
+                    },
+                    localization_required=True,
                 )
             )
         return tuple(offers)
@@ -187,7 +198,8 @@ _LIST_OFFERS = text(
         verification.source_url,
         verification.verified_by,
         verification.verified_at,
-        verification.expires_at
+        verification.expires_at,
+        COALESCE(localizations.items, '{}'::jsonb) AS localizations
     FROM offers AS offer
     JOIN organizations AS organization ON organization.id = offer.organization_id
     JOIN LATERAL (
@@ -210,6 +222,18 @@ _LIST_OFFERS = text(
         FROM offer_categories
         WHERE offer_id = offer.id
     ) AS categories ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT jsonb_object_agg(
+            locale,
+            jsonb_build_object(
+                'name', name,
+                'summary', summary,
+                'contact_note', contact_note
+            )
+        ) AS items
+        FROM offer_localizations
+        WHERE offer_id = offer.id AND status = 'reviewed'
+    ) AS localizations ON TRUE
     ORDER BY offer.name, offer.id
     """
 )
@@ -259,6 +283,15 @@ def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
         slug=str(row["slug"]),
         organization_name=str(row["organization_name"]),
         updated_at=row["updated_at"],
+        localizations={
+            str(locale): OfferText(
+                name=str(values["name"]),
+                summary=str(values["summary"]),
+                contact_note=str(values["contact_note"]),
+            )
+            for locale, values in (row.get("localizations") or {}).items()
+        },
+        localization_required=True,
     )
 
 

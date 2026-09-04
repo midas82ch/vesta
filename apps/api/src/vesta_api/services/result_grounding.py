@@ -10,7 +10,10 @@ _CONTACT_REQUIRED_UNCERTAINTIES = frozenset(
         "availability_unknown",
         "dog_access_unknown",
         "identity_document_rule_unknown",
+        "identity_document_must_be_confirmed",
         "target_group_must_be_confirmed",
+        "adult_status_must_be_confirmed",
+        "age_rule_requires_contact",
     }
 )
 

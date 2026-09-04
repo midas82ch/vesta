@@ -27,6 +27,7 @@ Internet
 eine Exoscale Compute-Instanz
    +-- Web-Container
    +-- API-Container
+   +-- URL-Import-Worker (separate DB-Rolle)
    |
 Exoscale Managed PostgreSQL
 ```
@@ -44,6 +45,7 @@ Network Load Balancer
 Exoscale SKS Pro in ch-dk-2
    +-- mindestens zwei Web-Replikate
    +-- mindestens zwei API-Replikate
+   +-- mindestens ein URL-Import-Worker
    |
 Managed PostgreSQL mit geeigneter Redundanz- und Backup-Stufe
    |

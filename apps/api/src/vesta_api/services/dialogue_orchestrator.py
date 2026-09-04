@@ -78,6 +78,11 @@ def _build_match_query(
 ) -> MatchQuery:
     assert state.need is not None
     values = state.confirmed_values()
+    unknown_attributes = tuple(
+        attribute.key
+        for attribute in state.attributes
+        if attribute.status in ("unknown", "declined")
+    )
     return MatchQuery(
         need=state.need,
         language=state.locale,
@@ -85,8 +90,9 @@ def _build_match_query(
         dog=values.get("person.has_dog"),
         has_identity_document=values.get("person.has_identity_document"),
         gender=values.get("person.gender"),
-        age=values.get("person.age"),
+        is_adult=values.get("person.is_adult"),
         user_location=user_location,
+        unknown_attributes=unknown_attributes,
     )
 
 
@@ -128,6 +134,31 @@ class DialogueOrchestrator:
         )
         self._session_store.save(state)
         return self._advance(state, now, user_location)
+
+    def start_safety_review(
+        self,
+        locale: str,
+        now: datetime,
+        *,
+        session_id: str | None = None,
+    ) -> DialogueTurnResult:
+        created = self._session_store.create(locale, now, session_id=session_id)
+        state = DialogueState(
+            session_id=created.session_id,
+            locale=locale,
+            created_at=created.created_at,
+            expires_at=created.expires_at,
+            need="victim_support",
+            safety_status="review",
+        )
+        question = next(
+            question
+            for question in self._catalog.list_questions()
+            if question.key == "safety.immediate_danger"
+        )
+        state = state.with_question_asked(question.key)
+        self._session_store.save(state)
+        return DialogueTurnResult(state=state, question=question, match_result=None)
 
     def flag_safety_handoff(self, session_id: str, now: datetime) -> DialogueTurnResult:
         state = self._require_state(session_id, now)
@@ -176,6 +207,76 @@ class DialogueOrchestrator:
         self._session_store.save(state)
         return self._advance(state, now, user_location)
 
+    def mark_attribute_unknown(
+        self,
+        session_id: str,
+        key: str,
+        now: datetime,
+        *,
+        user_location: GeoPoint | None = None,
+    ) -> DialogueTurnResult:
+        state = self._require_state(session_id, now)
+        state = state.with_attribute(
+            AttributeState(key=key, value=None, status="unknown", source="user")
+        )
+        self._session_store.save(state)
+        return self._advance(state, now, user_location)
+
+    def resolve_safety_review(
+        self,
+        session_id: str,
+        *,
+        immediate_danger: bool | None,
+        status: str,
+        now: datetime,
+    ) -> DialogueTurnResult:
+        state = self._require_state(session_id, now)
+        if state.safety_status != "review":
+            raise KeyError("dialogue_is_not_waiting_for_safety_review")
+        state = state.with_attribute(
+            AttributeState(
+                key="safety.immediate_danger",
+                value=immediate_danger,
+                status=status,  # type: ignore[arg-type]
+                source="user",
+            )
+        )
+        state = DialogueState(
+            session_id=state.session_id,
+            locale=state.locale,
+            created_at=state.created_at,
+            expires_at=state.expires_at,
+            need="victim_support",
+            attributes=state.attributes,
+            safety_status="handoff",
+            declined_question_keys=state.declined_question_keys,
+            asked_question_keys=state.asked_question_keys,
+        )
+        self._session_store.save(state)
+        if immediate_danger is True:
+            return DialogueTurnResult(
+                state=state,
+                question=None,
+                match_result=MatchResult(
+                    candidates=(),
+                    human_handoff_required=True,
+                    handoff_reason="immediate_danger",
+                ),
+            )
+        victim_support = self._matching_service.match(
+            _build_match_query(state, now)
+        )
+        return DialogueTurnResult(
+            state=state,
+            question=None,
+            match_result=MatchResult(
+                candidates=victim_support.candidates,
+                human_handoff_required=True,
+                handoff_reason="victim_support_recommended",
+                excluded_offers=victim_support.excluded_offers,
+            ),
+        )
+
     def _require_state(self, session_id: str, now: datetime) -> DialogueState:
         state = self._session_store.get(session_id, now)
         if state is None:
@@ -188,6 +289,14 @@ class DialogueOrchestrator:
         now: datetime,
         user_location: GeoPoint | None = None,
     ) -> DialogueTurnResult:
+        if state.safety_status == "review":
+            question = next(
+                question
+                for question in self._catalog.list_questions()
+                if question.key == "safety.immediate_danger"
+            )
+            return DialogueTurnResult(state=state, question=question, match_result=None)
+
         if state.safety_status == "handoff":
             return DialogueTurnResult(
                 state=state,

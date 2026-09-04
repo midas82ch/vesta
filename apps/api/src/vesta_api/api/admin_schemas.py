@@ -120,6 +120,66 @@ class AdminOfferResponse(BaseModel):
     verified_at: datetime
     expires_at: datetime
     updated_at: datetime
+    localizations: dict[str, "OfferLocalizationResponse"] = Field(default_factory=dict)
+
+
+class OfferLocalizationResponse(BaseModel):
+    locale: str
+    name: str
+    summary: str
+    contact_note: str
+    status: Literal["machine_draft", "reviewed"]
+    revision: int
+    reviewed_by: str | None
+    reviewed_at: datetime | None
+    updated_at: datetime | None
+
+
+class OfferLocalizationWriteRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    summary: str = Field(min_length=1, max_length=1_000)
+    contact_note: str = Field(min_length=1, max_length=2_000)
+    status: Literal["machine_draft", "reviewed"]
+    revision: int | None = Field(default=None, ge=1)
+
+
+class OfferImportJobCreateRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=2_000)
+
+
+class OfferImportJobResponse(BaseModel):
+    id: str
+    source_url: str
+    normalized_url: str
+    status: Literal[
+        "queued",
+        "fetching",
+        "extracting",
+        "translating",
+        "ready_for_review",
+        "failed",
+    ]
+    requested_by: str
+    offer_id: str | None
+    source_language: str | None
+    content_sha256: str | None
+    extracted_data: dict[str, Any] | None
+    evidence: list[dict[str, str]]
+    duplicate_offer_ids: list[str]
+    error_code: str | None
+    error_detail: str | None
+    attempts: int
+    lease_expires_at: datetime | None
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+    updated_at: datetime
+
+
+class OfferImportJobListResponse(BaseModel):
+    jobs: list[OfferImportJobResponse]
+    limit: int
+    offset: int
 
 
 class AdminOfferListResponse(BaseModel):

@@ -91,7 +91,7 @@
       "locale": "fr",
       "free_text": "J'ai 17 ans et je suis une femme, je cherche un logement pour la nuit.",
       "expected_need_key": "sleep_tonight",
-      "expected_attribute_keys": ["person.age", "person.gender"],
+      "expected_attribute_keys": ["person.is_adult", "person.gender"],
       "forbidden_attribute_keys": []
     },
     {

@@ -1,0 +1,68 @@
+{
+  "source": "anonymized_from_eight_admin_audit_exports",
+  "cases": [
+    {
+      "id": "audit-01-counselling-declined-access",
+      "need": "counselling",
+      "answers": {"person.has_identity_document": "declined", "person.is_adult": "declined"},
+      "expected_outcome": "matches",
+      "expected_offer_ids": ["demo-counselling"],
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-02-basic-needs-no-id",
+      "need": "basic_needs",
+      "answers": {"person.has_identity_document": false},
+      "expected_outcome": "matches",
+      "expected_offer_ids": ["demo-basic-needs"],
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-03-basic-needs-no-id-repeat",
+      "need": "basic_needs",
+      "answers": {"person.has_identity_document": false},
+      "expected_outcome": "matches",
+      "expected_offer_ids": ["demo-basic-needs"],
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-04-sleep-general-adult",
+      "need": "sleep_tonight",
+      "answers": {"person.gender": "other", "person.is_adult": true},
+      "expected_outcome": "matches",
+      "expected_offer_ids": ["demo-sleep"],
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-05-sleep-general-adult-repeat",
+      "need": "sleep_tonight",
+      "answers": {"person.gender": "other", "person.is_adult": true},
+      "expected_outcome": "matches",
+      "expected_offer_ids": ["demo-sleep"],
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-06-sleep-question-only",
+      "need": "sleep_tonight",
+      "answers": {},
+      "expected_outcome": "question",
+      "expected_question_key": "access.is_adult",
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-07-counselling-no-id",
+      "need": "counselling",
+      "answers": {"person.has_identity_document": false},
+      "expected_outcome": "matches",
+      "expected_offer_ids": ["demo-counselling"],
+      "expected_ai_mode": "template"
+    },
+    {
+      "id": "audit-08-violence-safety-route",
+      "free_text": "A partner is violent.",
+      "expected_need": "victim_support",
+      "expected_outcome": "safety",
+      "expected_question_key": "safety.immediate_danger"
+    }
+  ]
+}

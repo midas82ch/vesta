@@ -88,6 +88,7 @@ class JsonDialogueCatalogRepository:
                 priority=int(item["priority"]),
                 ai_rephrasing_allowed=bool(item["ai_rephrasing_allowed"]),
                 localizations=dict(item["localizations"]),
+                need_keys=tuple(str(key) for key in item.get("need_keys", [])),
             )
             for item in sorted(payload["questions"], key=lambda item: item["priority"])
         )
@@ -201,6 +202,7 @@ _LIST_QUESTIONS = text(
         q.answer_type,
         q.priority,
         q.ai_rephrasing_allowed,
+        COALESCE(scope.need_keys, ARRAY[]::text[]) AS need_keys,
         COALESCE(loc.localizations, '{}'::jsonb) AS localizations
     FROM question_definitions AS q
     JOIN attribute_definitions AS ad ON ad.id = q.attribute_definition_id
@@ -216,6 +218,12 @@ _LIST_QUESTIONS = text(
         FROM question_localizations AS ql
         WHERE ql.question_id = q.id
     ) AS loc ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT array_agg(n.key ORDER BY n.sort_order) AS need_keys
+        FROM question_need_definitions AS qn
+        JOIN need_definitions AS n ON n.id = qn.need_id
+        WHERE qn.question_id = q.id
+    ) AS scope ON TRUE
     WHERE q.status = 'published'
     ORDER BY q.priority
     """
@@ -249,6 +257,7 @@ def _row_to_question(row: Mapping[str, Any]) -> QuestionDefinition:
         priority=int(row["priority"]),
         ai_rephrasing_allowed=bool(row["ai_rephrasing_allowed"]),
         localizations=dict(row["localizations"]),
+        need_keys=tuple(str(key) for key in row["need_keys"]),
     )
 
 

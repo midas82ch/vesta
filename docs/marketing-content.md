@@ -200,11 +200,12 @@ Vermittlungen und klare Verantwortung für aktuelle Informationen.
 
 **Klein starten. Gemeinsam lernen.**
 
-Der erste Pilot konzentriert sich auf drei Situationen:
+Der erste Pilot konzentriert sich auf vier Situationen:
 
 - einen Schlafplatz für heute Nacht finden;
 - Essen, Dusche oder medizinische Ersthilfe finden;
 - Beratung zu Sucht, Wohnen oder finanziellen Problemen finden.
+- Opferhilfe nach Gewalt, Drohungen oder einer Straftat finden.
 
 Der Prototyp braucht kein Konto und kein Personendossier. Wir prüfen ihn
 gemeinsam mit Betroffenen, Fachpersonen und verantwortlichen Organisationen.
@@ -321,7 +322,7 @@ Angeboten führen und Fachpersonen bei der Recherche entlasten.
 Vesta ist keine autonome AI-Beratung. Vesta hilft bei Sprache und
 Orientierung. Sicherheitsregeln, Zugangsbedingungen und die fachliche
 Verantwortung bleiben klar und nachvollziehbar bei Menschen. Der erste Pilot
-beschränkt sich auf Übernachtung, Grundversorgung und Beratung. Er kommt
+beschränkt sich auf Übernachtung, Grundversorgung, Beratung und Opferhilfe. Er kommt
 ohne Personendossiers aus.
 
 Der Lotse soll in der Praxis nützlich und sicher sein. Deshalb entwickeln
@@ -346,7 +347,8 @@ verbindet der Sozial-Lotse eine einfache mobile Oberfläche mit einem
 geprüften Angebotsregister, klaren Matching- und Sicherheitsregeln sowie
 einer klaren Übergabe an Menschen.
 
-Der Pilot konzentriert sich auf Übernachtung, Grundversorgung und Beratung.
+Der Pilot konzentriert sich auf Übernachtung, Grundversorgung, Beratung und
+Opferhilfe.
 Er verzichtet auf Personendossiers, automatische Zuteilungen und
 medizinische oder soziale Fallentscheide. Wir messen: erfolgreiche Kontakte,
 die Qualität der Informationen, die Zeitersparnis für Fachpersonen, nicht

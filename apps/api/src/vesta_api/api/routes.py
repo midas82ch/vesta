@@ -67,7 +67,7 @@ def create_match(
             dog=payload.dog,
             has_identity_document=payload.has_identity_document,
             gender=payload.gender,
-            age=payload.age,
+            is_adult=payload.is_adult,
             user_location=(
                 payload.user_location.to_domain()
                 if payload.user_location is not None

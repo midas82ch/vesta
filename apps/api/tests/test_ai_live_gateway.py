@@ -24,6 +24,7 @@ from vesta_api.domain.dialogue_catalog import (  # noqa: E402
     AttributeDefinition,
     AttributeOption,
     NeedDefinition,
+    QuestionDefinition,
 )
 
 
@@ -137,6 +138,59 @@ class OpenAiExchangeContextTest(unittest.TestCase):
         self.assertNotIn("beta", by_label["alpha"].response or "")
         self.assertIn("beta", by_label["beta"].response or "")
         self.assertNotIn("alpha", by_label["beta"].response or "")
+
+
+class QuestionRenderingContractTest(unittest.TestCase):
+    def test_ai_only_changes_text_and_catalog_keeps_controls(self) -> None:
+        gateway = object.__new__(OpenAiGateway)
+        gateway._create = lambda **_kwargs: {  # type: ignore[attr-defined,method-assign]
+            "text": "AI question",
+            "help_text": "AI help",
+        }
+        attribute = AttributeDefinition(
+            key="person.is_adult",
+            value_type="boolean",
+            confirmation_required=True,
+            skippable=True,
+            options=(
+                AttributeOption(
+                    value="true",
+                    sort_order=1,
+                    localizations={"de": {"label": "Ja"}},
+                ),
+                AttributeOption(
+                    value="false",
+                    sort_order=2,
+                    localizations={"de": {"label": "Nein"}},
+                ),
+            ),
+        )
+        question = QuestionDefinition(
+            key="access.is_adult",
+            attribute_key="person.is_adult",
+            answer_type="yes_no_unknown",
+            priority=40,
+            ai_rephrasing_allowed=True,
+            localizations={
+                "de": {
+                    "canonical_text": "18 oder älter?",
+                    "help_text": "Zugangsregel",
+                    "unknown_label": "Weiss ich nicht",
+                    "decline_label": "Keine Angabe",
+                }
+            },
+        )
+
+        rendered = gateway.render_question(
+            question=question,
+            attribute=attribute,
+            locale="de",
+        )
+
+        self.assertEqual("AI question", rendered.text)
+        self.assertEqual(("true", "false"), tuple(option.value for option in rendered.options))
+        self.assertEqual("Weiss ich nicht", rendered.unknown_label)
+        self.assertEqual("Keine Angabe", rendered.decline_label)
 
 
 if __name__ == "__main__":

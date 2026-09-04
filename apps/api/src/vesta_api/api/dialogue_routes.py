@@ -1,11 +1,13 @@
 import json
 import logging
 import secrets
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from vesta_api.ai.fallback import TemplateGateway
 from vesta_api.ai.gateway import AiGateway
 from vesta_api.api.dialogue_schemas import (
     AnswerRequest,
@@ -14,6 +16,7 @@ from vesta_api.api.dialogue_schemas import (
     ExplainedCandidateResponse,
     ExplanationReasonResponse,
     ExplanationResponse,
+    HandoffResourceResponse,
     InterpretRequest,
     InterpretResponse,
     QuestionOptionResponse,
@@ -22,12 +25,9 @@ from vesta_api.api.dialogue_schemas import (
 )
 from vesta_api.api.localization import disclaimer_for
 from vesta_api.api.schemas import candidate_to_response
+from vesta_api.domain.ai_models import ExplanationResult
 from vesta_api.domain.dialogue_catalog import QuestionDefinition
-from vesta_api.domain.models import (
-    MAXIMUM_PERSON_AGE,
-    MINIMUM_PERSON_AGE,
-    MatchResult,
-)
+from vesta_api.domain.models import MatchResult
 from vesta_api.domain.workflow_audit_models import (
     NewWorkflowAuditEvent,
     WorkflowStage,
@@ -36,6 +36,7 @@ from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.services.dialogue_orchestrator import DialogueOrchestrator, DialogueTurnResult
 from vesta_api.services.result_grounding import build_grounding_bundle
+from vesta_api.services.safety import detect_safety_signal, safety_resources
 
 router = APIRouter(prefix="/v1/dialogue")
 logger = logging.getLogger(__name__)
@@ -44,27 +45,19 @@ def _validated_answer_value(
     question: QuestionDefinition,
     payload: AnswerRequest,
 ) -> object | None:
+    if payload.declined and payload.unknown:
+        raise HTTPException(status_code=422, detail="answer_state_is_ambiguous")
     if payload.declined or payload.unknown:
+        if payload.value is not None:
+            raise HTTPException(status_code=422, detail="answer_value_must_be_empty")
         return None
 
-    value = payload.value
-    if question.attribute_key != "person.age":
-        return value
+    if question.answer_type == "yes_no_unknown" and not isinstance(payload.value, bool):
+        raise HTTPException(status_code=422, detail="boolean_answer_required")
+    if question.answer_type == "single_choice" and not isinstance(payload.value, str):
+        raise HTTPException(status_code=422, detail="choice_answer_required")
 
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="age_must_be_an_integer",
-        )
-    if not MINIMUM_PERSON_AGE <= value <= MAXIMUM_PERSON_AGE:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=(
-                f"age_must_be_between_{MINIMUM_PERSON_AGE}_and_"
-                f"{MAXIMUM_PERSON_AGE}"
-            ),
-        )
-    return value
+    return payload.value
 
 
 def dialogue_orchestrator(request: Request) -> DialogueOrchestrator:
@@ -114,6 +107,7 @@ def _record_workflow_event(
 @router.post("/interpret", response_model=InterpretResponse)
 def interpret(
     payload: InterpretRequest,
+    orchestrator: Annotated[DialogueOrchestrator, Depends(dialogue_orchestrator)],
     gateway: Annotated[AiGateway, Depends(ai_gateway)],
     catalog: Annotated[DialogueCatalogRepository, Depends(dialogue_catalog)],
     workflow_log: Annotated[WorkflowAuditLogRepository, Depends(workflow_audit_log)],
@@ -127,6 +121,41 @@ def interpret(
         summary=f"Eingabe: {payload.free_text[:240]}",
         payload={"free_text": payload.free_text, "language": payload.language},
     )
+    safety_signal = detect_safety_signal(payload.free_text, payload.language)
+    if safety_signal is not None:
+        _record_workflow_event(
+            workflow_log,
+            workflow_id=workflow_id,
+            stage="system",
+            event_type="safety_signal_detected",
+            summary="Deterministische Sicherheitsregel startet den Opferhilfe-Dialog.",
+            payload={
+                "safety_code": safety_signal.code,
+                "detector_version": "2026-09-02",
+            },
+        )
+        safety_turn = orchestrator.start_safety_review(
+            locale=payload.language,
+            now=datetime.now(UTC),
+            session_id=workflow_id,
+        )
+        return InterpretResponse(
+            workflow_id=workflow_id,
+            need_key="victim_support",
+            proposals=[],
+            requires_confirmation=[],
+            ambiguities=[],
+            source="deterministic_safety",
+            outcome="safety",
+            safety_turn=_turn_response(
+                safety_turn,
+                gateway=gateway,
+                catalog=catalog,
+                locale=payload.language,
+                workflow_log=workflow_log,
+                location_used=False,
+            ),
+        )
     result = gateway.interpret(
         free_text=payload.free_text,
         locale=payload.language,
@@ -218,10 +247,42 @@ def _explain_candidates(
 ) -> list[ExplainedCandidateResponse]:
     if match_result is None:
         return []
+    if not match_result.candidates:
+        return []
+    bundles = [build_grounding_bundle(candidate) for candidate in match_result.candidates]
+
+    def cache_key(index: int) -> tuple[object, ...]:
+        return _grounding_cache_key(bundles[index], locale)
+
+    first_index_by_key: dict[tuple[object, ...], int] = {}
+    for index in range(len(bundles)):
+        first_index_by_key.setdefault(cache_key(index), index)
+
+    def explain_index(index: int) -> ExplanationResult:
+        return gateway.explain(
+            bundle=bundles[index], locale=locale, session_id=session_id
+        )
+
+    explanations: dict[tuple[object, ...], ExplanationResult] = {}
+    with ThreadPoolExecutor(max_workers=min(3, len(first_index_by_key))) as executor:
+        futures = {
+            key: executor.submit(explain_index, index)
+            for key, index in first_index_by_key.items()
+        }
+        for key, future in futures.items():
+            try:
+                explanations[key] = future.result()
+            except Exception:
+                logger.exception("candidate_explanation_failed: session_id=%s", session_id)
+                fallback_index = first_index_by_key[key]
+                explanations[key] = TemplateGateway().explain(
+                    bundle=bundles[fallback_index],
+                    locale=locale,
+                )
+
     explained: list[ExplainedCandidateResponse] = []
-    for candidate in match_result.candidates:
-        bundle = build_grounding_bundle(candidate)
-        explanation = gateway.explain(bundle=bundle, locale=locale, session_id=session_id)
+    for index, candidate in enumerate(match_result.candidates):
+        explanation = explanations[cache_key(index)]
         explained.append(
             ExplainedCandidateResponse(
                 candidate=candidate_to_response(candidate),
@@ -245,6 +306,49 @@ def _explain_candidates(
             )
         )
     return explained
+
+
+def _grounding_cache_key(bundle: object, locale: str) -> tuple[object, ...]:
+    return (
+        locale,
+        tuple(
+            (fact.id, fact.type, repr(fact.value))
+            for fact in bundle.facts  # type: ignore[attr-defined]
+        ),
+        bundle.match_reasons,  # type: ignore[attr-defined]
+        bundle.uncertainties,  # type: ignore[attr-defined]
+        bundle.allowed_next_actions,  # type: ignore[attr-defined]
+        bundle.forbidden_claims,  # type: ignore[attr-defined]
+    )
+
+
+def _record_explanation_deduplication(
+    match_result: MatchResult | None,
+    *,
+    locale: str,
+    workflow_log: WorkflowAuditLogRepository,
+    workflow_id: str,
+) -> None:
+    if match_result is None or len(match_result.candidates) < 2:
+        return
+    bundles = [build_grounding_bundle(candidate) for candidate in match_result.candidates]
+    unique_count = len({_grounding_cache_key(bundle, locale) for bundle in bundles})
+    if unique_count == len(bundles):
+        return
+    _record_workflow_event(
+        workflow_log,
+        workflow_id=workflow_id,
+        stage="system",
+        event_type="ai_explanations_deduplicated",
+        summary=(
+            f"Systemlogik fasst {len(bundles)} Faktenpakete zu "
+            f"{unique_count} AI-Erklärungen zusammen."
+        ),
+        payload={
+            "candidate_count": len(bundles),
+            "unique_fact_bundle_count": unique_count,
+        },
+    )
 
 
 def _question_text(question: QuestionDefinition, locale: str) -> str:
@@ -306,20 +410,32 @@ def _record_system_logic(
             stage="system",
             event_type="matching_completed",
             summary=(
-                f"Systemlogik findet {candidate_count} passendes Angebot"
-                f"{'' if candidate_count == 1 else 'e'}."
+                f"Systemlogik findet {candidate_count} "
+                f"{'passendes Angebot' if candidate_count == 1 else 'passende Angebote'}."
             ),
             payload={
                 **state_payload,
                 "matching": {
                     "candidates": [
                         {
+                            "rank": rank,
                             "offer_id": candidate.offer.id,
                             "offer_name": candidate.offer.name,
                             "reasons": list(candidate.reasons),
                             "uncertainties": list(candidate.uncertainties),
+                            "distance_band": _distance_band(candidate.distance_meters),
                         }
-                        for candidate in turn.match_result.candidates
+                        for rank, candidate in enumerate(
+                            turn.match_result.candidates, start=1
+                        )
+                    ],
+                    "excluded_offers": [
+                        {
+                            "offer_id": excluded.offer_id,
+                            "offer_name": excluded.offer_name,
+                            "reason": excluded.reason,
+                        }
+                        for excluded in turn.match_result.excluded_offers
                     ],
                     "human_handoff_required": (
                         turn.match_result.human_handoff_required
@@ -346,8 +462,8 @@ def _output_summary(response: DialogueTurnResponse) -> str:
     if response.candidates:
         candidate_count = len(response.candidates)
         return (
-            f"Antwort an die Person enthält {candidate_count} Angebot"
-            f"{'' if candidate_count == 1 else 'e'}."
+            f"Antwort an die Person enthält {candidate_count} "
+            f"{'passendes Angebot' if candidate_count == 1 else 'passende Angebote'}."
         )
     if response.human_handoff_required:
         return "Antwort an die Person empfiehlt eine menschliche Weiterleitung."
@@ -370,8 +486,23 @@ def _audit_output_payload(
             candidate = item.get("candidate")
             if isinstance(candidate, dict):
                 candidate.pop("distance_meters", None)
+                offer = candidate.get("offer")
+                if isinstance(offer, dict):
+                    offer.pop("directions_url", None)
     payload["location_used"] = location_used
     return payload
+
+
+def _distance_band(distance_meters: int | None) -> str:
+    if distance_meters is None:
+        return "unknown"
+    if distance_meters < 1_000:
+        return "under_1_km"
+    if distance_meters < 5_000:
+        return "1_to_5_km"
+    if distance_meters < 10_000:
+        return "5_to_10_km"
+    return "over_10_km"
 
 
 def _turn_response(
@@ -388,6 +519,21 @@ def _turn_response(
         workflow_log=workflow_log,
         locale=locale,
         location_used=location_used,
+    )
+    _record_explanation_deduplication(
+        turn.match_result,
+        locale=locale,
+        workflow_log=workflow_log,
+        workflow_id=turn.state.session_id,
+    )
+    handoff_reason = turn.match_result.handoff_reason if turn.match_result else None
+    resources = (
+        safety_resources(
+            locale,
+            immediate_danger=handoff_reason == "immediate_danger",
+        )
+        if handoff_reason in ("immediate_danger", "victim_support_recommended")
+        else ()
     )
     response = DialogueTurnResponse(
         session_id=turn.state.session_id,
@@ -417,7 +563,8 @@ def _turn_response(
         human_handoff_required=(
             turn.match_result.human_handoff_required if turn.match_result else False
         ),
-        handoff_reason=turn.match_result.handoff_reason if turn.match_result else None,
+        handoff_reason=handoff_reason,
+        handoff_resources=[HandoffResourceResponse(**resource) for resource in resources],
         disclaimer=disclaimer_for(locale),
     )
     _record_workflow_event(
@@ -483,8 +630,36 @@ def answer(
     now = datetime.now(UTC)
 
     try:
-        if payload.declined:
+        if question.attribute_key == "safety.immediate_danger":
+            answer_status = (
+                "declined"
+                if payload.declined
+                else "unknown"
+                if payload.unknown
+                else "confirmed"
+            )
+            immediate_danger = (
+                payload.value if isinstance(payload.value, bool) else None
+            )
+            turn = orchestrator.resolve_safety_review(
+                session_id=payload.session_id,
+                immediate_danger=immediate_danger,
+                status=answer_status,
+                now=now,
+            )
+        elif payload.declined:
             turn = orchestrator.decline_attribute(
+                session_id=payload.session_id,
+                key=question.attribute_key,
+                now=now,
+                user_location=(
+                    payload.user_location.to_domain()
+                    if payload.user_location is not None
+                    else None
+                ),
+            )
+        elif payload.unknown:
+            turn = orchestrator.mark_attribute_unknown(
                 session_id=payload.session_id,
                 key=question.attribute_key,
                 now=now,

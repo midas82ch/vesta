@@ -145,6 +145,10 @@ class AiGateway:
         locale: str,
         session_id: str | None = None,
     ) -> RenderedQuestion:
+        if not question.ai_rephrasing_allowed:
+            return self._template.render_question(
+                question=question, attribute=attribute, locale=locale
+            )
         if self._enabled and self._live is not None:
             try:
                 result = self._live.render_question(

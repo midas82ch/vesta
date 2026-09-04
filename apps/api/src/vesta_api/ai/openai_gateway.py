@@ -1,6 +1,7 @@
 import json
 from contextvars import ContextVar
 
+from vesta_api.ai.fallback import TemplateGateway
 from vesta_api.ai.live_gateway import (
     _EXPLANATION_SCHEMA,
     _EXPLANATION_SYSTEM,
@@ -18,7 +19,6 @@ from vesta_api.domain.ai_models import (
     ExplanationResult,
     GroundingBundle,
     InterpretationResult,
-    QuestionOption,
     RenderedQuestion,
 )
 from vesta_api.domain.audit_models import AiExchange
@@ -110,31 +110,26 @@ class OpenAiGateway:
         locale: str,
     ) -> RenderedQuestion:
         canonical = question.localizations.get(locale) or question.localizations["de"]
-        allowed_values = (
-            ", ".join(o.value for o in attribute.options)
-            if attribute.options
-            else "ja / nein / weiss nicht"
-        )
         payload = self._create(
             system=_QUESTION_SYSTEM,
             user=(
                 f"Sprache: {ai_locale_name(locale)}\n"
                 f"Kanonischer Text: {canonical['canonical_text']}\n"
                 f"Hilfetext: {canonical.get('help_text', '')}\n"
-                f"Erlaubte Antwortoptionen: {allowed_values}\n\n"
                 "Formuliere nur die Frage verstaendlicher."
             ),
             schema_name="rendered_question",
             schema=_QUESTION_SCHEMA,
         )
+        controls = TemplateGateway().render_question(
+            question=question, attribute=attribute, locale=locale
+        )
         return RenderedQuestion(
             text=payload["text"],
             help_text=payload["help_text"],
-            unknown_label=payload["unknown_label"],
-            decline_label=payload["decline_label"],
-            options=tuple(
-                QuestionOption(value=o["value"], label=o["label"]) for o in payload["options"]
-            ),
+            unknown_label=controls.unknown_label,
+            decline_label=controls.decline_label,
+            options=controls.options,
             source="ai",
         )
 
