@@ -182,6 +182,18 @@ function nullableNumber(value: string) {
   return value.trim() ? Number(value) : null;
 }
 
+function acceptedGenderRestrictions(value: string) {
+  const restrictions = Array.from(
+    new Set(
+      value
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+  return restrictions.includes("all") ? [] : restrictions;
+}
+
 function draftPayload(draft: OfferDraft) {
   return {
     name: draft.name.trim(),
@@ -192,7 +204,7 @@ function draftPayload(draft: OfferDraft) {
     access_rules: {
       accepts_dogs: nullableBoolean(draft.accepts_dogs),
       identity_document_required: nullableBoolean(draft.identity_document_required),
-      accepted_genders: draft.accepted_genders.split(",").map((item) => item.trim()).filter(Boolean),
+      accepted_genders: acceptedGenderRestrictions(draft.accepted_genders),
       minimum_age: nullableNumber(draft.minimum_age),
       maximum_age: nullableNumber(draft.maximum_age),
     },
@@ -522,7 +534,7 @@ export default function AdminOffersPage() {
             <label className="field" htmlFor="offer-availability">Verfügbarkeit<select id="offer-availability" value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value as Offer["availability"] }))}><option value="confirmed">Bestätigt</option><option value="call_to_confirm">Vorher abklären</option><option value="unknown">Unbekannt</option></select></label>
             <label className="field" htmlFor="offer-dogs">Tiere/Hunde<select id="offer-dogs" value={draft.accepts_dogs} onChange={(e) => setDraft((d) => ({ ...d, accepts_dogs: e.target.value as OfferDraft["accepts_dogs"] }))}><option value="unknown">Unbekannt</option><option value="yes">Akzeptiert</option><option value="no">Nicht akzeptiert</option></select></label>
             <label className="field" htmlFor="offer-id">Ausweis erforderlich<select id="offer-id" value={draft.identity_document_required} onChange={(e) => setDraft((d) => ({ ...d, identity_document_required: e.target.value as OfferDraft["identity_document_required"] }))}><option value="unknown">Unbekannt</option><option value="yes">Ja</option><option value="no">Nein</option></select></label>
-            <label className="field" htmlFor="offer-genders">Zielgruppen, kommagetrennt<input id="offer-genders" value={draft.accepted_genders} onChange={(e) => setDraft((d) => ({ ...d, accepted_genders: e.target.value }))} /></label>
+            <label className="field" htmlFor="offer-genders">Zielgruppen (leer = keine Einschränkung)<input id="offer-genders" placeholder="z. B. finta" value={draft.accepted_genders} onChange={(e) => setDraft((d) => ({ ...d, accepted_genders: e.target.value }))} /></label>
             <label className="field" htmlFor="offer-min-age">Mindestalter<input id="offer-min-age" max="120" min="0" type="number" value={draft.minimum_age} onChange={(e) => setDraft((d) => ({ ...d, minimum_age: e.target.value }))} /></label>
             <label className="field" htmlFor="offer-max-age">Höchstalter<input id="offer-max-age" max="120" min="0" type="number" value={draft.maximum_age} onChange={(e) => setDraft((d) => ({ ...d, maximum_age: e.target.value }))} /></label>
           </div></fieldset>

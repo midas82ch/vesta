@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -38,6 +39,17 @@ class RiskFlag(StrEnum):
     MINOR_IN_DANGER = "minor_in_danger"
 
 
+def normalize_accepted_genders(values: Iterable[str]) -> tuple[str, ...]:
+    """Return canonical restrictions; an empty tuple means unrestricted access."""
+
+    normalized = tuple(
+        dict.fromkeys(value.strip().lower() for value in values if value.strip())
+    )
+    if "all" in normalized:
+        return ()
+    return normalized
+
+
 @dataclass(frozen=True)
 class AccessRules:
     accepts_dogs: bool | None = None
@@ -45,6 +57,13 @@ class AccessRules:
     accepted_genders: tuple[str, ...] = ()
     minimum_age: int | None = None
     maximum_age: int | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "accepted_genders",
+            normalize_accepted_genders(self.accepted_genders),
+        )
 
 
 @dataclass(frozen=True)

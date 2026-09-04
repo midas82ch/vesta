@@ -18,6 +18,7 @@ from vesta_api.api.admin_routes import (  # noqa: E402
     offer_import_job_repository,
     workflow_audit_log_repository,
 )
+from vesta_api.api.admin_schemas import AdminAccessRulesInput  # noqa: E402
 from vesta_api.config import settings  # noqa: E402
 from vesta_api.domain.audit_models import NewAiAuditEntry  # noqa: E402
 from vesta_api.domain.ingestion_models import IngestionRun  # noqa: E402
@@ -73,6 +74,11 @@ class AdminRoutesTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         app.dependency_overrides.clear()
+
+    def test_admin_access_rules_normalize_all_to_no_restriction(self) -> None:
+        access = AdminAccessRulesInput(accepted_genders=[" ALL ", "finta"])
+
+        self.assertEqual([], access.accepted_genders)
 
     def test_list_requires_a_session(self) -> None:
         with TestClient(app) as client:

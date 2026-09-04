@@ -238,6 +238,34 @@ class MatchingServiceTest(unittest.TestCase):
 
         self.assertEqual((), result.candidates)
 
+    def test_all_gender_marker_is_unrestricted_for_pluto_offer(self) -> None:
+        pluto = offer(
+            offer_id="pluto",
+            name="Notschlafstelle für junge Menschen in Bern",
+            accepted_genders=("all",),
+            minimum_age=14,
+            maximum_age=23,
+        )
+        service = MatchingService(InMemoryOfferRepository((pluto,)))
+
+        result = service.match(
+            MatchQuery(
+                need=Need.SLEEP_TONIGHT,
+                language="de",
+                gender="finta",
+                is_adult=False,
+                at=NOW,
+            )
+        )
+
+        self.assertEqual(1, len(result.candidates))
+        self.assertEqual((), result.candidates[0].offer.access.accepted_genders)
+        self.assertNotIn("target_group_matches", result.candidates[0].reasons)
+        self.assertIn("age_rule_requires_contact", result.candidates[0].uncertainties)
+        self.assertFalse(
+            any(item.reason == "target_group_not_accepted" for item in result.excluded_offers)
+        )
+
     def test_safety_rule_short_circuits_matching(self) -> None:
         service = MatchingService(InMemoryOfferRepository((offer(),)))
 

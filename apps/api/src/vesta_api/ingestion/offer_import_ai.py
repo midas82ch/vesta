@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from vesta_api.domain.audit_models import NewAiAuditEntry
+from vesta_api.domain.models import normalize_accepted_genders
 from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,13 @@ class ExtractedOffer:
     minimum_age: int | None
     maximum_age: int | None
     evidence: tuple[dict[str, str], ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "accepted_genders",
+            normalize_accepted_genders(self.accepted_genders),
+        )
 
 
 @dataclass(frozen=True)
@@ -215,7 +223,9 @@ class OpenAiOfferImportGateway:
             "Adressen, Verfuegbarkeit oder Zugangsbedingungen. Unbelegte optionale Werte "
             "muessen null beziehungsweise leer sein. Alterswerte nur uebernehmen, wenn eine "
             "Zahl in der Quelle ausdruecklich als Zugangsgrenze genannt wird. evidence enthaelt "
-            "kurze woertliche Quellenbelege, niemals die ganze Seite. Darija hat Code ary."
+            "kurze woertliche Quellenbelege, niemals die ganze Seite. Eine leere Liste bei "
+            "accepted_genders bedeutet Zugang fuer alle; verwende dort niemals den Wert all. "
+            "Darija hat Code ary."
         )
         payload = self._call(
             system=system_prompt,
@@ -253,7 +263,9 @@ class OpenAiOfferImportGateway:
             address=str(payload["address"]).strip() if payload["address"] else None,
             accepts_dogs=payload["accepts_dogs"],  # type: ignore[arg-type]
             identity_document_required=payload["identity_document_required"],  # type: ignore[arg-type]
-            accepted_genders=tuple(str(value) for value in payload["accepted_genders"]),  # type: ignore[union-attr]
+            accepted_genders=normalize_accepted_genders(
+                str(value) for value in payload["accepted_genders"]  # type: ignore[union-attr]
+            ),
             minimum_age=int(minimum_age) if minimum_age is not None else None,
             maximum_age=int(maximum_age) if maximum_age is not None else None,
             evidence=evidence,

@@ -1,5 +1,6 @@
 import sys
 import unittest
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -185,6 +186,16 @@ EXTRACTED = ExtractedOffer(
     maximum_age=None,
     evidence=({"field": "name", "excerpt": "Beratung"},),
 )
+
+
+class ExtractedOfferTest(unittest.TestCase):
+    def test_normalizes_all_gender_marker_to_no_restriction(self) -> None:
+        extracted = replace(
+            EXTRACTED,
+            accepted_genders=(" ALL ", "finta"),
+        )
+
+        self.assertEqual((), extracted.accepted_genders)
 
 
 class FakeFetcher:

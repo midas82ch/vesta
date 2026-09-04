@@ -8,6 +8,7 @@ from vesta_api.domain.admin_catalog_models import (
     SUPPORTED_CATEGORY_ICONS,
     SUPPORTED_CATEGORY_LOCALES,
 )
+from vesta_api.domain.models import normalize_accepted_genders
 
 
 class AdminLoginRequest(BaseModel):
@@ -243,6 +244,11 @@ class AdminAccessRulesInput(BaseModel):
     accepted_genders: list[str] = Field(default_factory=list, max_length=20)
     minimum_age: int | None = Field(default=None, ge=0, le=120)
     maximum_age: int | None = Field(default=None, ge=0, le=120)
+
+    @field_validator("accepted_genders")
+    @classmethod
+    def normalize_gender_restrictions(cls, values: list[str]) -> list[str]:
+        return list(normalize_accepted_genders(values))
 
     @model_validator(mode="after")
     def validate_age_range(self) -> "AdminAccessRulesInput":

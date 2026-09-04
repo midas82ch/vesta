@@ -187,6 +187,12 @@ class NextQuestionPolicyTest(unittest.TestCase):
 
         self.assertIsNone(policy.next_question(_state(), candidates))
 
+    def test_all_gender_marker_does_not_create_a_target_group_question(self) -> None:
+        policy = NextQuestionPolicy(QUESTIONS)
+        candidates = (_candidate(accepted_genders=("all",)),)
+
+        self.assertIsNone(policy.next_question(_state(), candidates))
+
     def test_does_not_ask_adult_question_for_an_unresolvable_age_rule(self) -> None:
         policy = NextQuestionPolicy(QUESTIONS)
         candidates = (_candidate(minimum_age=21),)

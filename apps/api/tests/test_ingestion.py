@@ -77,6 +77,15 @@ class OfferCatalogTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             OfferCatalog.model_validate(payload)
 
+    def test_catalog_normalizes_all_gender_marker_to_no_restriction(self) -> None:
+        catalog_path = REPOSITORY_ROOT / "data" / "sources" / "bern_offers.json"
+        payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+        payload["offers"][0]["access"]["accepted_genders"] = ["ALL", "finta"]
+
+        catalog = OfferCatalog.model_validate(payload)
+
+        self.assertEqual([], catalog.offers[0].access.accepted_genders)
+
     def test_new_clean_slug_gets_a_stable_id_without_test_prefix(self) -> None:
         connection = Mock()
         connection.execute.return_value.scalar_one_or_none.return_value = None

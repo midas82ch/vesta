@@ -16,6 +16,8 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from sqlalchemy import Connection, Engine, text
 
+from vesta_api.domain.models import normalize_accepted_genders
+
 USER_AGENT = "VestaPrototypeOfferVerifier/0.2 (+https://www.vesta-app.ch)"
 # Immutable UUID namespace used by already imported records. This is an
 # identifier only and is never requested or exposed as the public site URL.
@@ -30,6 +32,11 @@ class CatalogAccessRules(BaseModel):
     accepted_genders: list[str] = Field(default_factory=list)
     minimum_age: int | None = None
     maximum_age: int | None = None
+
+    @field_validator("accepted_genders")
+    @classmethod
+    def normalize_gender_restrictions(cls, values: list[str]) -> list[str]:
+        return list(normalize_accepted_genders(values))
 
 
 class CatalogSource(BaseModel):
