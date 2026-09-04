@@ -92,6 +92,24 @@ _INSERT_QUEUE_CHANGE = text(
     """
 )
 
+_CLAIM_NEXT = text(
+    _SELECT
+    + """
+    WHERE j.id = (
+        SELECT id FROM offer_import_jobs
+        WHERE (
+            status = 'queued'
+            OR (status IN ('fetching', 'extracting', 'translating')
+                AND lease_expires_at < now())
+        ) AND attempts < 3
+        ORDER BY created_at
+        FOR UPDATE SKIP LOCKED
+        LIMIT 1
+    )
+    FOR UPDATE OF j
+    """
+)
+
 
 class PostgresOfferImportJobRepository:
     def __init__(self, database_url: str, *, engine: Engine | None = None) -> None:
@@ -188,25 +206,7 @@ class PostgresOfferImportJobRepository:
     def claim_next(self, *, lease: timedelta) -> OfferImportJob | None:
         lease_seconds = int(lease.total_seconds())
         with self._engine.begin() as connection:
-            row = connection.execute(
-                text(
-                    _SELECT
-                    + """
-                    WHERE j.id = (
-                        SELECT id FROM offer_import_jobs
-                        WHERE (
-                            status = 'queued'
-                            OR (status IN ('fetching', 'extracting', 'translating')
-                                AND lease_expires_at < now())
-                        ) AND attempts < 3
-                        ORDER BY created_at
-                        FOR UPDATE SKIP LOCKED
-                        LIMIT 1
-                    )
-                    FOR UPDATE
-                    """
-                )
-            ).mappings().one_or_none()
+            row = connection.execute(_CLAIM_NEXT).mappings().one_or_none()
             if row is None:
                 return None
             connection.execute(
