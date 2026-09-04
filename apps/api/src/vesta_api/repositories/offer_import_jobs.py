@@ -79,6 +79,19 @@ FROM offer_import_jobs j
 JOIN admin_users u ON u.id = j.requested_by
 """
 
+_INSERT_QUEUE_CHANGE = text(
+    """
+    INSERT INTO admin_change_log (
+        id, admin_user_id, admin_username, entity_type,
+        entity_id, action, after_data
+    ) VALUES (
+        :change_id, CAST(:admin_id AS uuid), :username,
+        'offer_import', :entity_id, 'queued',
+        jsonb_build_object('source_url', CAST(:source_url AS text))
+    )
+    """
+)
+
 
 class PostgresOfferImportJobRepository:
     def __init__(self, database_url: str, *, engine: Engine | None = None) -> None:
@@ -106,18 +119,7 @@ class PostgresOfferImportJobRepository:
                 },
             )
             connection.execute(
-                text(
-                    """
-                    INSERT INTO admin_change_log (
-                        id, admin_user_id, admin_username, entity_type,
-                        entity_id, action, after_data
-                    ) VALUES (
-                        :change_id, CAST(:admin_id AS uuid), :username,
-                        'offer_import', :entity_id, 'queued',
-                        jsonb_build_object('source_url', :source_url)
-                    )
-                    """
-                ),
+                _INSERT_QUEUE_CHANGE,
                 {
                     "change_id": uuid4(),
                     "admin_id": admin.id,

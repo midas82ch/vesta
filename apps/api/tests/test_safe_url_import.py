@@ -21,11 +21,15 @@ from vesta_api.ingestion.safe_url import (  # noqa: E402
     normalize_offer_url,
 )
 from vesta_api.repositories.offer_import_jobs import (  # noqa: E402
+    _INSERT_QUEUE_CHANGE,
     InMemoryOfferImportJobRepository,
 )
 
 
 class SafeUrlTest(unittest.TestCase):
+    def test_queue_audit_casts_url_before_building_json(self) -> None:
+        self.assertIn("CAST(:source_url AS text)", str(_INSERT_QUEUE_CHANGE))
+
     def test_normalizes_https_and_removes_fragment(self) -> None:
         self.assertEqual(
             "https://example.org/offer?q=1",
