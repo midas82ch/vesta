@@ -472,6 +472,8 @@ class AdminRoutesTest(unittest.TestCase):
         self.assertEqual("imported", offer["origin"])
         self.assertTrue(offer["is_demo"])
         self.assertEqual("Vesta Testfixture", offer["source_label"])
+        self.assertEqual("reviewed", offer["localizations"]["de"]["status"])
+        self.assertEqual(offer["name"], offer["localizations"]["de"]["name"])
 
     def test_offers_support_pagination(self) -> None:
         with TestClient(app) as client:

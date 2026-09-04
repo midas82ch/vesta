@@ -432,35 +432,7 @@ def list_admin_offers(
     all_offers = offers.list_offers()
     selected_offers = all_offers[offset : offset + limit]
     return AdminOfferListResponse(
-        offers=[
-            AdminOfferResponse(
-                id=offer.id,
-                slug=offer.slug,
-                name=offer.name,
-                organization_name=offer.organization_name,
-                summary=offer.summary,
-                needs=list(offer.needs),
-                languages=list(offer.languages),
-                access_rules=offer.access_rules,
-                availability=offer.availability,
-                lifecycle=offer.lifecycle,
-                origin=offer.origin,
-                management_mode=offer.management_mode,
-                revision=offer.revision,
-                is_demo=offer.is_demo,
-                contact_note=offer.contact_note,
-                address=offer.address,
-                latitude=offer.latitude,
-                longitude=offer.longitude,
-                source_label=offer.source_label,
-                source_url=offer.source_url,
-                verified_by=offer.verified_by,
-                verified_at=offer.verified_at,
-                expires_at=offer.expires_at,
-                updated_at=offer.updated_at,
-            )
-            for offer in selected_offers
-        ],
+        offers=[_offer_response(offer) for offer in selected_offers],
         total=len(all_offers),
         limit=limit,
         offset=offset,
