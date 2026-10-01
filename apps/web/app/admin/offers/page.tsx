@@ -4,6 +4,7 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { AdminNav } from "@/components/admin-nav";
 import { Button } from "@/components/ui";
+import { missingServiceRequirementMessage } from "@/lib/admin-offer-guidance";
 
 type Category = {
   key: string;
@@ -503,7 +504,7 @@ export default function AdminOffersPage() {
               : detail === "provider_approval_required"
                 ? "Vor der Veröffentlichung muss die Zustimmung der Institution dokumentiert sein."
               : detail === "offer_requires_confirmed_services"
-                ? "Vor der Veröffentlichung braucht jeder zugeordnete Bereich mindestens ein belegtes Leistungsmerkmal."
+                ? missingServiceRequirementMessage(draft, services, categories)
               : "Status konnte nicht geändert werden.",
       );
     } finally {
@@ -563,7 +564,7 @@ export default function AdminOffersPage() {
     <main className="admin-shell admin-offers-shell" id="main-content">
       <AdminNav />
       <div className="admin-heading"><div><p className="eyebrow">Angebotsregister</p><h1>Angebote & Mapping</h1></div><Button onClick={logout} variant="ghost">Abmelden</Button></div>
-      <p className="admin-intro">Die Matrix zeigt, welche aktiven Kategorien zu einem Angebot führen. Eine manuelle Änderung schützt das Angebot vor späterem Überschreiben durch den Import.</p>
+      <p className="admin-intro">Die Häkchen in der Tabelle bestimmen, bei welchen Anliegen ein Angebot gefunden werden kann. Vor der Veröffentlichung müssen Sie im Formular zusätzlich auswählen, welche konkreten Leistungen durch die angegebene Quelle belegt sind. Eine manuelle Änderung schützt das Angebot vor späterem Überschreiben durch den Import.</p>
       {verificationWarnings.length > 0 && <section className="admin-panel" aria-labelledby="verification-warnings"><h2 id="verification-warnings">Anstehende Nachprüfungen</h2><ul>{verificationWarnings.map(({ offer, days }) => <li key={offer.id}><button className="admin-text-button" onClick={() => selectOffer(offer)} type="button">{offer.name}</button>: {days < -30 ? "abgelaufen und öffentlich ausgeblendet" : days < 0 ? `Prüffrist abgelaufen · noch ${30 + days} Tage Kulanz` : days === 0 ? "heute erneut prüfen" : `in ${days} Tagen erneut prüfen`}</li>)}</ul></section>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {notice && <p className="admin-success" role="status">{notice}</p>}
@@ -597,7 +598,7 @@ export default function AdminOffersPage() {
 
           <fieldset className="check-group"><legend>Kategorien</legend><div className="admin-checkbox-grid">{activeCategories.map((category) => <label key={category.key}><input checked={draft.needs.includes(category.key)} onChange={(e) => setDraft((d) => ({ ...d, needs: e.target.checked ? [...d.needs, category.key] : d.needs.filter((key) => key !== category.key) }))} type="checkbox" />{category.localizations.de?.title ?? category.key}</label>)}</div></fieldset>
 
-          <fieldset className="check-group"><legend>Quellenbelegte Leistungen</legend><p className="field-hint">Diese Auswahl ist ein harter Filter. Ordnen Sie nur Leistungen zu, die in der angegebenen Quelle ausdrücklich belegt sind.</p><div className="admin-checkbox-grid">{services.filter((service) => service.status !== "archived").map((service) => <label key={service.key}><input checked={draft.services.includes(service.key)} onChange={(event) => setDraft((current) => ({ ...current, services: event.target.checked ? [...current.services, service.key] : current.services.filter((key) => key !== service.key) }))} type="checkbox" />{service.localizations.de?.label ?? service.key}</label>)}</div></fieldset>
+          <fieldset className="check-group" id="offer-services"><legend>Quellenbelegte Leistungen</legend><p className="field-hint">Diese Auswahl entscheidet, für welche konkrete Suche das Angebot erscheinen darf. Wählen Sie nur Leistungen, die in der angegebenen Quelle ausdrücklich genannt werden. Eine Leistung im Status „Entwurf“ muss zuerst im Bereich „Leistungen“ aktiviert werden, bevor das Angebot veröffentlicht werden kann.</p><div className="admin-checkbox-grid">{services.filter((service) => service.status !== "archived").map((service) => <label key={service.key}><input checked={draft.services.includes(service.key)} onChange={(event) => setDraft((current) => ({ ...current, services: event.target.checked ? [...current.services, service.key] : current.services.filter((key) => key !== service.key) }))} type="checkbox" />{service.localizations.de?.label ?? service.key}{service.status === "draft" ? " (Entwurf – noch nicht aktiv)" : ""}</label>)}</div></fieldset>
 
           <fieldset><legend>Zugang und Verfügbarkeit</legend><div className="admin-form-grid admin-form-grid--three">
             <label className="field" htmlFor="offer-availability">Verfügbarkeit<select id="offer-availability" value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value as Offer["availability"] }))}><option value="confirmed">Bestätigt</option><option value="call_to_confirm">Vorher abklären</option><option value="unknown">Unbekannt</option></select></label>
