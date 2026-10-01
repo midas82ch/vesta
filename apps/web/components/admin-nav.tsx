@@ -8,6 +8,7 @@ const ADMIN_LINKS = [
   { href: "/admin/offers", label: "Angebote" },
   { href: "/admin/offer-imports", label: "URL-Import" },
   { href: "/admin/categories", label: "Kategorien & Mapping" },
+  { href: "/admin/services", label: "Leistungen" },
   { href: "/admin/ingestion-runs", label: "Angebots-Prüfung" },
 ];
 

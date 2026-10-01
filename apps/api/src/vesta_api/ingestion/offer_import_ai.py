@@ -10,7 +10,34 @@ from vesta_api.repositories.ai_audit_log import AiAuditLogRepository
 logger = logging.getLogger(__name__)
 
 SUPPORTED_LOCALES = ("de", "fr", "en", "es", "pt", "ary")
-SUPPORTED_NEEDS = ("sleep_tonight", "basic_needs", "counselling", "victim_support")
+SUPPORTED_NEEDS = (
+    "sleep_tonight",
+    "basic_needs",
+    "counselling",
+    "victim_support",
+    "daytime_stay",
+)
+SUPPORTED_SERVICES = (
+    "meal",
+    "groceries",
+    "shower",
+    "laundry",
+    "clothing",
+    "toilet",
+    "locker",
+    "general_social",
+    "housing",
+    "finances",
+    "health",
+    "mental_health",
+    "legal",
+    "addiction",
+    "addiction_alcohol",
+    "addiction_opioids",
+    "addiction_other",
+    "addiction_multiple",
+    "daytime_no_purchase",
+)
 
 
 @dataclass(frozen=True)
@@ -30,6 +57,7 @@ class ExtractedOffer:
     minimum_age: int | None
     maximum_age: int | None
     evidence: tuple[dict[str, str], ...]
+    services: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -73,6 +101,7 @@ _EXTRACTION_SCHEMA = {
         "accepted_genders",
         "minimum_age",
         "maximum_age",
+        "services",
         "evidence",
     ],
     "properties": {
@@ -93,6 +122,11 @@ _EXTRACTION_SCHEMA = {
         "accepted_genders": {"type": "array", "items": {"type": "string"}},
         "minimum_age": {"type": ["integer", "null"], "minimum": 0, "maximum": 120},
         "maximum_age": {"type": ["integer", "null"], "minimum": 0, "maximum": 120},
+        "services": {
+            "type": "array",
+            "items": {"type": "string", "enum": list(SUPPORTED_SERVICES)},
+            "uniqueItems": True,
+        },
         "evidence": {
             "type": "array",
             "maxItems": 12,
@@ -223,6 +257,7 @@ class OpenAiOfferImportGateway:
             "Adressen, Verfuegbarkeit oder Zugangsbedingungen. Unbelegte optionale Werte "
             "muessen null beziehungsweise leer sein. Alterswerte nur uebernehmen, wenn eine "
             "Zahl in der Quelle ausdruecklich als Zugangsgrenze genannt wird. evidence enthaelt "
+            "services enthaelt nur Leistungen, die in der Quelle ausdruecklich belegt sind. "
             "kurze woertliche Quellenbelege, niemals die ganze Seite. Eine leere Liste bei "
             "accepted_genders bedeutet Zugang fuer alle; verwende dort niemals den Wert all. "
             "Darija hat Code ary."
@@ -251,6 +286,9 @@ class OpenAiOfferImportGateway:
         )
         minimum_age = payload["minimum_age"]
         maximum_age = payload["maximum_age"]
+        services = tuple(str(value) for value in payload["services"])
+        if any(value not in SUPPORTED_SERVICES for value in services):
+            raise ValueError("invalid_service")
         return ExtractedOffer(
             source_language=str(payload["source_language"]),
             organization_name=str(payload["organization_name"]).strip(),
@@ -268,6 +306,7 @@ class OpenAiOfferImportGateway:
             ),
             minimum_age=int(minimum_age) if minimum_age is not None else None,
             maximum_age=int(maximum_age) if maximum_age is not None else None,
+            services=services,
             evidence=evidence,
         )
 

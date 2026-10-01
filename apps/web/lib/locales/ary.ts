@@ -34,6 +34,8 @@ export const ary: Record<MessageKey, string> = {
   "need.counselling.detail": "مساعدة فالإدمان، السكن ولا الفلوس",
   "need.victimSupport.title": "مساعدة الضحايا",
   "need.victimSupport.detail": "مساعدة من بعد العنف، التهديد ولا شي جريمة",
+  "need.daytime.title": "بلاصة ترتاح فيها",
+  "need.daytime.detail": "تبقى بلا ما تشري شي حاجة وتستعمل المرحاض",
   "form.targetGroup.label": "الفئة المعنية",
   "form.targetGroup.hint":
     "هاد المعلومة كتعاون باش نختارو مزيان الخدمات اللي عندها شروط خاصة للدخول.",
@@ -137,7 +139,7 @@ export const ary: Record<MessageKey, string> = {
   "privacy.scope.eyebrow": "شنو كنعالجو",
   "privacy.scope.title": "غير معلومات البحث الحالي ديالك",
   "privacy.scope.text":
-    "فكل بحث، فيستا كتعالج غير المعلومات اللي كتختار فالفورمولير: المجال، اللغة، ومعلومات اختيارية بحال واش معاك كلب، واش ما عندكش وثيقة الهوية، الفئة المعنية، العمر ولا إشارات السلامة. هاد المعلومات كتستعمل غير فداك البحث.",
+    "فكل بحث، فيستا كتعالج غير المعلومات اللي كتختار فالفورمولير: المجال، اللغة، ومعلومات اختيارية بحال واش معاك كلب، واش ما عندكش وثيقة الهوية، الفئة المعنية، العمر ولا إشارات السلامة. العمر المحدد كيبقى غير فالذاكرة المؤقتة مدة البحث، ما كيتصيفطش لنموذج الذكاء الاصطناعي وما كيبان لا فالتدقيق لا فالتصدير.",
   "privacy.scope.noAccount":
     "فيستا كتخدم بلا حساب. البحث ديالك ما كيتحفظش كملف ولا كبروفايل.",
   "privacy.location.eyebrow": "الموقع اختياري",
@@ -260,6 +262,9 @@ export const ary: Record<MessageKey, string> = {
   "dialogue.safety.openWebsite": "حل الموقع",
   "dialogue.question.eyebrow": "باقي سؤال واحد",
   "dialogue.question.answerLegend": "الجواب ديالك",
+  "dialogue.multiChoice.continue": "كمل",
+  "dialogue.age.label": "العمر بالسنين",
+  "dialogue.age.provided": "العمر تعطى",
   "dialogue.question.yes": "نعم",
   "dialogue.question.no": "لا",
   "dialogue.question.numberLabel": "الجواب ديالك",

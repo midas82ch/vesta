@@ -40,6 +40,8 @@ const de = {
   "need.counselling.detail": "Hilfe bei Sucht, Wohnen oder Geld",
   "need.victimSupport.title": "Opferhilfe",
   "need.victimSupport.detail": "Hilfe nach Gewalt, Drohungen oder einer Straftat",
+  "need.daytime.title": "Aufenthalt & Toilette",
+  "need.daytime.detail": "Ohne Konsumzwang verweilen und eine Toilette nutzen",
   "form.targetGroup.label": "Zielgruppe",
   "form.targetGroup.hint":
     "Die Angabe hilft, Angebote mit besonderen Zugangsbedingungen korrekt einzuordnen.",
@@ -143,7 +145,7 @@ const de = {
   "privacy.scope.eyebrow": "Was wir verarbeiten",
   "privacy.scope.title": "Nur die Angaben deiner aktuellen Suche",
   "privacy.scope.text":
-    "Für eine Suche verarbeitet Vesta ausschliesslich die Angaben, die du im Formular auswählst: den gewählten Bereich, deine Sprache und optionale Angaben wie Hund, fehlender Ausweis, Zielgruppe, Alter oder Sicherheitshinweise. Diese Angaben werden nur für die einzelne Suche verwendet.",
+    "Für eine Suche verarbeitet Vesta ausschliesslich die Angaben, die du im Formular auswählst: den gewählten Bereich, deine Sprache und optionale Angaben wie Hund, fehlender Ausweis, Zielgruppe, Alter oder Sicherheitshinweise. Ein konkret angegebenes Alter bleibt nur während der laufenden Suche im Arbeitsspeicher, wird nicht an das AI-Modell übermittelt und erscheint weder im Audit noch im Export.",
   "privacy.scope.noAccount":
     "Vesta funktioniert ohne Konto. Deine Suche wird nicht als Dossier oder Profil gespeichert.",
   "privacy.location.eyebrow": "Optionaler Standort",
@@ -263,6 +265,9 @@ const de = {
   "dialogue.safety.openWebsite": "Website öffnen",
   "dialogue.question.eyebrow": "Eine Frage noch",
   "dialogue.question.answerLegend": "Deine Antwort",
+  "dialogue.multiChoice.continue": "Weiter",
+  "dialogue.age.label": "Alter in Jahren",
+  "dialogue.age.provided": "Alter angegeben",
   "dialogue.question.yes": "Ja",
   "dialogue.question.no": "Nein",
   "dialogue.question.numberLabel": "Deine Antwort",
@@ -327,6 +332,9 @@ const fr: Record<MessageKey, string> = {
   "need.victimSupport.title": "Aide aux victimes",
   "need.victimSupport.detail":
     "Aide après des violences, des menaces ou une infraction",
+  "need.daytime.title": "Lieu d’accueil et toilettes",
+  "need.daytime.detail":
+    "Rester sans obligation de consommer et utiliser des toilettes",
   "form.targetGroup.label": "Groupe cible",
   "form.targetGroup.hint":
     "Cette indication aide à classer correctement les offres avec des conditions d’accès particulières.",
@@ -431,7 +439,7 @@ const fr: Record<MessageKey, string> = {
   "privacy.scope.eyebrow": "Ce que nous traitons",
   "privacy.scope.title": "Uniquement les informations de ta recherche actuelle",
   "privacy.scope.text":
-    "Pour une recherche, Vesta traite uniquement les informations que tu sélectionnes dans le formulaire : le domaine choisi, ta langue et des informations optionnelles comme un chien, l’absence de pièce d’identité, le groupe cible, l’âge ou des indications de sécurité. Ces informations ne servent qu’à cette recherche précise.",
+    "Pour une recherche, Vesta traite uniquement les informations que tu sélectionnes dans le formulaire : le domaine choisi, ta langue et des informations optionnelles comme un chien, l’absence de pièce d’identité, le groupe cible, l’âge ou des indications de sécurité. Un âge précis reste uniquement en mémoire pendant la recherche, n’est pas transmis au modèle d’IA et n’apparaît ni dans l’audit ni dans l’export.",
   "privacy.scope.noAccount":
     "Vesta fonctionne sans compte. Ta recherche n’est pas enregistrée comme dossier ou profil.",
   "privacy.location.eyebrow": "Localisation facultative",
@@ -554,6 +562,9 @@ const fr: Record<MessageKey, string> = {
   "dialogue.safety.openWebsite": "Ouvrir le site web",
   "dialogue.question.eyebrow": "Encore une question",
   "dialogue.question.answerLegend": "Ta réponse",
+  "dialogue.multiChoice.continue": "Continuer",
+  "dialogue.age.label": "Âge en années",
+  "dialogue.age.provided": "Âge indiqué",
   "dialogue.question.yes": "Oui",
   "dialogue.question.no": "Non",
   "dialogue.question.numberLabel": "Ta réponse",
@@ -614,6 +625,8 @@ const en: Record<MessageKey, string> = {
   "need.counselling.detail": "Help with addiction, housing or money",
   "need.victimSupport.title": "Victim support",
   "need.victimSupport.detail": "Help after violence, threats or a crime",
+  "need.daytime.title": "Daytime space & toilet",
+  "need.daytime.detail": "Stay without buying anything and use a toilet",
   "form.targetGroup.label": "Target group",
   "form.targetGroup.hint":
     "This helps classify services with specific access conditions correctly.",
@@ -718,7 +731,7 @@ const en: Record<MessageKey, string> = {
   "privacy.scope.eyebrow": "What we process",
   "privacy.scope.title": "Only the details of your current search",
   "privacy.scope.text":
-    "For a search, Vesta only processes the details you choose in the form: the selected area, your language, and optional details such as a dog, missing identity document, target group, age or safety flags. These details are only used for that one search.",
+    "For a search, Vesta only processes the details you choose in the form: the selected area, your language, and optional details such as a dog, missing identity document, target group, age or safety flags. A specific age remains only in working memory during the search, is not sent to the AI model, and appears in neither the audit nor its export.",
   "privacy.scope.noAccount":
     "Vesta works without an account. Your search is not stored as a case file or profile.",
   "privacy.location.eyebrow": "Optional location",
@@ -840,6 +853,9 @@ const en: Record<MessageKey, string> = {
   "dialogue.safety.openWebsite": "Open website",
   "dialogue.question.eyebrow": "One more question",
   "dialogue.question.answerLegend": "Your answer",
+  "dialogue.multiChoice.continue": "Continue",
+  "dialogue.age.label": "Age in years",
+  "dialogue.age.provided": "Age provided",
   "dialogue.question.yes": "Yes",
   "dialogue.question.no": "No",
   "dialogue.question.numberLabel": "Your answer",

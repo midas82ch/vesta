@@ -74,10 +74,44 @@ mobile Admin-Nutzerführung ist jedoch keine Anforderung.
   durch versionierte Regeln erkannt.
 - Bei unmittelbarer Gefahr werden ausschließlich 117 und 144 angeboten; in
   allen anderen Sicherheitsfällen 142 und geprüfte Opferhilfe-Angebote.
-- Die öffentliche Altersfrage fragt nur, ob die Person 18 Jahre oder älter ist.
-  Eine konkrete Zahl wird nicht erhoben.
+- Bei altersbeschränkten verbleibenden Angeboten wird das konkrete Alter, nie
+  das Geburtsdatum, erfragt. Es wird nur in der laufenden Dialogsession
+  verarbeitet und weder an AI noch an Audit, Log oder Export übergeben.
 - Unbekannte und abgelehnte Angaben bleiben sichtbar und führen zu einer
   Abklärungsunsicherheit statt zu einem stillen Ausschluss.
+
+### Präzise Bedarfsauswahl
+
+- Die fünf Hauptbereiche sind Schlafplatz, Grundversorgung, Beratung,
+  Opferhilfe sowie Aufenthalt & Toilette.
+- Grundversorgung und Beratung werden vor dem Matching mit grossen,
+  beschrifteten Icon-Kacheln präzisiert; bei Sucht folgt ein zweiter kurzer
+  Schritt für Alkohol, Opioide/Heroin, andere oder mehrere Substanzen.
+- Die mobile Ansicht zeigt bei 320 bis 480 Pixel Breite zwei Kacheln pro Zeile
+  ohne horizontales Scrollen. Auswahlzustand, Häkchen und `aria-pressed`
+  funktionieren mit Touch, Tastatur und Screenreader.
+- Bestätigte Leistungen sind harte Matching-Kriterien. Eine beiläufig
+  erwähnte Mahlzeit macht ein Angebot nicht zur allgemeinen
+  Grundversorgungsstelle.
+- Freitext darf geeignete Kacheln vorauswählen; die Person bestätigt sie vor
+  dem Matching.
+- Höchstens drei unterschiedliche fachlich passende Angebote werden gezeigt.
+  Fehlt ein belegter Treffer, wird `no_match` statt einer unpassenden
+  Alternative geliefert.
+
+### Institutionelle Freigabe und Aktualität
+
+- Jedes Leistungsmerkmal benötigt eine Primärquelle oder dokumentierte
+  Bestätigung der Institution.
+- Neue Angebote werden erst nach dokumentierter institutioneller Zustimmung
+  veröffentlicht. Bestehende Einträge dürfen höchstens 90 Tage als
+  `legacy_pending` weiterlaufen.
+- Angebotsprüfungen unterscheiden `current`, `overdue_grace` und `expired`.
+  Nach Ablauf bleibt ein Angebot höchstens 30 Tage mit
+  „Bitte vorher abklären“ sichtbar; danach wird es ausgeblendet.
+- Quellenimporte speichern fachliche Änderungen als revisionssicheren
+  Entwurf. Sie beschädigen oder überschreiben die veröffentlichte Fassung
+  nicht automatisch.
 
 ### Quellen und Import
 

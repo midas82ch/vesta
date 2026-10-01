@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
-ValueType = Literal["boolean", "integer", "enum"]
-AnswerType = Literal["yes_no_unknown", "single_choice", "number"]
+ValueType = Literal["boolean", "integer", "enum", "multi_enum"]
+AnswerType = Literal["yes_no_unknown", "single_choice", "multi_choice", "number"]
+QuestionPresentation = Literal["list", "icon_grid"]
+SelectionMode = Literal["single", "multiple"]
 
 # locale -> field name -> text, e.g. {"de": {"title": "...", "description": "..."}}
 Localizations = dict[str, dict[str, str]]
@@ -21,6 +23,7 @@ class AttributeOption:
     value: str
     sort_order: int
     localizations: Localizations
+    icon: str = "other"
 
 
 @dataclass(frozen=True)
@@ -41,3 +44,6 @@ class QuestionDefinition:
     ai_rephrasing_allowed: bool
     localizations: Localizations
     need_keys: tuple[str, ...] = field(default_factory=tuple)
+    presentation: QuestionPresentation = "list"
+    selection_mode: SelectionMode = "single"
+    minimum_selections: int = 1

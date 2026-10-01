@@ -37,14 +37,30 @@ class NextQuestionPolicy:
                 continue
             if question.attribute_key in answered_attribute_keys:
                 continue
-            if self._attribute_is_relevant(question.attribute_key, candidates):
+            if self._attribute_is_relevant(
+                question.attribute_key, dialogue_state, candidates
+            ):
                 return question
         return None
 
     @staticmethod
     def _attribute_is_relevant(
-        attribute_key: str, candidates: tuple[Candidate, ...]
+        attribute_key: str,
+        dialogue_state: DialogueState,
+        candidates: tuple[Candidate, ...],
     ) -> bool:
+        if attribute_key == "request.services.basic":
+            return dialogue_state.need == "basic_needs"
+        if attribute_key == "request.services.counselling":
+            return dialogue_state.need == "counselling"
+        if attribute_key == "request.services.addiction":
+            selected = dialogue_state.attribute("request.services.counselling")
+            return bool(
+                selected
+                and selected.status == "confirmed"
+                and isinstance(selected.value, list)
+                and "addiction" in selected.value
+            )
         if attribute_key == "person.has_dog":
             dog_rules = {candidate.offer.access.accepts_dogs for candidate in candidates}
             return False in dog_rules or (True in dog_rules and None in dog_rules)
@@ -60,6 +76,10 @@ class NextQuestionPolicy:
                 return True
             if attribute_key == "person.is_adult" and (
                 access.minimum_age == 18 or access.maximum_age == 17
+            ):
+                return True
+            if attribute_key == "person.age" and (
+                access.minimum_age is not None or access.maximum_age is not None
             ):
                 return True
         return False

@@ -14,6 +14,7 @@ from vesta_api.domain.admin_catalog_models import (
     AdminCatalogState,
     AdminCategory,
     AdminOffer,
+    AdminServiceDefinition,
     OfferLocalization,
 )
 from vesta_api.repositories.admin_catalog import (
@@ -146,6 +147,32 @@ def create_admin_catalog_repository(
     development_database_url = settings.get_database_url()
     if development_database_url is not None:
         return PostgresAdminCatalogRepository(development_database_url)
+    service_groups = {
+        "request.services.basic": "basic_needs",
+        "request.services.counselling": "counselling",
+        "request.services.addiction": "addiction",
+    }
+    services: dict[str, AdminServiceDefinition] = {}
+    for attribute in catalog.list_attributes():
+        group = service_groups.get(attribute.key)
+        if group is None:
+            continue
+        for option in attribute.options:
+            services[option.value] = AdminServiceDefinition(
+                key=option.value,
+                service_group=group,  # type: ignore[arg-type]
+                icon=option.icon,
+                status="published",
+                sort_order=option.sort_order,
+                revision=1,
+                localizations={
+                    locale: {
+                        "label": values["label"],
+                        "description": "",
+                    }
+                    for locale, values in option.localizations.items()
+                },
+            )
     state = AdminCatalogState(
         categories={
             need.key: AdminCategory(
@@ -158,6 +185,7 @@ def create_admin_catalog_repository(
             )
             for need in catalog.list_needs()
         },
+        services=services,
         offers={
             offer.id: AdminOffer(
                 id=offer.id,
@@ -205,6 +233,9 @@ def create_admin_catalog_repository(
                         updated_at=offer.updated_at or offer.source.verified_at,
                     )
                 },
+                services=offer.services,
+                provider_approval_status=offer.provider_approval_status.value,
+                provider_approval_deadline=offer.provider_approval_deadline,
             )
             for offer in offers.list_offers()
         },

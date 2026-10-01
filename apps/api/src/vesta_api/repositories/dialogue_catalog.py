@@ -1,5 +1,6 @@
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -35,6 +36,7 @@ def _options_from_payload(payload: list[dict[str, object]]) -> tuple[AttributeOp
             value=str(item["value"]),
             sort_order=int(item["sort_order"]),  # type: ignore[arg-type]
             localizations=dict(item.get("localizations", {})),  # type: ignore[arg-type]
+            icon=str(item.get("icon", "other")),
         )
         for item in payload
     )
@@ -89,6 +91,9 @@ class JsonDialogueCatalogRepository:
                 ai_rephrasing_allowed=bool(item["ai_rephrasing_allowed"]),
                 localizations=dict(item["localizations"]),
                 need_keys=tuple(str(key) for key in item.get("need_keys", [])),
+                presentation=item.get("presentation", "list"),
+                selection_mode=item.get("selection_mode", "single"),
+                minimum_selections=int(item.get("minimum_selections", 1)),
             )
             for item in sorted(payload["questions"], key=lambda item: item["priority"])
         )
@@ -124,10 +129,40 @@ class AdminManagedDialogueCatalogRepository:
         )
 
     def list_attributes(self) -> tuple[AttributeDefinition, ...]:
-        return self._base.list_attributes()
+        return tuple(self._with_admin_services(item) for item in self._base.list_attributes())
 
     def get_attribute(self, key: str) -> AttributeDefinition | None:
-        return self._base.get_attribute(key)
+        attribute = self._base.get_attribute(key)
+        return self._with_admin_services(attribute) if attribute is not None else None
+
+    def _with_admin_services(
+        self, attribute: AttributeDefinition
+    ) -> AttributeDefinition:
+        groups = {
+            "request.services.basic": "basic_needs",
+            "request.services.counselling": "counselling",
+            "request.services.addiction": "addiction",
+        }
+        group = groups.get(attribute.key)
+        if group is None:
+            return attribute
+        options = tuple(
+            AttributeOption(
+                value=service.key,
+                sort_order=service.sort_order,
+                icon=service.icon,
+                localizations={
+                    locale: {
+                        "label": values["label"],
+                        "explanation": values.get("description", ""),
+                    }
+                    for locale, values in service.localizations.items()
+                },
+            )
+            for service in self._admin_catalog.list_services()
+            if service.service_group == group and service.status == "published"
+        )
+        return replace(attribute, options=options)
 
     def list_questions(self) -> tuple[QuestionDefinition, ...]:
         return self._base.list_questions()
@@ -173,6 +208,7 @@ _LIST_ATTRIBUTES = text(
             jsonb_build_object(
                 'value', o.value,
                 'sort_order', o.sort_order,
+                'icon', o.icon,
                 'localizations', COALESCE(ol.localizations, '{}'::jsonb)
             )
             ORDER BY o.sort_order
@@ -202,6 +238,9 @@ _LIST_QUESTIONS = text(
         q.answer_type,
         q.priority,
         q.ai_rephrasing_allowed,
+        q.presentation,
+        q.selection_mode,
+        q.minimum_selections,
         COALESCE(scope.need_keys, ARRAY[]::text[]) AS need_keys,
         COALESCE(loc.localizations, '{}'::jsonb) AS localizations
     FROM question_definitions AS q
@@ -258,6 +297,9 @@ def _row_to_question(row: Mapping[str, Any]) -> QuestionDefinition:
         ai_rephrasing_allowed=bool(row["ai_rephrasing_allowed"]),
         localizations=dict(row["localizations"]),
         need_keys=tuple(str(key) for key in row["need_keys"]),
+        presentation=row["presentation"],
+        selection_mode=row["selection_mode"],
+        minimum_selections=int(row["minimum_selections"]),
     )
 
 

@@ -11,6 +11,14 @@ type Category = {
   localizations: Record<string, { title: string; description: string }>;
 };
 
+type ServiceDefinition = {
+  key: string;
+  service_group: "basic_needs" | "counselling" | "addiction";
+  status: "draft" | "published" | "archived";
+  sort_order: number;
+  localizations: Record<string, { label: string; description: string }>;
+};
+
 type Offer = {
   id: string;
   slug: string;
@@ -43,6 +51,14 @@ type Offer = {
   expires_at: string;
   updated_at: string;
   localizations: Record<string, OfferLocalization>;
+  services: string[];
+  provider_approval_status: "legacy_pending" | "pending" | "approved" | "declined";
+  provider_approval_reference: string | null;
+  provider_approval_scope: string | null;
+  provider_approval_evidence: string | null;
+  provider_approval_deadline: string | null;
+  source_draft: Record<string, unknown> | null;
+  source_draft_created_at: string | null;
 };
 
 type OfferLocalization = {
@@ -112,6 +128,11 @@ type OfferDraft = {
   source_url: string;
   expires_on: string;
   management_mode: Offer["management_mode"];
+  services: string[];
+  provider_approval_status: Offer["provider_approval_status"];
+  provider_approval_reference: string;
+  provider_approval_scope: string;
+  provider_approval_evidence: string;
   revision?: number;
 };
 
@@ -142,6 +163,11 @@ function emptyDraft(): OfferDraft {
     source_url: "",
     expires_on: dateDaysFromNow(30),
     management_mode: "manual",
+    services: [],
+    provider_approval_status: "pending",
+    provider_approval_reference: "",
+    provider_approval_scope: "",
+    provider_approval_evidence: "",
   };
 }
 
@@ -170,6 +196,11 @@ function offerDraft(offer: Offer): OfferDraft {
     source_url: offer.source_url ?? "",
     expires_on: offer.expires_at.slice(0, 10),
     management_mode: offer.management_mode,
+    services: offer.services,
+    provider_approval_status: offer.provider_approval_status,
+    provider_approval_reference: offer.provider_approval_reference ?? "",
+    provider_approval_scope: offer.provider_approval_scope ?? "",
+    provider_approval_evidence: offer.provider_approval_evidence ?? "",
     revision: offer.revision,
   };
 }
@@ -217,6 +248,11 @@ function draftPayload(draft: OfferDraft) {
     source_url: draft.source_url.trim() || null,
     expires_at: new Date(`${draft.expires_on}T23:59:59`).toISOString(),
     management_mode: draft.management_mode,
+    services: draft.services,
+    provider_approval_status: draft.provider_approval_status,
+    provider_approval_reference: draft.provider_approval_reference.trim() || null,
+    provider_approval_scope: draft.provider_approval_scope.trim() || null,
+    provider_approval_evidence: draft.provider_approval_evidence.trim() || null,
     revision: draft.revision,
   };
 }
@@ -238,6 +274,11 @@ function offerPayload(offer: Offer, needs: string[]) {
     source_url: offer.source_url,
     expires_at: offer.expires_at,
     management_mode: "manual",
+    services: offer.services,
+    provider_approval_status: offer.provider_approval_status,
+    provider_approval_reference: offer.provider_approval_reference,
+    provider_approval_scope: offer.provider_approval_scope,
+    provider_approval_evidence: offer.provider_approval_evidence,
     revision: offer.revision,
   };
 }
@@ -246,9 +287,17 @@ function lifecycleLabel(value: Offer["lifecycle"]) {
   return value === "published" ? "Veröffentlicht" : value === "draft" ? "Entwurf" : "Archiviert";
 }
 
+function verificationLabel(expiresAt: string) {
+  const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000);
+  if (days >= 0) return "Prüfung aktuell";
+  if (days >= -30) return "Prüfung überfällig · Kulanz";
+  return "Prüfung abgelaufen";
+}
+
 export default function AdminOffersPage() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [services, setServices] = useState<ServiceDefinition[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<OfferDraft>(emptyDraft);
   const [changes, setChanges] = useState<Change[]>([]);
@@ -263,43 +312,56 @@ export default function AdminOffersPage() {
     contact_note: "",
   });
   const activeCategories = categories.filter((item) => item.status !== "archived");
+  const selectedOffer = offers.find((item) => item.id === selectedId);
+  const verificationWarnings = offers
+    .map((offer) => ({
+      offer,
+      days: Math.ceil((new Date(offer.expires_at).getTime() - Date.now()) / 86_400_000),
+    }))
+    .filter(({ days }) => days <= 30)
+    .sort((left, right) => left.days - right.days);
 
   const loadData = useCallback(async () => {
-    const [offersResponse, categoriesResponse] = await Promise.all([
+    const [offersResponse, categoriesResponse, servicesResponse] = await Promise.all([
       fetch("/api/admin/offers?limit=200&offset=0", { cache: "no-store" }),
       fetch("/api/admin/categories", { cache: "no-store" }),
+      fetch("/api/admin/services", { cache: "no-store" }),
     ]);
-    if (offersResponse.status === 401 || categoriesResponse.status === 401) {
+    if ([offersResponse, categoriesResponse, servicesResponse].some((response) => response.status === 401)) {
       window.location.replace("/admin/login");
       return;
     }
-    if (!offersResponse.ok || !categoriesResponse.ok) throw new Error("load_failed");
+    if (!offersResponse.ok || !categoriesResponse.ok || !servicesResponse.ok) throw new Error("load_failed");
     setOffers(((await offersResponse.json()) as { offers: Offer[] }).offers);
     setCategories(((await categoriesResponse.json()) as { categories: Category[] }).categories);
+    setServices(((await servicesResponse.json()) as { services: ServiceDefinition[] }).services);
   }, []);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/admin/offers?limit=200&offset=0", { cache: "no-store" }),
       fetch("/api/admin/categories", { cache: "no-store" }),
+      fetch("/api/admin/services", { cache: "no-store" }),
     ])
-      .then(async ([offersResponse, categoriesResponse]) => {
-        if (offersResponse.status === 401 || categoriesResponse.status === 401) {
+      .then(async ([offersResponse, categoriesResponse, servicesResponse]) => {
+        if ([offersResponse, categoriesResponse, servicesResponse].some((response) => response.status === 401)) {
           window.location.replace("/admin/login");
           return null;
         }
-        if (!offersResponse.ok || !categoriesResponse.ok) {
+        if (!offersResponse.ok || !categoriesResponse.ok || !servicesResponse.ok) {
           throw new Error("load_failed");
         }
         return {
           offers: ((await offersResponse.json()) as { offers: Offer[] }).offers,
           categories: ((await categoriesResponse.json()) as { categories: Category[] }).categories,
+          services: ((await servicesResponse.json()) as { services: ServiceDefinition[] }).services,
         };
       })
       .then((data) => {
         if (!data) return;
         setOffers(data.offers);
         setCategories(data.categories);
+        setServices(data.services);
         const requestedId = new URLSearchParams(window.location.search).get("offer");
         const requestedOffer = data.offers.find((offer) => offer.id === requestedId);
         if (requestedOffer) {
@@ -369,7 +431,7 @@ export default function AdminOffersPage() {
       setNotice(selectedId ? "Angebot wurde gespeichert." : "Angebot wurde als Entwurf angelegt.");
     } catch (saveError) {
       const detail = saveError instanceof Error ? saveError.message : "save_failed";
-      setError(detail === "offer_was_modified" ? "Das Angebot wurde zwischenzeitlich geändert. Bitte laden Sie es neu." : detail === "unknown_or_inactive_category" ? "Mindestens eine Kategorie ist nicht mehr aktiv." : "Angebot konnte nicht gespeichert werden. Bitte prüfen Sie Pflichtfelder, Quelle und Koordinaten.");
+      setError(detail === "offer_was_modified" ? "Das Angebot wurde zwischenzeitlich geändert. Bitte laden Sie es neu." : detail === "unknown_or_inactive_category" ? "Mindestens eine Kategorie ist nicht mehr aktiv." : detail === "unknown_or_inactive_service" ? "Mindestens eine Leistung ist nicht mehr aktiv." : "Angebot konnte nicht gespeichert werden. Bitte prüfen Sie Pflichtfelder, Quelle, Zustimmung und Koordinaten.");
     } finally {
       setSaving(false);
     }
@@ -438,6 +500,10 @@ export default function AdminOffersPage() {
             ? "Vor der Veröffentlichung muss die deutsche Sprachfassung geprüft werden."
             : detail === "offer_requires_published_categories"
               ? "Vor der Veröffentlichung müssen alle zugeordneten Kategorien aktiv sein."
+              : detail === "provider_approval_required"
+                ? "Vor der Veröffentlichung muss die Zustimmung der Institution dokumentiert sein."
+              : detail === "offer_requires_confirmed_services"
+                ? "Vor der Veröffentlichung braucht jeder zugeordnete Bereich mindestens ein belegtes Leistungsmerkmal."
               : "Status konnte nicht geändert werden.",
       );
     } finally {
@@ -498,6 +564,7 @@ export default function AdminOffersPage() {
       <AdminNav />
       <div className="admin-heading"><div><p className="eyebrow">Angebotsregister</p><h1>Angebote & Mapping</h1></div><Button onClick={logout} variant="ghost">Abmelden</Button></div>
       <p className="admin-intro">Die Matrix zeigt, welche aktiven Kategorien zu einem Angebot führen. Eine manuelle Änderung schützt das Angebot vor späterem Überschreiben durch den Import.</p>
+      {verificationWarnings.length > 0 && <section className="admin-panel" aria-labelledby="verification-warnings"><h2 id="verification-warnings">Anstehende Nachprüfungen</h2><ul>{verificationWarnings.map(({ offer, days }) => <li key={offer.id}><button className="admin-text-button" onClick={() => selectOffer(offer)} type="button">{offer.name}</button>: {days < -30 ? "abgelaufen und öffentlich ausgeblendet" : days < 0 ? `Prüffrist abgelaufen · noch ${30 + days} Tage Kulanz` : days === 0 ? "heute erneut prüfen" : `in ${days} Tagen erneut prüfen`}</li>)}</ul></section>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {notice && <p className="admin-success" role="status">{notice}</p>}
 
@@ -509,7 +576,7 @@ export default function AdminOffersPage() {
               <thead><tr><th scope="col">Angebot</th><th scope="col">Status</th><th scope="col">Verwaltung</th>{activeCategories.map((category) => <th key={category.key} scope="col">{category.localizations.de?.title ?? category.key}</th>)}<th scope="col">Aktion</th></tr></thead>
               <tbody>{offers.map((offer) => <tr key={offer.id}>
                 <td><strong>{offer.name}</strong><span className="admin-offer-secondary">{offer.organization_name}<br /><code>{offer.slug}</code></span></td>
-                <td><span className={`offer-status offer-status--${offer.lifecycle}`}>{lifecycleLabel(offer.lifecycle)}</span></td>
+                <td><span className={`offer-status offer-status--${offer.lifecycle}`}>{lifecycleLabel(offer.lifecycle)}</span><span className="admin-offer-secondary">{verificationLabel(offer.expires_at)}<br />Zustimmung: {offer.provider_approval_status}</span></td>
                 <td>{offer.origin === "manual" ? "Manuell" : offer.management_mode === "manual" ? "Import · geschützt" : "Import"}</td>
                 {activeCategories.map((category) => <td className="mapping-cell" key={category.key}><input aria-label={`${category.localizations.de?.title ?? category.key} für ${offer.name}`} checked={offer.needs.includes(category.key)} disabled={saving || offer.lifecycle === "archived"} onChange={(event) => updateMapping(offer, category.key, event.target.checked)} type="checkbox" /></td>)}
                 <td><Button onClick={() => selectOffer(offer)} variant="ghost">Bearbeiten</Button></td>
@@ -529,6 +596,8 @@ export default function AdminOffersPage() {
           </div><label className="field" htmlFor="offer-summary">Kurzbeschreibung<textarea id="offer-summary" maxLength={1000} required rows={3} value={draft.summary} onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))} /></label></fieldset>
 
           <fieldset className="check-group"><legend>Kategorien</legend><div className="admin-checkbox-grid">{activeCategories.map((category) => <label key={category.key}><input checked={draft.needs.includes(category.key)} onChange={(e) => setDraft((d) => ({ ...d, needs: e.target.checked ? [...d.needs, category.key] : d.needs.filter((key) => key !== category.key) }))} type="checkbox" />{category.localizations.de?.title ?? category.key}</label>)}</div></fieldset>
+
+          <fieldset className="check-group"><legend>Quellenbelegte Leistungen</legend><p className="field-hint">Diese Auswahl ist ein harter Filter. Ordnen Sie nur Leistungen zu, die in der angegebenen Quelle ausdrücklich belegt sind.</p><div className="admin-checkbox-grid">{services.filter((service) => service.status !== "archived").map((service) => <label key={service.key}><input checked={draft.services.includes(service.key)} onChange={(event) => setDraft((current) => ({ ...current, services: event.target.checked ? [...current.services, service.key] : current.services.filter((key) => key !== service.key) }))} type="checkbox" />{service.localizations.de?.label ?? service.key}</label>)}</div></fieldset>
 
           <fieldset><legend>Zugang und Verfügbarkeit</legend><div className="admin-form-grid admin-form-grid--three">
             <label className="field" htmlFor="offer-availability">Verfügbarkeit<select id="offer-availability" value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value as Offer["availability"] }))}><option value="confirmed">Bestätigt</option><option value="call_to_confirm">Vorher abklären</option><option value="unknown">Unbekannt</option></select></label>
@@ -552,8 +621,16 @@ export default function AdminOffersPage() {
             {selectedId && <label className="field" htmlFor="offer-management">Verwaltung<select id="offer-management" value={draft.management_mode} onChange={(e) => setDraft((d) => ({ ...d, management_mode: e.target.value as Offer["management_mode"] }))}><option value="manual">Manuell geschützt</option><option value="source">Beim nächsten Import aus Quelle übernehmen</option></select></label>}
           </div></fieldset>
 
+          <fieldset><legend>Zustimmung der Institution</legend><p className="field-hint">Neue Angebote dürfen erst nach dokumentierter Zustimmung veröffentlicht werden. Bestehende Angebote können während der befristeten Klärung als „Altbestand“ sichtbar bleiben.</p><div className="admin-form-grid admin-form-grid--three">
+            <label className="field" htmlFor="offer-approval-status">Status<select id="offer-approval-status" value={draft.provider_approval_status} onChange={(event) => setDraft((current) => ({ ...current, provider_approval_status: event.target.value as Offer["provider_approval_status"] }))}><option value="pending">Zustimmung offen</option><option value="approved">Zugestimmt</option><option value="declined">Abgelehnt</option><option value="legacy_pending">Altbestand · Klärung läuft</option></select></label>
+            <label className="field" htmlFor="offer-approval-reference">Kontakt / Referenz<input id="offer-approval-reference" maxLength={500} value={draft.provider_approval_reference} onChange={(event) => setDraft((current) => ({ ...current, provider_approval_reference: event.target.value }))} /></label>
+            <label className="field" htmlFor="offer-approval-scope">Bestätigter Einsatzbereich<input id="offer-approval-scope" maxLength={2000} required={draft.provider_approval_status === "approved"} value={draft.provider_approval_scope} onChange={(event) => setDraft((current) => ({ ...current, provider_approval_scope: event.target.value }))} /></label>
+          </div><label className="field" htmlFor="offer-approval-evidence">Dokumentationshinweis<textarea id="offer-approval-evidence" maxLength={2000} rows={2} value={draft.provider_approval_evidence} onChange={(event) => setDraft((current) => ({ ...current, provider_approval_evidence: event.target.value }))} /></label></fieldset>
+
           <div className="admin-form-actions"><Button disabled={saving} type="submit">{saving ? "Wird gespeichert …" : "Entwurf speichern"}</Button>{selectedId && <><Button disabled={saving} onClick={() => changeLifecycle("published")} variant="secondary">Veröffentlichen</Button><Button disabled={saving} onClick={() => changeLifecycle("draft")} variant="ghost">Veröffentlichung zurückziehen</Button><Button disabled={saving} onClick={() => changeLifecycle("archived")} variant="ghost">Archivieren</Button></>}<Button onClick={startNew} variant="ghost">Eingaben verwerfen</Button></div>
         </form>
+
+        {selectedOffer?.source_draft && <section className="admin-history" aria-labelledby="source-draft-heading"><h3 id="source-draft-heading">Importentwurf vergleichen</h3><p>Die öffentliche Fassung wurde nicht überschrieben. Prüfen Sie die extrahierten Angaben und übernehmen Sie bestätigte Änderungen bewusst in die Felder oben.</p><div className="admin-table-scroll" tabIndex={0}><table className="admin-compact-table"><thead><tr><th scope="col">Feld</th><th scope="col">Öffentliche / bearbeitete Fassung</th><th scope="col">Neuer Quellenentwurf</th></tr></thead><tbody><tr><th scope="row">Name</th><td>{selectedOffer.name}</td><td>{String(selectedOffer.source_draft.name ?? "—")}</td></tr><tr><th scope="row">Beschreibung</th><td>{selectedOffer.summary}</td><td>{String(selectedOffer.source_draft.summary ?? "—")}</td></tr><tr><th scope="row">Kategorien</th><td>{selectedOffer.needs.join(", ")}</td><td>{Array.isArray(selectedOffer.source_draft.needs) ? selectedOffer.source_draft.needs.join(", ") : "—"}</td></tr><tr><th scope="row">Leistungen</th><td>{selectedOffer.services.join(", ") || "—"}</td><td>{Array.isArray(selectedOffer.source_draft.services) ? selectedOffer.source_draft.services.join(", ") : "—"}</td></tr></tbody></table></div></section>}
 
         {selectedId && <section aria-labelledby="offer-localizations-heading" className="admin-history admin-offer-localizations">
           <h3 id="offer-localizations-heading">Sprachfassungen</h3>

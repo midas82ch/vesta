@@ -17,7 +17,11 @@ EXPECTED_ATTRIBUTE_KEYS = {
     "person.has_identity_document",
     "person.gender",
     "person.is_adult",
+    "person.age",
     "safety.immediate_danger",
+    "request.services.basic",
+    "request.services.counselling",
+    "request.services.addiction",
 }
 EXPECTED_LOCALES = {"de", "fr", "en", "es", "pt", "ary"}
 
@@ -26,11 +30,17 @@ class DialogueCatalogTest(unittest.TestCase):
     def setUp(self) -> None:
         self.repository = JsonDialogueCatalogRepository(CATALOG_PATH)
 
-    def test_lists_four_needs_in_sort_order(self) -> None:
+    def test_lists_five_needs_in_sort_order(self) -> None:
         needs = self.repository.list_needs()
 
         self.assertEqual(
-            ["sleep_tonight", "basic_needs", "counselling", "victim_support"],
+            [
+                "sleep_tonight",
+                "basic_needs",
+                "counselling",
+                "victim_support",
+                "daytime_stay",
+            ],
             [need.key for need in needs],
         )
         for need in needs:
@@ -51,6 +61,27 @@ class DialogueCatalogTest(unittest.TestCase):
         self.assertEqual("Frau / FINTA", finta.localizations["de"]["label"])
         self.assertEqual(EXPECTED_LOCALES, set(finta.localizations))
         self.assertEqual("مرا / FINTA", finta.localizations["ary"]["label"])
+
+    def test_service_questions_use_localized_icon_grids(self) -> None:
+        questions = {
+            question.key: question for question in self.repository.list_questions()
+        }
+        question = questions["basic.services"]
+        attribute = self.repository.get_attribute(question.attribute_key)
+
+        assert attribute is not None
+        self.assertEqual("multi_choice", question.answer_type)
+        self.assertEqual("icon_grid", question.presentation)
+        self.assertEqual("multiple", question.selection_mode)
+        self.assertEqual(1, question.minimum_selections)
+        self.assertEqual(7, len(attribute.options))
+        self.assertTrue(all(option.icon != "other" for option in attribute.options))
+        self.assertTrue(
+            all(
+                EXPECTED_LOCALES == set(option.localizations)
+                for option in attribute.options
+            )
+        )
 
     def test_unknown_attribute_returns_none(self) -> None:
         self.assertIsNone(self.repository.get_attribute("person.does_not_exist"))

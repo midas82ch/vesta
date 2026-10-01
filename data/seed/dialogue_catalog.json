@@ -51,9 +51,65 @@
         "pt": { "title": "Apoio à vítima", "description": "Ajuda após violência, ameaças ou um crime" },
         "ary": { "title": "مساعدة الضحايا", "description": "مساعدة من بعد العنف، التهديد ولا شي جريمة" }
       }
+    },
+    {
+      "key": "daytime_stay",
+      "icon": "daytime",
+      "sort_order": 5,
+      "localizations": {
+        "de": { "title": "Aufenthalt & Toilette", "description": "Ohne Konsumzwang verweilen und eine Toilette nutzen" },
+        "fr": { "title": "Lieu d’accueil et toilettes", "description": "Rester sans obligation de consommer et utiliser des toilettes" },
+        "en": { "title": "Daytime space & toilet", "description": "Stay without buying anything and use a toilet" },
+        "es": { "title": "Espacio de estancia y aseo", "description": "Estar sin obligación de consumir y usar un aseo" },
+        "pt": { "title": "Espaço de permanência e casa de banho", "description": "Ficar sem obrigação de consumir e usar uma casa de banho" },
+        "ary": { "title": "بلاصة ترتاح فيها", "description": "تبقى بلا ما تشري شي حاجة وتستعمل المرحاض" }
+      }
     }
   ],
   "attributes": [
+    {
+      "key": "request.services.basic",
+      "value_type": "multi_enum",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": [
+        { "value": "meal", "icon": "meal", "sort_order": 1, "localizations": { "de": { "label": "Mahlzeit" }, "fr": { "label": "Repas" }, "en": { "label": "Meal" }, "es": { "label": "Comida preparada" }, "pt": { "label": "Refeição" }, "ary": { "label": "وجبة" } } },
+        { "value": "groceries", "icon": "groceries", "sort_order": 2, "localizations": { "de": { "label": "Lebensmittel" }, "fr": { "label": "Aliments" }, "en": { "label": "Groceries" }, "es": { "label": "Alimentos" }, "pt": { "label": "Alimentos" }, "ary": { "label": "مواد غذائية" } } },
+        { "value": "shower", "icon": "shower", "sort_order": 3, "localizations": { "de": { "label": "Dusche" }, "fr": { "label": "Douche" }, "en": { "label": "Shower" }, "es": { "label": "Ducha" }, "pt": { "label": "Duche" }, "ary": { "label": "دوش" } } },
+        { "value": "laundry", "icon": "laundry", "sort_order": 4, "localizations": { "de": { "label": "Wäsche waschen" }, "fr": { "label": "Laver le linge" }, "en": { "label": "Laundry" }, "es": { "label": "Lavar la ropa" }, "pt": { "label": "Lavar roupa" }, "ary": { "label": "تصبين الحوايج" } } },
+        { "value": "clothing", "icon": "clothing", "sort_order": 5, "localizations": { "de": { "label": "Kleidung" }, "fr": { "label": "Vêtements" }, "en": { "label": "Clothing" }, "es": { "label": "Ropa" }, "pt": { "label": "Roupa" }, "ary": { "label": "حوايج" } } },
+        { "value": "toilet", "icon": "toilet", "sort_order": 6, "localizations": { "de": { "label": "Toilette" }, "fr": { "label": "Toilettes" }, "en": { "label": "Toilet" }, "es": { "label": "Aseo" }, "pt": { "label": "Casa de banho" }, "ary": { "label": "مرحاض" } } },
+        { "value": "locker", "icon": "locker", "sort_order": 7, "localizations": { "de": { "label": "Schliessfach" }, "fr": { "label": "Casier" }, "en": { "label": "Locker" }, "es": { "label": "Taquilla" }, "pt": { "label": "Cacifo" }, "ary": { "label": "خزانة" } } }
+      ]
+    },
+    {
+      "key": "request.services.counselling",
+      "value_type": "multi_enum",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": [
+        { "value": "general_social", "icon": "chat", "sort_order": 1, "localizations": { "de": { "label": "Allgemeine Sozialberatung" }, "fr": { "label": "Conseil social général" }, "en": { "label": "General social advice" }, "es": { "label": "Asesoramiento social general" }, "pt": { "label": "Aconselhamento social geral" }, "ary": { "label": "نصيحة اجتماعية" } } },
+        { "value": "housing", "icon": "housing", "sort_order": 2, "localizations": { "de": { "label": "Wohnen" }, "fr": { "label": "Logement" }, "en": { "label": "Housing" }, "es": { "label": "Vivienda" }, "pt": { "label": "Habitação" }, "ary": { "label": "السكن" } } },
+        { "value": "finances", "icon": "wallet", "sort_order": 3, "localizations": { "de": { "label": "Geld und Schulden" }, "fr": { "label": "Argent et dettes" }, "en": { "label": "Money and debt" }, "es": { "label": "Dinero y deudas" }, "pt": { "label": "Dinheiro e dívidas" }, "ary": { "label": "الفلوس والديون" } } },
+        { "value": "health", "icon": "health", "sort_order": 4, "localizations": { "de": { "label": "Gesundheit" }, "fr": { "label": "Santé" }, "en": { "label": "Health" }, "es": { "label": "Salud" }, "pt": { "label": "Saúde" }, "ary": { "label": "الصحة" } } },
+        { "value": "mental_health", "icon": "mental-health", "sort_order": 5, "localizations": { "de": { "label": "Psychische Belastung" }, "fr": { "label": "Difficultés psychiques" }, "en": { "label": "Mental distress" }, "es": { "label": "Malestar psicológico" }, "pt": { "label": "Sofrimento psicológico" }, "ary": { "label": "الضغط النفسي" } } },
+        { "value": "legal", "icon": "legal", "sort_order": 6, "localizations": { "de": { "label": "Recht" }, "fr": { "label": "Droit" }, "en": { "label": "Legal matters" }, "es": { "label": "Asuntos legales" }, "pt": { "label": "Assuntos jurídicos" }, "ary": { "label": "القانون" } } },
+        { "value": "addiction", "icon": "support", "sort_order": 7, "localizations": { "de": { "label": "Sucht" }, "fr": { "label": "Dépendance" }, "en": { "label": "Addiction" }, "es": { "label": "Adicciones" }, "pt": { "label": "Dependências" }, "ary": { "label": "الإدمان" } } }
+      ]
+    },
+    {
+      "key": "request.services.addiction",
+      "value_type": "multi_enum",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": [
+        { "value": "addiction_alcohol", "icon": "alcohol", "sort_order": 1, "localizations": { "de": { "label": "Alkohol" }, "fr": { "label": "Alcool" }, "en": { "label": "Alcohol" }, "es": { "label": "Alcohol" }, "pt": { "label": "Álcool" }, "ary": { "label": "الكحول" } } },
+        { "value": "addiction_opioids", "icon": "medication", "sort_order": 2, "localizations": { "de": { "label": "Opioide / Heroin" }, "fr": { "label": "Opioïdes / héroïne" }, "en": { "label": "Opioids / heroin" }, "es": { "label": "Opioides / heroína" }, "pt": { "label": "Opioides / heroína" }, "ary": { "label": "الأفيونات / الهيروين" } } },
+        { "value": "addiction_other", "icon": "substances", "sort_order": 3, "localizations": { "de": { "label": "Andere Substanzen" }, "fr": { "label": "Autres substances" }, "en": { "label": "Other substances" }, "es": { "label": "Otras sustancias" }, "pt": { "label": "Outras substâncias" }, "ary": { "label": "مخدرات أخرى" } } },
+        { "value": "addiction_multiple", "icon": "multiple", "sort_order": 4, "localizations": { "de": { "label": "Mehrere Substanzen" }, "fr": { "label": "Plusieurs substances" }, "en": { "label": "Multiple substances" }, "es": { "label": "Varias sustancias" }, "pt": { "label": "Várias substâncias" }, "ary": { "label": "بزاف ديال المواد" } } },
+        { "value": "addiction_unsure", "icon": "question", "sort_order": 5, "localizations": { "de": { "label": "Nicht sicher" }, "fr": { "label": "Je ne sais pas" }, "en": { "label": "Not sure" }, "es": { "label": "No lo sé" }, "pt": { "label": "Não tenho a certeza" }, "ary": { "label": "ما متأكدش" } } }
+      ]
+    },
     {
       "key": "person.has_dog",
       "value_type": "boolean",
@@ -101,6 +157,13 @@
       ]
     },
     {
+      "key": "person.age",
+      "value_type": "integer",
+      "confirmation_required": true,
+      "skippable": true,
+      "options": []
+    },
+    {
       "key": "person.is_adult",
       "value_type": "boolean",
       "confirmation_required": true,
@@ -116,6 +179,63 @@
     }
   ],
   "questions": [
+    {
+      "key": "basic.services",
+      "need_keys": ["basic_needs"],
+      "attribute_key": "request.services.basic",
+      "answer_type": "multi_choice",
+      "presentation": "icon_grid",
+      "selection_mode": "multiple",
+      "minimum_selections": 1,
+      "priority": 1,
+      "ai_rephrasing_allowed": false,
+      "localizations": {
+        "de": { "canonical_text": "Was brauchst du?", "help_text": "Du kannst mehrere Dinge auswählen.", "unknown_label": "Weiss ich nicht", "decline_label": "Überspringen" },
+        "fr": { "canonical_text": "De quoi as-tu besoin ?", "help_text": "Tu peux choisir plusieurs éléments.", "unknown_label": "Je ne sais pas", "decline_label": "Passer" },
+        "en": { "canonical_text": "What do you need?", "help_text": "You can choose more than one.", "unknown_label": "I don't know", "decline_label": "Skip" },
+        "es": { "canonical_text": "¿Qué necesitas?", "help_text": "Puedes elegir varias opciones.", "unknown_label": "No lo sé", "decline_label": "Omitir" },
+        "pt": { "canonical_text": "Do que precisas?", "help_text": "Podes escolher várias opções.", "unknown_label": "Não sei", "decline_label": "Ignorar" },
+        "ary": { "canonical_text": "شنو محتاج؟", "help_text": "تقدر تختار كثر من حاجة.", "unknown_label": "ما عارفش", "decline_label": "دوز" }
+      }
+    },
+    {
+      "key": "counselling.services",
+      "need_keys": ["counselling"],
+      "attribute_key": "request.services.counselling",
+      "answer_type": "multi_choice",
+      "presentation": "icon_grid",
+      "selection_mode": "multiple",
+      "minimum_selections": 1,
+      "priority": 1,
+      "ai_rephrasing_allowed": false,
+      "localizations": {
+        "de": { "canonical_text": "Wobei brauchst du Unterstützung?", "help_text": "Du kannst mehrere Themen auswählen.", "unknown_label": "Weiss ich nicht", "decline_label": "Überspringen" },
+        "fr": { "canonical_text": "Pour quoi as-tu besoin de soutien ?", "help_text": "Tu peux choisir plusieurs thèmes.", "unknown_label": "Je ne sais pas", "decline_label": "Passer" },
+        "en": { "canonical_text": "What do you need support with?", "help_text": "You can choose more than one topic.", "unknown_label": "I don't know", "decline_label": "Skip" },
+        "es": { "canonical_text": "¿Con qué necesitas apoyo?", "help_text": "Puedes elegir varios temas.", "unknown_label": "No lo sé", "decline_label": "Omitir" },
+        "pt": { "canonical_text": "Em que precisas de apoio?", "help_text": "Podes escolher vários temas.", "unknown_label": "Não sei", "decline_label": "Ignorar" },
+        "ary": { "canonical_text": "فاش محتاج المساعدة؟", "help_text": "تقدر تختار كثر من موضوع.", "unknown_label": "ما عارفش", "decline_label": "دوز" }
+      }
+    },
+    {
+      "key": "counselling.addiction",
+      "need_keys": ["counselling"],
+      "attribute_key": "request.services.addiction",
+      "answer_type": "multi_choice",
+      "presentation": "icon_grid",
+      "selection_mode": "multiple",
+      "minimum_selections": 1,
+      "priority": 2,
+      "ai_rephrasing_allowed": false,
+      "localizations": {
+        "de": { "canonical_text": "Worum geht es bei der Sucht?", "help_text": "Wähle aus, was am besten passt.", "unknown_label": "Weiss ich nicht", "decline_label": "Überspringen" },
+        "fr": { "canonical_text": "De quelle dépendance s’agit-il ?", "help_text": "Choisis ce qui correspond le mieux.", "unknown_label": "Je ne sais pas", "decline_label": "Passer" },
+        "en": { "canonical_text": "What kind of addiction is it?", "help_text": "Choose what fits best.", "unknown_label": "I don't know", "decline_label": "Skip" },
+        "es": { "canonical_text": "¿De qué adicción se trata?", "help_text": "Elige lo que mejor corresponda.", "unknown_label": "No lo sé", "decline_label": "Omitir" },
+        "pt": { "canonical_text": "De que dependência se trata?", "help_text": "Escolhe o que corresponde melhor.", "unknown_label": "Não sei", "decline_label": "Ignorar" },
+        "ary": { "canonical_text": "على شنو داير الإدمان؟", "help_text": "اختار شنو كيناسب كثر.", "unknown_label": "ما عارفش", "decline_label": "دوز" }
+      }
+    },
     {
       "key": "sleep.has_dog",
       "need_keys": ["sleep_tonight"],
@@ -255,46 +375,46 @@
       }
     },
     {
-      "key": "access.is_adult",
-      "need_keys": ["sleep_tonight", "basic_needs", "counselling", "victim_support"],
-      "attribute_key": "person.is_adult",
-      "answer_type": "yes_no_unknown",
+      "key": "access.age",
+      "need_keys": ["sleep_tonight"],
+      "attribute_key": "person.age",
+      "answer_type": "number",
       "priority": 40,
-      "ai_rephrasing_allowed": true,
+      "ai_rephrasing_allowed": false,
       "localizations": {
         "de": {
-          "canonical_text": "Ist die Person, für die Sie Hilfe suchen, 18 Jahre oder älter?",
-          "help_text": "Einige Angebote sind nur für volljährige Personen zugänglich.",
+          "canonical_text": "Wie alt ist die Person, für die du Hilfe suchst?",
+          "help_text": "Das Alter wird nur für diese Suche verwendet und nicht gespeichert.",
           "unknown_label": "Weiss ich nicht",
           "decline_label": "Möchte ich nicht angeben"
         },
         "fr": {
-          "canonical_text": "La personne pour laquelle vous cherchez de l’aide a-t-elle 18 ans ou plus ?",
-          "help_text": "Certaines offres sont réservées aux personnes majeures.",
+          "canonical_text": "Quel âge a la personne pour laquelle tu cherches de l’aide ?",
+          "help_text": "L’âge est utilisé uniquement pour cette recherche et n’est pas enregistré.",
           "unknown_label": "Je ne sais pas",
           "decline_label": "Je préfère ne pas dire"
         },
         "en": {
-          "canonical_text": "Is the person you are seeking help for 18 or older?",
-          "help_text": "Some services are only available to adults.",
+          "canonical_text": "How old is the person you are seeking help for?",
+          "help_text": "The age is used only for this search and is not stored.",
           "unknown_label": "Don't know",
           "decline_label": "Prefer not to say"
         },
         "es": {
-          "canonical_text": "¿La persona para la que buscas ayuda tiene 18 años o más?",
-          "help_text": "Algunos servicios solo están disponibles para personas adultas.",
+          "canonical_text": "¿Qué edad tiene la persona para la que buscas ayuda?",
+          "help_text": "La edad solo se utiliza para esta búsqueda y no se guarda.",
           "unknown_label": "No lo sé",
           "decline_label": "Prefiero no indicarlo"
         },
         "pt": {
-          "canonical_text": "A pessoa para quem procuras ajuda tem 18 anos ou mais?",
-          "help_text": "Alguns serviços destinam-se apenas a pessoas adultas.",
+          "canonical_text": "Que idade tem a pessoa para quem procuras ajuda?",
+          "help_text": "A idade é usada apenas para esta pesquisa e não é guardada.",
           "unknown_label": "Não sei",
           "decline_label": "Prefiro não indicar"
         },
         "ary": {
-          "canonical_text": "واش الشخص اللي كتقلب ليه على المساعدة عندو 18 عام ولا كثر؟",
-          "help_text": "شي خدمات مخصصين غير للناس الراشدين.",
+          "canonical_text": "شحال فعمر الشخص اللي كتقلب ليه على المساعدة؟",
+          "help_text": "العمر كيتستعمل غير فهاد البحث وما كيتخزنش.",
           "unknown_label": "ما عارفش",
           "decline_label": "ما بغيتش نجاوب"
         }

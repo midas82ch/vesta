@@ -15,6 +15,7 @@ from vesta_api.ingestion.web_offers import (  # noqa: E402
     _FIND_EXISTING_OFFER_ID,
     _INSERT_CATEGORY,
     _INSERT_RUN,
+    _INSERT_SOURCE_REVISION,
     _UPSERT_OFFER,
     _UPSERT_VERIFICATION,
     LEGACY_ID_NAMESPACE,
@@ -180,6 +181,7 @@ class OfferCatalogTest(unittest.TestCase):
         self.assertNotIn(_DELETE_CATEGORIES, statements)
         self.assertNotIn(_INSERT_CATEGORY, statements)
         self.assertNotIn(_UPSERT_VERIFICATION, statements)
+        self.assertIn(_INSERT_SOURCE_REVISION, statements)
         self.assertIn(_INSERT_RUN, statements)
 
 

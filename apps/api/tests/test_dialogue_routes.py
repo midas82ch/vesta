@@ -268,11 +268,10 @@ class DialogueRoutesTest(unittest.TestCase):
         self.assertEqual("template", payload["ai_mode"])
         self.assertEqual("question", payload["outcome"])
         assert payload["question"] is not None
-        self.assertEqual("person.is_adult", payload["question"]["attribute_key"])
+        self.assertEqual("person.age", payload["question"]["attribute_key"])
         # Regression: the web UI rendered a stray number-input form on every
         # question because answer_type was missing from the wire response,
-        # so a yes/no question also showed an empty "confirm a number" field.
-        self.assertEqual("yes_no_unknown", payload["question"]["answer_type"])
+        self.assertEqual("number", payload["question"]["answer_type"])
         self.assertTrue(payload["question"]["text"])
         self.assertEqual([], payload["candidates"])
 
@@ -285,6 +284,74 @@ class DialogueRoutesTest(unittest.TestCase):
 
         self.assertEqual(422, response.status_code)
         self.assertEqual("unknown_or_inactive_category", response.json()["detail"])
+
+    def test_basic_needs_starts_with_a_multi_select_icon_grid(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/dialogue/start",
+                json={"need": "basic_needs", "language": "de"},
+            )
+
+        self.assertEqual(200, response.status_code, response.text)
+        question = response.json()["question"]
+        self.assertEqual("request.services.basic", question["attribute_key"])
+        self.assertEqual("multi_choice", question["answer_type"])
+        self.assertEqual("icon_grid", question["presentation"])
+        self.assertEqual("multiple", question["selection_mode"])
+        self.assertEqual(7, len(question["options"]))
+        self.assertTrue(all(option["icon"] for option in question["options"]))
+
+    def test_multi_select_rejects_empty_duplicate_and_unknown_values(self) -> None:
+        with TestClient(app) as client:
+            started = client.post(
+                "/v1/dialogue/start",
+                json={"need": "basic_needs", "language": "de"},
+            ).json()
+            for value in ([], ["meal", "meal"], ["does_not_exist"]):
+                with self.subTest(value=value):
+                    response = client.post(
+                        "/v1/dialogue/answer",
+                        json={
+                            "session_id": started["session_id"],
+                            "question_key": started["question"]["question_key"],
+                            "value": value,
+                        },
+                    )
+                    self.assertEqual(422, response.status_code, response.text)
+
+    def test_skipping_required_service_detail_does_not_return_a_broad_offer(self) -> None:
+        with TestClient(app) as client:
+            started = client.post(
+                "/v1/dialogue/start",
+                json={"need": "basic_needs", "language": "de"},
+            ).json()
+            response = client.post(
+                "/v1/dialogue/answer",
+                json={
+                    "session_id": started["session_id"],
+                    "question_key": started["question"]["question_key"],
+                    "declined": True,
+                },
+            )
+
+        self.assertEqual(200, response.status_code, response.text)
+        self.assertEqual("no_match", response.json()["outcome"])
+        self.assertEqual([], response.json()["candidates"])
+
+    def test_detected_topic_is_preselected_but_not_yet_confirmed(self) -> None:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/dialogue/start",
+                json={
+                    "need": "basic_needs",
+                    "language": "de",
+                    "service_topics": ["food"],
+                },
+            )
+
+        self.assertEqual(200, response.status_code, response.text)
+        question = response.json()["question"]
+        self.assertEqual(["meal", "groceries"], question["preselected_values"])
 
     def test_dialogue_returns_an_explicit_no_offer_outcome(self) -> None:
         with TestClient(app) as client:
@@ -348,7 +415,7 @@ class DialogueRoutesTest(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_adult_answer_must_be_boolean(self) -> None:
+    def test_age_answer_must_be_a_realistic_integer(self) -> None:
         with TestClient(app) as client:
             payload = client.post(
                 "/v1/dialogue/start",
@@ -359,7 +426,7 @@ class DialogueRoutesTest(unittest.TestCase):
             for _ in range(10):
                 question = payload["question"]
                 assert question is not None
-                if question["attribute_key"] == "person.is_adult":
+                if question["attribute_key"] == "person.age":
                     break
                 response = client.post(
                     "/v1/dialogue/answer",
@@ -372,18 +439,18 @@ class DialogueRoutesTest(unittest.TestCase):
                 self.assertEqual(200, response.status_code)
                 payload = response.json()
 
-            adult_question = payload["question"]
-            assert adult_question is not None
-            self.assertEqual("person.is_adult", adult_question["attribute_key"])
-            self.assertEqual("yes_no_unknown", adult_question["answer_type"])
+            age_question = payload["question"]
+            assert age_question is not None
+            self.assertEqual("person.age", age_question["attribute_key"])
+            self.assertEqual("number", age_question["answer_type"])
 
-            for invalid_value in (-1, 18, "yes", 6.5):
+            for invalid_value in (-1, 5, 121, "yes", 6.5, True):
                 with self.subTest(value=invalid_value):
                     response = client.post(
                         "/v1/dialogue/answer",
                         json={
                             "session_id": session_id,
-                            "question_key": adult_question["question_key"],
+                            "question_key": age_question["question_key"],
                             "value": invalid_value,
                         },
                     )
@@ -393,8 +460,8 @@ class DialogueRoutesTest(unittest.TestCase):
                 "/v1/dialogue/answer",
                 json={
                     "session_id": session_id,
-                    "question_key": adult_question["question_key"],
-                    "value": True,
+                    "question_key": age_question["question_key"],
+                    "value": 18,
                 },
             )
             self.assertEqual(200, response.status_code)
@@ -442,6 +509,49 @@ class DialogueRoutesTest(unittest.TestCase):
         self.assertTrue(
             any(event.payload.get("location_used") is True for event in events)
         )
+
+    def test_exact_age_is_not_retained_in_workflow_audit(self) -> None:
+        with TestClient(app) as client:
+            started = client.post(
+                "/v1/dialogue/start",
+                json={"need": "sleep_tonight", "language": "de"},
+            ).json()
+            response = client.post(
+                "/v1/dialogue/answer",
+                json={
+                    "session_id": started["session_id"],
+                    "question_key": started["question"]["question_key"],
+                    "value": 119,
+                },
+            )
+            self.assertEqual(200, response.status_code, response.text)
+            events = app.state.workflow_audit_log.list_events(started["session_id"])
+
+        serialized = json.dumps(
+            [event.payload for event in events], ensure_ascii=False, sort_keys=True
+        )
+        self.assertNotIn("119", serialized)
+        self.assertNotIn("provided_not_stored", serialized)
+
+    def test_minor_without_matching_sleep_offer_receives_147(self) -> None:
+        with TestClient(app) as client:
+            started = client.post(
+                "/v1/dialogue/start",
+                json={"need": "sleep_tonight", "language": "de"},
+            ).json()
+            response = client.post(
+                "/v1/dialogue/answer",
+                json={
+                    "session_id": started["session_id"],
+                    "question_key": started["question"]["question_key"],
+                    "value": 6,
+                },
+            )
+
+        self.assertEqual(200, response.status_code, response.text)
+        payload = response.json()
+        self.assertEqual("no_match", payload["outcome"])
+        self.assertEqual("147", payload["handoff_resources"][0]["phone"])
 
 
 if __name__ == "__main__":

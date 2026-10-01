@@ -63,6 +63,7 @@ class RoutesTest(unittest.TestCase):
                     "language": "fr",
                     "dog": True,
                     "has_identity_document": False,
+                    "requested_services": ["meal"],
                     "risk_flags": [],
                 },
             )
@@ -111,15 +112,21 @@ class RoutesTest(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         categories = response.json()["categories"]
-        self.assertEqual(4, len(categories))
+        self.assertEqual(5, len(categories))
         self.assertEqual(
-            {"sleep_tonight", "basic_needs", "counselling", "victim_support"},
+            {
+                "sleep_tonight",
+                "basic_needs",
+                "counselling",
+                "victim_support",
+                "daytime_stay",
+            },
             {category["key"] for category in categories},
         )
         self.assertTrue(all(category["title"] for category in categories))
         self.assertTrue(all(category["description"] for category in categories))
         self.assertEqual(
-            {"home", "food", "book", "support"},
+            {"home", "food", "book", "support", "daytime"},
             {category["icon"] for category in categories},
         )
 
@@ -181,8 +188,25 @@ class RoutesTest(unittest.TestCase):
                             "is_adult": value,
                         },
                     )
-
                     self.assertEqual(422, response.status_code)
+
+    def test_match_rejects_unknown_services_and_invalid_exact_age(self) -> None:
+        with TestClient(app) as client:
+            unknown_service = client.post(
+                "/v1/matches",
+                json={
+                    "need": "basic_needs",
+                    "requested_services": ["not_in_the_catalog"],
+                },
+            )
+            boolean_age = client.post(
+                "/v1/matches",
+                json={"need": "sleep_tonight", "age": True},
+            )
+
+        self.assertEqual(422, unknown_service.status_code)
+        self.assertEqual("unknown_requested_service", unknown_service.json()["detail"])
+        self.assertEqual(422, boolean_age.status_code)
 
     def test_accepts_boolean_adult_status(self) -> None:
         with TestClient(app) as client:

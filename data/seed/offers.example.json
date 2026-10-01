@@ -34,6 +34,7 @@
       "name": "Demo-Angebot Grundversorgung (nicht real)",
       "summary": "Beispieldatensatz für Essen, Dusche oder Ersthilfe.",
       "needs": ["basic_needs"],
+      "services": ["meal", "groceries", "shower", "laundry", "clothing", "toilet", "locker"],
       "languages": ["de", "fr", "en", "ar"],
       "access": {
         "accepts_dogs": true,
@@ -59,6 +60,7 @@
       "name": "Demo-Angebot Beratung (nicht real)",
       "summary": "Beispieldatensatz für Beratung zu Wohnen, Sucht oder Finanzen.",
       "needs": ["counselling"],
+      "services": ["general_social", "housing", "finances", "health", "mental_health", "legal", "addiction", "addiction_alcohol", "addiction_opioids", "addiction_other", "addiction_multiple"],
       "languages": ["de", "fr"],
       "access": {
         "accepts_dogs": null,

@@ -24,6 +24,7 @@ const ICONS: { value: NeedIcon; label: string }[] = [
   { value: "clothing", label: "Kleidung" },
   { value: "shower", label: "Hygiene / Dusche" },
   { value: "support", label: "Unterstützung" },
+  { value: "daytime", label: "Aufenthalt / Toilette" },
   { value: "other", label: "Andere Kategorie" },
 ];
 

@@ -126,6 +126,10 @@ _RESOURCE_TEXTS: dict[str, dict[str, str]] = {
         "police_note": "Bei unmittelbarer Bedrohung sofort anrufen.",
         "medical_note": "Bei Verletzungen oder einem medizinischen Notfall.",
         "victim_note": "Kostenlos, vertraulich und rund um die Uhr erreichbar.",
+        "youth": "Beratung 147",
+        "youth_note": "Für Kinder und Jugendliche: kostenlos, vertraulich und rund um die Uhr.",
+        "crisis": "Die Dargebotene Hand",
+        "crisis_note": "Ein offenes Ohr in schwierigen Situationen, rund um die Uhr.",
     },
     "fr": {
         "police": "Police",
@@ -134,6 +138,13 @@ _RESOURCE_TEXTS: dict[str, dict[str, str]] = {
         "police_note": "Appelez immédiatement en cas de menace directe.",
         "medical_note": "En cas de blessure ou d'urgence médicale.",
         "victim_note": "Service gratuit, confidentiel et disponible 24 h/24.",
+        "youth": "Conseil 147",
+        "youth_note": (
+            "Pour les enfants et les jeunes : gratuit, confidentiel "
+            "et disponible 24 h/24."
+        ),
+        "crisis": "La Main Tendue",
+        "crisis_note": "Une écoute dans les moments difficiles, disponible 24 h/24.",
     },
     "en": {
         "police": "Police",
@@ -142,6 +153,13 @@ _RESOURCE_TEXTS: dict[str, dict[str, str]] = {
         "police_note": "Call immediately if you are under direct threat.",
         "medical_note": "For injuries or a medical emergency.",
         "victim_note": "Free, confidential and available around the clock.",
+        "youth": "Counselling 147",
+        "youth_note": (
+            "For children and young people: free, confidential and "
+            "available around the clock."
+        ),
+        "crisis": "The Helping Hand",
+        "crisis_note": "Someone to listen in difficult situations, available around the clock.",
     },
     "es": {
         "police": "Policía",
@@ -150,6 +168,13 @@ _RESOURCE_TEXTS: dict[str, dict[str, str]] = {
         "police_note": "Llama inmediatamente si existe una amenaza directa.",
         "medical_note": "En caso de lesiones o emergencia médica.",
         "victim_note": "Servicio gratuito, confidencial y disponible las 24 horas.",
+        "youth": "Asesoramiento 147",
+        "youth_note": (
+            "Para niños, niñas y jóvenes: gratuito, confidencial y "
+            "disponible las 24 horas."
+        ),
+        "crisis": "La Mano Tendida",
+        "crisis_note": "Alguien que escucha en situaciones difíciles, disponible las 24 horas.",
     },
     "pt": {
         "police": "Polícia",
@@ -158,6 +183,10 @@ _RESOURCE_TEXTS: dict[str, dict[str, str]] = {
         "police_note": "Liga imediatamente em caso de ameaça direta.",
         "medical_note": "Em caso de ferimentos ou emergência médica.",
         "victim_note": "Serviço gratuito, confidencial e disponível 24 horas.",
+        "youth": "Aconselhamento 147",
+        "youth_note": "Para crianças e jovens: gratuito, confidencial e disponível 24 horas.",
+        "crisis": "A Mão Amiga",
+        "crisis_note": "Alguém que escuta em situações difíceis, disponível 24 horas.",
     },
     "ary": {
         "police": "البوليس",
@@ -166,6 +195,10 @@ _RESOURCE_TEXTS: dict[str, dict[str, str]] = {
         "police_note": "عيط دابا إلا كنت فخطر مباشر.",
         "medical_note": "إلا كنت مجروح ولا كاينة حالة طبية مستعجلة.",
         "victim_note": "مساعدة مجانية وسرية ومتوفرة فالليل والنهار.",
+        "youth": "المساعدة 147",
+        "youth_note": "للأطفال والشباب: مجانية وسرية ومتوفرة فالليل والنهار.",
+        "crisis": "اليد الممدودة",
+        "crisis_note": "شي حد يسمع ليك فالظروف الصعيبة، فالليل والنهار.",
     },
 }
 
@@ -205,3 +238,33 @@ def safety_resources(locale: str, *, immediate_danger: bool) -> tuple[dict[str, 
             "description": texts["victim_note"],
         },
     )
+
+
+def no_match_resources(
+    locale: str, *, youth: bool = False, emotional_crisis: bool = False
+) -> tuple[dict[str, str], ...]:
+    """Return contextual support without turning a normal no-match into a handoff."""
+
+    texts = _RESOURCE_TEXTS[normalized_locale(locale)]
+    resources: list[dict[str, str]] = []
+    if youth:
+        resources.append(
+            {
+                "kind": "youth_support",
+                "name": texts["youth"],
+                "phone": "147",
+                "url": "tel:147",
+                "description": texts["youth_note"],
+            }
+        )
+    if emotional_crisis:
+        resources.append(
+            {
+                "kind": "crisis_support",
+                "name": texts["crisis"],
+                "phone": "143",
+                "url": "tel:143",
+                "description": texts["crisis_note"],
+            }
+        )
+    return tuple(resources)

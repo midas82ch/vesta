@@ -178,6 +178,7 @@ class TemplateGateway:
                 label=_localized(option.localizations, locale).get(
                     "label", option.value
                 ),
+                icon=option.icon,
             )
             for option in attribute.options
         )

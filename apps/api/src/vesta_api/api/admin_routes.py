@@ -14,6 +14,9 @@ from vesta_api.api.admin_schemas import (
     AdminOfferListResponse,
     AdminOfferResponse,
     AdminOfferWriteRequest,
+    AdminServiceListResponse,
+    AdminServiceResponse,
+    AdminServiceWriteRequest,
     AiAuditEntryDetailResponse,
     AiAuditEntrySummaryResponse,
     AiAuditLogListResponse,
@@ -35,6 +38,7 @@ from vesta_api.domain.admin_catalog_models import (
     CategoryWrite,
     OfferLocalizationWrite,
     OfferWrite,
+    ServiceDefinitionWrite,
 )
 from vesta_api.domain.admin_models import AdminUser
 from vesta_api.domain.audit_models import AiOutcome, AiPort
@@ -447,6 +451,10 @@ def _offer_response(offer: object) -> AdminOfferResponse:
     return AdminOfferResponse.model_validate(offer, from_attributes=True)
 
 
+def _service_response(service: object) -> AdminServiceResponse:
+    return AdminServiceResponse.model_validate(service, from_attributes=True)
+
+
 @router.get("/categories", response_model=AdminCategoryListResponse)
 def list_admin_categories(
     _admin: Annotated[AdminUser, Depends(require_admin_session)],
@@ -455,6 +463,71 @@ def list_admin_categories(
     return AdminCategoryListResponse(
         categories=[_category_response(category) for category in catalog.list_categories()]
     )
+
+
+@router.get("/services", response_model=AdminServiceListResponse)
+def list_admin_services(
+    _admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminServiceListResponse:
+    return AdminServiceListResponse(
+        services=[_service_response(service) for service in catalog.list_services()]
+    )
+
+
+@router.post("/services", response_model=AdminServiceResponse, status_code=201)
+def create_admin_service(
+    payload: AdminServiceWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminServiceResponse:
+    try:
+        service = catalog.create_service(
+            ServiceDefinitionWrite(
+                service_group=payload.service_group,
+                icon=payload.icon,
+                status=payload.status,
+                sort_order=payload.sort_order,
+                localizations={
+                    locale: values.model_dump()
+                    for locale, values in payload.localizations.items()
+                },
+            ),
+            admin,
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _service_response(service)
+
+
+@router.put("/services/{key}", response_model=AdminServiceResponse)
+def update_admin_service(
+    key: str,
+    payload: AdminServiceWriteRequest,
+    admin: Annotated[AdminUser, Depends(require_admin_session)],
+    catalog: Annotated[AdminCatalogRepository, Depends(admin_offer_repository)],
+) -> AdminServiceResponse:
+    if payload.revision is None:
+        raise HTTPException(status_code=422, detail="revision_required")
+    try:
+        service = catalog.update_service(
+            key,
+            ServiceDefinitionWrite(
+                service_group=payload.service_group,
+                icon=payload.icon,
+                status=payload.status,
+                sort_order=payload.sort_order,
+                localizations={
+                    locale: values.model_dump()
+                    for locale, values in payload.localizations.items()
+                },
+                revision=payload.revision,
+            ),
+            admin,
+        )
+    except Exception as error:
+        _raise_catalog_http_error(error)
+    return _service_response(service)
 
 
 @router.post(
@@ -531,6 +604,11 @@ def _offer_write(payload: AdminOfferWriteRequest) -> OfferWrite:
         slug=payload.slug,
         management_mode=payload.management_mode,
         revision=payload.revision,
+        services=tuple(payload.services),
+        provider_approval_status=payload.provider_approval_status,
+        provider_approval_reference=payload.provider_approval_reference,
+        provider_approval_scope=payload.provider_approval_scope,
+        provider_approval_evidence=payload.provider_approval_evidence,
     )
 
 

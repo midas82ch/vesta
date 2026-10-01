@@ -15,11 +15,13 @@ from vesta_api.domain.admin_catalog_models import (
     AdminCategory,
     AdminChange,
     AdminOffer,
+    AdminServiceDefinition,
     CategoryWrite,
     ImportSettings,
     OfferLocalization,
     OfferLocalizationWrite,
     OfferWrite,
+    ServiceDefinitionWrite,
 )
 from vesta_api.domain.admin_models import AdminUser
 from vesta_api.repositories.database import create_database_engine
@@ -37,6 +39,23 @@ class CatalogValidationError(ValueError):
     pass
 
 
+def _services_cover_public_needs(
+    needs: tuple[str, ...],
+    services: tuple[str, ...],
+    service_groups: Mapping[str, str],
+) -> bool:
+    selected_groups = {
+        service_groups[key] for key in services if key in service_groups
+    }
+    if "basic_needs" in needs and "basic_needs" not in selected_groups:
+        return False
+    if "counselling" in needs and "counselling" not in selected_groups:
+        return False
+    if "daytime_stay" in needs and "daytime_no_purchase" not in services:
+        return False
+    return True
+
+
 class AdminCatalogRepository(Protocol):
     def list_categories(self) -> tuple[AdminCategory, ...]: ...
 
@@ -45,6 +64,16 @@ class AdminCatalogRepository(Protocol):
     def update_category(
         self, key: str, write: CategoryWrite, admin: AdminUser
     ) -> AdminCategory: ...
+
+    def list_services(self) -> tuple[AdminServiceDefinition, ...]: ...
+
+    def create_service(
+        self, write: ServiceDefinitionWrite, admin: AdminUser
+    ) -> AdminServiceDefinition: ...
+
+    def update_service(
+        self, key: str, write: ServiceDefinitionWrite, admin: AdminUser
+    ) -> AdminServiceDefinition: ...
 
     def list_offers(self) -> tuple[AdminOffer, ...]: ...
 
@@ -106,6 +135,21 @@ def _category_from_row(row: Mapping[str, Any]) -> AdminCategory:
     )
 
 
+def _service_from_row(row: Mapping[str, Any]) -> AdminServiceDefinition:
+    return AdminServiceDefinition(
+        key=str(row["key"]),
+        service_group=row["service_group"],
+        icon=str(row["icon"]),
+        status=row["status"],
+        sort_order=int(row["sort_order"]),
+        revision=int(row["revision"]),
+        localizations=dict(row["localizations"]),
+        offer_count=int(row["offer_count"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
 def _offer_from_row(row: Mapping[str, Any]) -> AdminOffer:
     contact = row["contact"] or {}
     archived_at = row["archived_at"]
@@ -150,6 +194,16 @@ def _offer_from_row(row: Mapping[str, Any]) -> AdminOffer:
         is_demo=bool(row["is_demo"]),
         updated_at=row["updated_at"],
         localizations=localizations,
+        services=tuple(row.get("services") or ()),
+        provider_approval_status=row.get("provider_approval_status") or "pending",
+        provider_approval_reference=row.get("provider_approval_reference"),
+        provider_approval_scope=row.get("provider_approval_scope"),
+        provider_approval_evidence=row.get("provider_approval_evidence"),
+        provider_approval_deadline=row.get("provider_approval_deadline"),
+        source_draft=(
+            dict(row["source_draft"]) if row.get("source_draft") else None
+        ),
+        source_draft_created_at=row.get("source_draft_created_at"),
     )
 
 
@@ -171,6 +225,25 @@ _LIST_CATEGORIES = text(
     """
 )
 
+_LIST_SERVICES = text(
+    """
+    SELECT s.key, s.service_group, s.icon, s.status, s.sort_order, s.revision,
+           s.created_at, s.updated_at,
+           COALESCE(jsonb_object_agg(
+               sl.locale, jsonb_build_object(
+                   'label', sl.label, 'description', sl.description
+               )
+           ) FILTER (WHERE sl.locale IS NOT NULL), '{}'::jsonb) AS localizations,
+           COUNT(DISTINCT os.offer_id) FILTER (WHERE os.status = 'confirmed')
+               AS offer_count
+    FROM service_definitions s
+    LEFT JOIN service_localizations sl ON sl.service_key = s.key
+    LEFT JOIN offer_services os ON os.service_key = s.key
+    GROUP BY s.key
+    ORDER BY s.service_group, s.sort_order, s.key
+    """
+)
+
 _LIST_ADMIN_OFFERS = text(
     """
     SELECT o.id::text AS id, o.slug, o.name, o.summary, o.languages,
@@ -181,16 +254,29 @@ _LIST_ADMIN_OFFERS = text(
            ST_X(o.location::geometry) AS longitude,
            org.name AS organization_name,
            COALESCE(c.needs, ARRAY[]::text[]) AS needs,
+           COALESCE(s.services, ARRAY[]::text[]) AS services,
            COALESCE(l.localizations, '{}'::jsonb) AS localizations,
            v.source_label, v.source_url, v.verified_by,
            COALESCE(v.verified_at, o.created_at) AS verified_at,
-           COALESCE(v.expires_at, o.created_at) AS expires_at
+           COALESCE(v.expires_at, o.created_at) AS expires_at,
+           COALESCE(pa.status, 'pending') AS provider_approval_status,
+           pa.contact_reference AS provider_approval_reference,
+           pa.scope_note AS provider_approval_scope,
+           pa.decision_evidence AS provider_approval_evidence,
+           pa.legacy_deadline AS provider_approval_deadline,
+           sr.extracted_data AS source_draft,
+           sr.created_at AS source_draft_created_at
     FROM offers o
     JOIN organizations org ON org.id = o.organization_id
     LEFT JOIN LATERAL (
         SELECT array_agg(category ORDER BY category) AS needs
         FROM offer_categories WHERE offer_id = o.id
     ) c ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT array_agg(service_key ORDER BY service_key) AS services
+        FROM offer_services
+        WHERE offer_id = o.id
+    ) s ON TRUE
     LEFT JOIN LATERAL (
         SELECT jsonb_object_agg(
             ol.locale, jsonb_build_object(
@@ -213,6 +299,13 @@ _LIST_ADMIN_OFFERS = text(
         FROM offer_verifications WHERE offer_id = o.id
         ORDER BY verified_at DESC, created_at DESC LIMIT 1
     ) v ON TRUE
+    LEFT JOIN provider_approvals pa ON pa.offer_id = o.id
+    LEFT JOIN LATERAL (
+        SELECT extracted_data, created_at
+        FROM offer_source_revisions
+        WHERE offer_id = o.id AND status = 'pending_review'
+        ORDER BY created_at DESC LIMIT 1
+    ) sr ON TRUE
     ORDER BY o.updated_at DESC, o.name
     """
 )
@@ -434,6 +527,227 @@ class PostgresAdminCatalogRepository:
             )
         return after
 
+    def list_services(self) -> tuple[AdminServiceDefinition, ...]:
+        with self._engine.connect() as connection:
+            rows = connection.execute(_LIST_SERVICES).mappings().all()
+        return tuple(_service_from_row(row) for row in rows)
+
+    @staticmethod
+    def _replace_service_localizations(
+        connection: Connection,
+        key: str,
+        localizations: dict[str, dict[str, str]],
+    ) -> None:
+        connection.execute(
+            text("DELETE FROM service_localizations WHERE service_key = :key"),
+            {"key": key},
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO service_localizations (
+                    service_key, locale, label, description
+                ) VALUES (:key, :locale, :label, :description)
+                """
+            ),
+            [
+                {
+                    "key": key,
+                    "locale": locale,
+                    "label": values["label"],
+                    "description": values.get("description", ""),
+                }
+                for locale, values in localizations.items()
+            ],
+        )
+
+    @staticmethod
+    def _sync_service_question_option(
+        connection: Connection,
+        key: str,
+        write: ServiceDefinitionWrite,
+    ) -> None:
+        attribute_keys = {
+            "basic_needs": "request.services.basic",
+            "counselling": "request.services.counselling",
+            "addiction": "request.services.addiction",
+        }
+        connection.execute(
+            text(
+                """
+                DELETE FROM attribute_options
+                WHERE value = :key
+                  AND attribute_id IN (
+                      SELECT id FROM attribute_definitions
+                      WHERE key LIKE 'request.services.%'
+                  )
+                """
+            ),
+            {"key": key},
+        )
+        if write.status != "published" or key == "daytime_no_purchase":
+            return
+        option_id = uuid4()
+        connection.execute(
+            text(
+                """
+                INSERT INTO attribute_options (
+                    id, attribute_id, value, sort_order, icon
+                )
+                SELECT :id, id, :value, :sort_order, :icon
+                FROM attribute_definitions WHERE key = :attribute_key
+                """
+            ),
+            {
+                "id": option_id,
+                "value": key,
+                "sort_order": write.sort_order,
+                "icon": write.icon,
+                "attribute_key": attribute_keys[write.service_group],
+            },
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO attribute_option_localizations (
+                    option_id, locale, label, explanation
+                ) VALUES (:option_id, :locale, :label, :explanation)
+                """
+            ),
+            [
+                {
+                    "option_id": option_id,
+                    "locale": locale,
+                    "label": values["label"],
+                    "explanation": values.get("description", ""),
+                }
+                for locale, values in write.localizations.items()
+            ],
+        )
+
+    def create_service(
+        self, write: ServiceDefinitionWrite, admin: AdminUser
+    ) -> AdminServiceDefinition:
+        if write.status != "draft":
+            raise CatalogValidationError("new_service_must_start_as_draft")
+        with self._engine.begin() as connection:
+            base = _slugify(write.localizations["de"]["label"])
+            key = base
+            suffix = 2
+            while connection.execute(
+                text("SELECT 1 FROM service_definitions WHERE key = :key"),
+                {"key": key},
+            ).scalar_one_or_none():
+                key = f"{base}-{suffix}"
+                suffix += 1
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO service_definitions (
+                        key, service_group, icon, status, sort_order
+                    ) VALUES (:key, :service_group, :icon, :status, :sort_order)
+                    """
+                ),
+                {
+                    "key": key,
+                    "service_group": write.service_group,
+                    "icon": write.icon,
+                    "status": write.status,
+                    "sort_order": write.sort_order,
+                },
+            )
+            self._replace_service_localizations(connection, key, write.localizations)
+            self._sync_service_question_option(connection, key, write)
+            created = next(
+                _service_from_row(row)
+                for row in connection.execute(_LIST_SERVICES).mappings()
+                if row["key"] == key
+            )
+            _record_change(
+                connection,
+                admin=admin,
+                entity_type="service_definition",
+                entity_id=key,
+                action="created",
+                before=None,
+                after=created,
+            )
+        return created
+
+    def update_service(
+        self, key: str, write: ServiceDefinitionWrite, admin: AdminUser
+    ) -> AdminServiceDefinition:
+        assert write.revision is not None
+        with self._engine.begin() as connection:
+            row = next(
+                (
+                    item
+                    for item in connection.execute(_LIST_SERVICES).mappings()
+                    if item["key"] == key
+                ),
+                None,
+            )
+            if row is None:
+                raise CatalogNotFoundError("service_not_found")
+            before = _service_from_row(row)
+            if before.revision != write.revision:
+                raise CatalogConflictError("service_was_modified")
+            if write.status == "archived" and before.offer_count:
+                raise CatalogValidationError("service_still_has_offers")
+            if write.status == "published":
+                published_count = connection.execute(
+                    text(
+                        """
+                        SELECT count(*) FROM service_definitions
+                        WHERE service_group = :service_group
+                          AND status = 'published' AND key <> :key
+                          AND key <> 'daytime_no_purchase'
+                        """
+                    ),
+                    {"service_group": write.service_group, "key": key},
+                ).scalar_one()
+                if published_count >= 7:
+                    raise CatalogValidationError("service_group_limit_reached")
+            result = connection.execute(
+                text(
+                    """
+                    UPDATE service_definitions
+                    SET service_group = :service_group, icon = :icon,
+                        status = :status, sort_order = :sort_order,
+                        revision = revision + 1, updated_at = now()
+                    WHERE key = :key AND revision = :revision
+                    RETURNING key
+                    """
+                ),
+                {
+                    "key": key,
+                    "service_group": write.service_group,
+                    "icon": write.icon,
+                    "status": write.status,
+                    "sort_order": write.sort_order,
+                    "revision": write.revision,
+                },
+            ).scalar_one_or_none()
+            if result is None:
+                raise CatalogConflictError("service_was_modified")
+            self._replace_service_localizations(connection, key, write.localizations)
+            self._sync_service_question_option(connection, key, write)
+            after = next(
+                _service_from_row(item)
+                for item in connection.execute(_LIST_SERVICES).mappings()
+                if item["key"] == key
+            )
+            _record_change(
+                connection,
+                admin=admin,
+                entity_type="service_definition",
+                entity_id=key,
+                action="updated",
+                before=before,
+                after=after,
+            )
+        return after
+
     def list_offers(self) -> tuple[AdminOffer, ...]:
         with self._engine.connect() as connection:
             rows = connection.execute(_LIST_ADMIN_OFFERS).mappings().all()
@@ -518,6 +832,22 @@ class PostgresAdminCatalogRepository:
             raise CatalogValidationError("unknown_or_inactive_category")
 
     @staticmethod
+    def _ensure_services(connection: Connection, services: tuple[str, ...]) -> None:
+        if not services:
+            return
+        rows = connection.execute(
+            text(
+                """
+                SELECT key FROM service_definitions
+                WHERE key = ANY(:keys) AND status <> 'archived'
+                """
+            ),
+            {"keys": list(services)},
+        ).scalars().all()
+        if set(rows) != set(services):
+            raise CatalogValidationError("unknown_or_inactive_service")
+
+    @staticmethod
     def _write_categories(
         connection: Connection, offer_id: object, categories: tuple[str, ...]
     ) -> None:
@@ -531,6 +861,94 @@ class PostgresAdminCatalogRepository:
                 "VALUES (:offer_id, :category)"
             ),
             [{"offer_id": offer_id, "category": item} for item in categories],
+        )
+
+    @staticmethod
+    def _write_services(
+        connection: Connection,
+        offer_id: object,
+        services: tuple[str, ...],
+        write: OfferWrite,
+    ) -> None:
+        connection.execute(
+            text("DELETE FROM offer_services WHERE offer_id = :offer_id"),
+            {"offer_id": offer_id},
+        )
+        if not services:
+            return
+        connection.execute(
+            text(
+                """
+                INSERT INTO offer_services (
+                    offer_id, service_key, status, evidence_url,
+                    evidence_note, verified_at
+                ) VALUES (
+                    :offer_id, :service_key, 'confirmed', :evidence_url,
+                    :evidence_note, now()
+                )
+                """
+            ),
+            [
+                {
+                    "offer_id": offer_id,
+                    "service_key": service,
+                    "evidence_url": write.source_url,
+                    "evidence_note": f"Im Adminbereich bestätigte Leistung: {service}",
+                }
+                for service in services
+            ],
+        )
+
+    @staticmethod
+    def _write_provider_approval(
+        connection: Connection,
+        offer_id: object,
+        write: OfferWrite,
+        admin: AdminUser,
+    ) -> None:
+        approved = write.provider_approval_status == "approved"
+        connection.execute(
+            text(
+                """
+                INSERT INTO provider_approvals (
+                    offer_id, status, contact_reference, scope_note,
+                    approved_at, approved_by, decision_evidence,
+                    legacy_deadline, revision, updated_at
+                ) VALUES (
+                    :offer_id, :status, :contact_reference, :scope_note,
+                    CASE WHEN :approved THEN now() ELSE NULL END,
+                    CASE WHEN :approved THEN CAST(:admin_id AS uuid) ELSE NULL END,
+                    :decision_evidence,
+                    CASE WHEN :status = 'legacy_pending'
+                         THEN now() + interval '90 days' ELSE NULL END,
+                    1, now()
+                )
+                ON CONFLICT (offer_id) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    contact_reference = EXCLUDED.contact_reference,
+                    scope_note = EXCLUDED.scope_note,
+                    approved_at = EXCLUDED.approved_at,
+                    approved_by = EXCLUDED.approved_by,
+                    decision_evidence = EXCLUDED.decision_evidence,
+                    legacy_deadline = CASE
+                        WHEN EXCLUDED.status = 'legacy_pending'
+                        THEN COALESCE(provider_approvals.legacy_deadline,
+                                      EXCLUDED.legacy_deadline)
+                        ELSE NULL
+                    END,
+                    revision = provider_approvals.revision + 1,
+                    updated_at = now()
+                """
+            ),
+            {
+                "offer_id": offer_id,
+                "status": write.provider_approval_status,
+                "contact_reference": write.provider_approval_reference,
+                "scope_note": write.provider_approval_scope,
+                "decision_evidence": write.provider_approval_evidence,
+                "approved": approved,
+                "admin_id": admin.id,
+            },
         )
 
     @staticmethod
@@ -582,6 +1000,7 @@ class PostgresAdminCatalogRepository:
     def create_offer(self, write: OfferWrite, admin: AdminUser) -> AdminOffer:
         with self._engine.begin() as connection:
             self._ensure_categories(connection, write.needs)
+            self._ensure_services(connection, write.services)
             offer_id = uuid4()
             organization_id = self._organization_id(connection, write.organization_name)
             slug = self._unique_slug(connection, write.slug or write.name)
@@ -614,6 +1033,8 @@ class PostgresAdminCatalogRepository:
                 },
             )
             self._write_categories(connection, offer_id, write.needs)
+            self._write_services(connection, offer_id, write.services, write)
+            self._write_provider_approval(connection, offer_id, write, admin)
             self._write_verification(connection, offer_id, write, admin)
             self._upsert_german_localization(connection, offer_id, write, admin)
             row = connection.execute(
@@ -645,6 +1066,7 @@ class PostgresAdminCatalogRepository:
             if before.revision != write.revision:
                 raise CatalogConflictError("offer_was_modified")
             self._ensure_categories(connection, write.needs)
+            self._ensure_services(connection, write.services)
             organization_id = self._organization_id(connection, write.organization_name)
             result = connection.execute(
                 text(
@@ -677,6 +1099,8 @@ class PostgresAdminCatalogRepository:
             if result is None:
                 raise CatalogConflictError("offer_was_modified")
             self._write_categories(connection, result, write.needs)
+            self._write_services(connection, result, write.services, write)
+            self._write_provider_approval(connection, result, write, admin)
             self._write_verification(connection, result, write, admin)
             self._upsert_german_localization(connection, result, write, admin)
             after = _offer_from_row(
@@ -732,6 +1156,27 @@ class PostgresAdminCatalogRepository:
                 )
                 if published_categories != set(before.needs):
                     raise CatalogValidationError("offer_requires_published_categories")
+                service_groups = {
+                    str(row["key"]): str(row["service_group"])
+                    for row in connection.execute(
+                        text(
+                            "SELECT key, service_group FROM service_definitions "
+                            "WHERE key = ANY(:keys) AND status = 'published'"
+                        ),
+                        {"keys": list(before.services)},
+                    ).mappings()
+                }
+                if not _services_cover_public_needs(
+                    before.needs, before.services, service_groups
+                ):
+                    raise CatalogValidationError("offer_requires_confirmed_services")
+                approval_valid = before.provider_approval_status == "approved" or (
+                    before.provider_approval_status == "legacy_pending"
+                    and before.provider_approval_deadline is not None
+                    and before.provider_approval_deadline > datetime.now(UTC)
+                )
+                if not approval_valid:
+                    raise CatalogValidationError("provider_approval_required")
             result = connection.execute(
                 text(
                     """
@@ -973,6 +1418,13 @@ class InMemoryAdminCatalogRepository:
                     key in offer.needs for offer in self.state.offers.values()
                 ),
             )
+        for key, service in self.state.services.items():
+            self.state.services[key] = replace(
+                service,
+                offer_count=sum(
+                    key in offer.services for offer in self.state.offers.values()
+                ),
+            )
 
     def _record_memory_change(
         self,
@@ -1077,6 +1529,85 @@ class InMemoryAdminCatalogRepository:
         )
         return category
 
+    def list_services(self) -> tuple[AdminServiceDefinition, ...]:
+        return tuple(
+            sorted(
+                self.state.services.values(),
+                key=lambda item: (item.service_group, item.sort_order),
+            )
+        )
+
+    def create_service(
+        self, write: ServiceDefinitionWrite, admin: AdminUser
+    ) -> AdminServiceDefinition:
+        if write.status != "draft":
+            raise CatalogValidationError("new_service_must_start_as_draft")
+        key = _slugify(write.localizations["de"]["label"])
+        if key in self.state.services:
+            raise CatalogConflictError("service_already_exists")
+        service = AdminServiceDefinition(
+            key=key,
+            service_group=write.service_group,
+            icon=write.icon,
+            status=write.status,
+            sort_order=write.sort_order,
+            revision=1,
+            localizations=write.localizations,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        self.state.services[key] = service
+        self._record_memory_change(
+            admin=admin,
+            entity_type="service_definition",
+            entity_id=key,
+            action="created",
+            before=None,
+            after=service,
+        )
+        return service
+
+    def update_service(
+        self, key: str, write: ServiceDefinitionWrite, admin: AdminUser
+    ) -> AdminServiceDefinition:
+        before = self.state.services.get(key)
+        if before is None:
+            raise CatalogNotFoundError("service_not_found")
+        if write.revision != before.revision:
+            raise CatalogConflictError("service_was_modified")
+        if write.status == "archived" and before.offer_count:
+            raise CatalogValidationError("service_still_has_offers")
+        if write.status == "published":
+            published_count = sum(
+                item.key != key
+                and item.key != "daytime_no_purchase"
+                and item.service_group == write.service_group
+                and item.status == "published"
+                for item in self.state.services.values()
+            )
+            if published_count >= 7:
+                raise CatalogValidationError("service_group_limit_reached")
+        service = replace(
+            before,
+            service_group=write.service_group,
+            icon=write.icon,
+            status=write.status,
+            sort_order=write.sort_order,
+            revision=before.revision + 1,
+            localizations=write.localizations,
+            updated_at=datetime.now(UTC),
+        )
+        self.state.services[key] = service
+        self._record_memory_change(
+            admin=admin,
+            entity_type="service_definition",
+            entity_id=key,
+            action="updated",
+            before=before,
+            after=service,
+        )
+        return service
+
     def list_offers(self) -> tuple[AdminOffer, ...]:
         return tuple(self.state.offers.values())
 
@@ -1089,6 +1620,11 @@ class InMemoryAdminCatalogRepository:
         }
         if unknown:
             raise CatalogValidationError("unknown_or_inactive_category")
+        unknown_services = set(write.services) - {
+            item.key for item in self.state.services.values() if item.status != "archived"
+        }
+        if unknown_services:
+            raise CatalogValidationError("unknown_or_inactive_service")
         now = datetime.now(UTC)
         offer_id = str(uuid4())
         offer = AdminOffer(
@@ -1129,6 +1665,11 @@ class InMemoryAdminCatalogRepository:
                     updated_at=now,
                 )
             },
+            services=write.services,
+            provider_approval_status=write.provider_approval_status,
+            provider_approval_reference=write.provider_approval_reference,
+            provider_approval_scope=write.provider_approval_scope,
+            provider_approval_evidence=write.provider_approval_evidence,
         )
         self.state.offers[offer_id] = offer
         self._refresh_offer_counts()
@@ -1155,6 +1696,11 @@ class InMemoryAdminCatalogRepository:
         }
         if unknown:
             raise CatalogValidationError("unknown_or_inactive_category")
+        unknown_services = set(write.services) - {
+            item.key for item in self.state.services.values() if item.status != "archived"
+        }
+        if unknown_services:
+            raise CatalogValidationError("unknown_or_inactive_service")
         updated = replace(
             before,
             name=write.name,
@@ -1176,6 +1722,11 @@ class InMemoryAdminCatalogRepository:
             management_mode=write.management_mode,
             revision=before.revision + 1,
             updated_at=datetime.now(UTC),
+            services=write.services,
+            provider_approval_status=write.provider_approval_status,
+            provider_approval_reference=write.provider_approval_reference,
+            provider_approval_scope=write.provider_approval_scope,
+            provider_approval_evidence=write.provider_approval_evidence,
             localizations={
                 **before.localizations,
                 "de": OfferLocalization(
@@ -1231,6 +1782,22 @@ class InMemoryAdminCatalogRepository:
             }
             if unpublished:
                 raise CatalogValidationError("offer_requires_published_categories")
+            service_groups = {
+                key: service.service_group
+                for key, service in self.state.services.items()
+                if service.status == "published"
+            }
+            if not _services_cover_public_needs(
+                before.needs, before.services, service_groups
+            ):
+                raise CatalogValidationError("offer_requires_confirmed_services")
+            approval_valid = before.provider_approval_status == "approved" or (
+                before.provider_approval_status == "legacy_pending"
+                and before.provider_approval_deadline is not None
+                and before.provider_approval_deadline > datetime.now(UTC)
+            )
+            if not approval_valid:
+                raise CatalogValidationError("provider_approval_required")
         updated = replace(
             before,
             lifecycle=lifecycle,

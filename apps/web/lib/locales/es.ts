@@ -34,6 +34,8 @@ export const es: Record<MessageKey, string> = {
   "need.counselling.detail": "Ayuda con adicciones, vivienda o dinero",
   "need.victimSupport.title": "Ayuda a víctimas",
   "need.victimSupport.detail": "Ayuda tras violencia, amenazas o un delito",
+  "need.daytime.title": "Espacio de estancia y aseo",
+  "need.daytime.detail": "Estar sin obligación de consumir y usar un aseo",
   "form.targetGroup.label": "Grupo destinatario",
   "form.targetGroup.hint":
     "Esta información ayuda a clasificar correctamente los servicios con condiciones de acceso específicas.",
@@ -138,7 +140,7 @@ export const es: Record<MessageKey, string> = {
   "privacy.scope.eyebrow": "Qué tratamos",
   "privacy.scope.title": "Solo los datos de tu búsqueda actual",
   "privacy.scope.text":
-    "Para una búsqueda, Vesta trata únicamente los datos que seleccionas en el formulario: el ámbito elegido, tu idioma y datos opcionales como tener un perro, no disponer de documento de identidad, el grupo destinatario, la edad o indicaciones de seguridad. Estos datos solo se usan para esa búsqueda.",
+    "Para una búsqueda, Vesta trata únicamente los datos que seleccionas en el formulario: el ámbito elegido, tu idioma y datos opcionales como tener un perro, no disponer de documento de identidad, el grupo destinatario, la edad o indicaciones de seguridad. Una edad concreta solo permanece en la memoria de trabajo durante la búsqueda, no se envía al modelo de IA ni aparece en la auditoría o su exportación.",
   "privacy.scope.noAccount":
     "Vesta funciona sin cuenta. Tu búsqueda no se guarda como expediente ni perfil.",
   "privacy.location.eyebrow": "Ubicación opcional",
@@ -261,6 +263,9 @@ export const es: Record<MessageKey, string> = {
   "dialogue.safety.openWebsite": "Abrir sitio web",
   "dialogue.question.eyebrow": "Una pregunta más",
   "dialogue.question.answerLegend": "Tu respuesta",
+  "dialogue.multiChoice.continue": "Continuar",
+  "dialogue.age.label": "Edad en años",
+  "dialogue.age.provided": "Edad indicada",
   "dialogue.question.yes": "Sí",
   "dialogue.question.no": "No",
   "dialogue.question.numberLabel": "Tu respuesta",

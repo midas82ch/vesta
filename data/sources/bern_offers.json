@@ -73,7 +73,8 @@
       "organization_name": "CONTACT Stiftung für Suchthilfe",
       "name": "CONTACT Anlaufstelle Bern",
       "summary": "Grundversorgung und niederschwellige Suchthilfe.",
-      "needs": ["basic_needs", "counselling"],
+      "needs": ["counselling"],
+      "services": ["addiction"],
       "languages": ["de"],
       "access": {
         "accepts_dogs": null,
@@ -107,6 +108,7 @@
       "name": "CONTACT La Gare",
       "summary": "Aufenthaltsraum, einfache Mahlzeiten, Beratung und Weitervermittlung für alkoholabhängige Menschen.",
       "needs": ["basic_needs", "counselling"],
+      "services": ["meal", "addiction", "addiction_alcohol"],
       "languages": ["de"],
       "access": {
         "accepts_dogs": null,
@@ -140,6 +142,7 @@
       "name": "Wohnberatung Bern",
       "summary": "Beratung bei Wohnungssuche, Wohnungserhalt und möglichen Mietzinssicherheiten.",
       "needs": ["counselling"],
+      "services": ["housing"],
       "languages": ["de"],
       "access": {
         "accepts_dogs": null,
@@ -172,7 +175,8 @@
       "organization_name": "HOPE POINT Bern",
       "name": "HOPE POINT Bern",
       "summary": "Nothilfe, Auskunft, Sozialberatung und Begleitung in schwierigen Lebenssituationen.",
-      "needs": ["basic_needs", "counselling"],
+      "needs": ["counselling"],
+      "services": ["general_social"],
       "languages": ["de"],
       "access": {
         "accepts_dogs": null,
@@ -207,6 +211,13 @@
       "name": "CONTACT Suchtbehandlung Bern",
       "summary": "Ambulante Suchtbehandlung sowie psychosoziale Beratung und Begleitung.",
       "needs": ["counselling"],
+      "services": [
+        "addiction",
+        "addiction_alcohol",
+        "addiction_opioids",
+        "addiction_other",
+        "addiction_multiple"
+      ],
       "languages": ["de"],
       "access": {
         "accepts_dogs": null,

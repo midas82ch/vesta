@@ -10,9 +10,21 @@ import {
 
 import { useI18n } from "@/components/i18n-provider";
 import { NeedSymbol } from "@/components/need-symbol";
-import { Button, ChoiceList, TextAreaField, type ChoiceOption } from "@/components/ui";
+import {
+  Button,
+  ChoiceList,
+  IconChoiceGrid,
+  NumberField,
+  TextAreaField,
+  type ChoiceOption,
+} from "@/components/ui";
 import { localeTags, type Locale, type MessageKey } from "@/lib/i18n";
-import { needs, type Need, type NeedIcon } from "@/lib/needs";
+import {
+  needs,
+  type Need,
+  type NeedIcon,
+  type ServiceIcon,
+} from "@/lib/needs";
 
 type Offer = {
   id: string;
@@ -44,8 +56,12 @@ type ExplainedCandidate = {
   explanation: null;
 };
 
-type QuestionOption = { value: string; label: string };
-type AnswerType = "yes_no_unknown" | "single_choice" | "number";
+type QuestionOption = { value: string; label: string; icon: ServiceIcon };
+type AnswerType =
+  | "yes_no_unknown"
+  | "single_choice"
+  | "multi_choice"
+  | "number";
 
 type RenderedQuestion = {
   question_key: string;
@@ -56,6 +72,10 @@ type RenderedQuestion = {
   unknown_label: string;
   decline_label: string;
   options: QuestionOption[];
+  presentation: "list" | "icon_grid";
+  selection_mode: "single" | "multiple";
+  minimum_selections: number;
+  preselected_values: string[];
   source: "ai" | "template";
 };
 
@@ -72,7 +92,7 @@ type DialogueTurn = {
 };
 
 type HandoffResource = {
-  kind: "emergency" | "victim_support";
+  kind: string;
   name: string;
   phone: string;
   url: string;
@@ -352,6 +372,8 @@ export function DialogueForm() {
   const [locationStatus, setLocationStatus] =
     useState<LocationStatus>("idle");
   const [catalogCategories, setCatalogCategories] = useState<PublicCategory[]>([]);
+  const [multiSelections, setMultiSelections] = useState<Record<string, string[]>>({});
+  const [numberAnswer, setNumberAnswer] = useState("");
 
   const busy = phase === "interpreting" || phase === "loading";
   const locationBusy = locationStatus === "locating";
@@ -532,6 +554,14 @@ export function DialogueForm() {
 
   function applyTurn(result: DialogueTurn) {
     setTurn(result);
+    if (result.question?.answer_type === "multi_choice") {
+      setMultiSelections((current) => ({
+        ...current,
+        [result.question!.question_key]:
+          current[result.question!.question_key] ?? result.question!.preselected_values,
+      }));
+    }
+    if (result.question?.answer_type === "number") setNumberAnswer("");
     const responseMessage = appendMessage(
       "vesta",
       result.question
@@ -553,7 +583,8 @@ export function DialogueForm() {
     visibleAnswer: string,
   ) {
     if (!turn?.question) return;
-    appendMessage(
+    const previousActiveQuestionId = activeQuestionId;
+    const answerMessage = appendMessage(
       "person",
       t("dialogue.conversation.answer", { answer: visibleAnswer }),
     );
@@ -568,7 +599,11 @@ export function DialogueForm() {
       });
       applyTurn(result);
     } catch {
-      setPhase("error");
+      setConversation((current) =>
+        current.filter((message) => message.id !== answerMessage.id),
+      );
+      setActiveQuestionId(previousActiveQuestionId);
+      setPhase("question");
     }
   }
 
@@ -578,6 +613,8 @@ export function DialogueForm() {
     setFreeText("");
     setConversation([]);
     setActiveQuestionId(null);
+    setMultiSelections({});
+    setNumberAnswer("");
   }
 
   function restart() {
@@ -674,6 +711,39 @@ export function DialogueForm() {
       (option) => option.value === value,
     );
     submitAnswer({ value }, selectedOption?.label ?? value);
+  }
+
+  function toggleMultiChoice(question: RenderedQuestion, value: string) {
+    setMultiSelections((current) => {
+      const selected = current[question.question_key] ?? [];
+      return {
+        ...current,
+        [question.question_key]:
+          question.selection_mode === "single"
+            ? selected.includes(value)
+              ? []
+              : [value]
+            : selected.includes(value)
+              ? selected.filter((item) => item !== value)
+              : [...selected, value],
+      };
+    });
+  }
+
+  function submitMultiChoice(question: RenderedQuestion) {
+    const selected = multiSelections[question.question_key] ?? [];
+    const labels = question.options
+      .filter((option) => selected.includes(option.value))
+      .map((option) => option.label)
+      .join(", ");
+    submitAnswer({ value: selected }, labels);
+  }
+
+  function submitNumberAnswer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = Number(numberAnswer);
+    if (!Number.isInteger(value) || value < 6 || value > 120) return;
+    submitAnswer({ value }, t("dialogue.age.provided"));
   }
 
   const needPickerOptions: ChoiceOption[] = [
@@ -877,6 +947,107 @@ export function DialogueForm() {
                 ]}
               />
               )}
+
+            {turn.question.answer_type === "multi_choice" &&
+              turn.question.presentation === "icon_grid" && (
+                <>
+                  <IconChoiceGrid
+                    onToggle={(value) =>
+                      toggleMultiChoice(turn.question!, value)
+                    }
+                    options={turn.question.options.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                      icon: option.icon,
+                    }))}
+                    selectedValues={
+                      multiSelections[turn.question.question_key] ?? []
+                    }
+                  />
+                  <div className="icon-choice-actions">
+                    <Button
+                      disabled={
+                        (multiSelections[turn.question.question_key]?.length ?? 0) <
+                        turn.question.minimum_selections
+                      }
+                      onClick={() => submitMultiChoice(turn.question!)}
+                    >
+                      {t("dialogue.multiChoice.continue")}
+                    </Button>
+                    <div className="icon-choice-skip-actions">
+                      <Button
+                        onClick={() =>
+                          submitAnswer(
+                            { unknown: true },
+                            turn.question!.unknown_label,
+                          )
+                        }
+                        variant="ghost"
+                      >
+                        {turn.question.unknown_label}
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          submitAnswer(
+                            { declined: true },
+                            turn.question!.decline_label,
+                          )
+                        }
+                        variant="ghost"
+                      >
+                        {turn.question.decline_label}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+            {turn.question.answer_type === "number" && (
+              <form
+                className="dialogue-number-answer"
+                onSubmit={submitNumberAnswer}
+              >
+                <NumberField
+                  id="dialogue-age"
+                  label={t("dialogue.age.label")}
+                  max={120}
+                  min={6}
+                  onChange={(event) => setNumberAnswer(event.target.value)}
+                  required
+                  value={numberAnswer}
+                />
+                <Button
+                  disabled={numberAnswer === ""}
+                  type="submit"
+                >
+                  {t("dialogue.multiChoice.continue")}
+                </Button>
+                <div className="icon-choice-skip-actions">
+                  <Button
+                    onClick={() =>
+                      submitAnswer(
+                        { unknown: true },
+                        turn.question!.unknown_label,
+                      )
+                    }
+                    variant="ghost"
+                  >
+                    {turn.question.unknown_label}
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      submitAnswer(
+                        { declined: true },
+                        turn.question!.decline_label,
+                      )
+                    }
+                    variant="ghost"
+                  >
+                    {turn.question.decline_label}
+                  </Button>
+                </div>
+              </form>
+            )}
 
           </fieldset>
         </section>

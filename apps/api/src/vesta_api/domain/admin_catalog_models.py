@@ -7,6 +7,11 @@ OfferOrigin = Literal["imported", "manual"]
 OfferManagementMode = Literal["source", "manual"]
 OfferLifecycle = Literal["draft", "published", "archived"]
 OfferLocalizationStatus = Literal["machine_draft", "reviewed"]
+ServiceStatus = Literal["draft", "published", "archived"]
+ServiceGroup = Literal["basic_needs", "counselling", "addiction"]
+ProviderApprovalStatus = Literal[
+    "legacy_pending", "pending", "approved", "declined"
+]
 
 SUPPORTED_CATEGORY_LOCALES = ("de", "fr", "en", "es", "pt", "ary")
 SUPPORTED_CATEGORY_ICONS = (
@@ -17,6 +22,30 @@ SUPPORTED_CATEGORY_ICONS = (
     "clothing",
     "shower",
     "support",
+    "daytime",
+    "other",
+)
+SUPPORTED_SERVICE_ICONS = (
+    "meal",
+    "groceries",
+    "shower",
+    "laundry",
+    "clothing",
+    "toilet",
+    "locker",
+    "chat",
+    "housing",
+    "wallet",
+    "health",
+    "mental-health",
+    "legal",
+    "support",
+    "alcohol",
+    "medication",
+    "substances",
+    "multiple",
+    "question",
+    "daytime",
     "other",
 )
 
@@ -38,6 +67,30 @@ class AdminCategory:
 class CategoryWrite:
     icon: str
     status: CategoryStatus
+    sort_order: int
+    localizations: dict[str, dict[str, str]]
+    revision: int | None = None
+
+
+@dataclass(frozen=True)
+class AdminServiceDefinition:
+    key: str
+    service_group: ServiceGroup
+    icon: str
+    status: ServiceStatus
+    sort_order: int
+    revision: int
+    localizations: dict[str, dict[str, str]]
+    offer_count: int = 0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+@dataclass(frozen=True)
+class ServiceDefinitionWrite:
+    service_group: ServiceGroup
+    icon: str
+    status: ServiceStatus
     sort_order: int
     localizations: dict[str, dict[str, str]]
     revision: int | None = None
@@ -70,6 +123,14 @@ class AdminOffer:
     is_demo: bool
     updated_at: datetime
     localizations: dict[str, "OfferLocalization"] = field(default_factory=dict)
+    services: tuple[str, ...] = ()
+    provider_approval_status: ProviderApprovalStatus = "approved"
+    provider_approval_reference: str | None = None
+    provider_approval_scope: str | None = None
+    provider_approval_evidence: str | None = None
+    provider_approval_deadline: datetime | None = None
+    source_draft: dict[str, object] | None = None
+    source_draft_created_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -113,6 +174,11 @@ class OfferWrite:
     slug: str | None = None
     management_mode: OfferManagementMode = "manual"
     revision: int | None = None
+    services: tuple[str, ...] = ()
+    provider_approval_status: ProviderApprovalStatus = "pending"
+    provider_approval_reference: str | None = None
+    provider_approval_scope: str | None = None
+    provider_approval_evidence: str | None = None
 
 
 @dataclass(frozen=True)
@@ -138,5 +204,6 @@ class AdminChange:
 @dataclass
 class AdminCatalogState:
     categories: dict[str, AdminCategory] = field(default_factory=dict)
+    services: dict[str, AdminServiceDefinition] = field(default_factory=dict)
     offers: dict[str, AdminOffer] = field(default_factory=dict)
     changes: list[AdminChange] = field(default_factory=list)

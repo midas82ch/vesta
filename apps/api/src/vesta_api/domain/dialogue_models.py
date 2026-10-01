@@ -32,6 +32,7 @@ class DialogueState:
     expires_at: datetime
     need: str | None = None
     service_topics: tuple[ServiceTopic, ...] = field(default_factory=tuple)
+    requested_services: tuple[str, ...] = field(default_factory=tuple)
     attributes: tuple[AttributeState, ...] = field(default_factory=tuple)
     safety_status: Literal["clear", "review", "handoff"] = "clear"
     declined_question_keys: tuple[str, ...] = field(default_factory=tuple)
@@ -52,6 +53,7 @@ class DialogueState:
             expires_at=self.expires_at,
             need=self.need,
             service_topics=self.service_topics,
+            requested_services=self.requested_services,
             attributes=(*remaining, attribute),
             safety_status=self.safety_status,
             declined_question_keys=self.declined_question_keys,
@@ -68,6 +70,7 @@ class DialogueState:
             expires_at=self.expires_at,
             need=self.need,
             service_topics=self.service_topics,
+            requested_services=self.requested_services,
             attributes=self.attributes,
             safety_status=self.safety_status,
             declined_question_keys=self.declined_question_keys,

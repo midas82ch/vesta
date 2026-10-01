@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 from vesta_api.domain.admin_catalog_models import (
     SUPPORTED_CATEGORY_ICONS,
     SUPPORTED_CATEGORY_LOCALES,
+    SUPPORTED_SERVICE_ICONS,
 )
 from vesta_api.domain.models import normalize_accepted_genders
 
@@ -122,6 +123,16 @@ class AdminOfferResponse(BaseModel):
     expires_at: datetime
     updated_at: datetime
     localizations: dict[str, "OfferLocalizationResponse"] = Field(default_factory=dict)
+    services: list[str] = Field(default_factory=list)
+    provider_approval_status: Literal[
+        "legacy_pending", "pending", "approved", "declined"
+    ]
+    provider_approval_reference: str | None
+    provider_approval_scope: str | None
+    provider_approval_evidence: str | None
+    provider_approval_deadline: datetime | None
+    source_draft: dict[str, Any] | None
+    source_draft_created_at: datetime | None
 
 
 class OfferLocalizationResponse(BaseModel):
@@ -238,6 +249,51 @@ class AdminCategoryListResponse(BaseModel):
     categories: list[AdminCategoryResponse]
 
 
+class ServiceLocalizationInput(BaseModel):
+    label: str = Field(min_length=1, max_length=120)
+    description: str = Field(default="", max_length=300)
+
+
+class AdminServiceWriteRequest(BaseModel):
+    service_group: Literal["basic_needs", "counselling", "addiction"]
+    icon: str
+    status: Literal["draft", "published", "archived"] = "draft"
+    sort_order: int = Field(ge=0, le=10_000)
+    localizations: dict[str, ServiceLocalizationInput]
+    revision: int | None = Field(default=None, ge=1)
+
+    @field_validator("icon")
+    @classmethod
+    def validate_icon(cls, value: str) -> str:
+        if value not in SUPPORTED_SERVICE_ICONS:
+            raise ValueError("unknown_service_icon")
+        return value
+
+    @model_validator(mode="after")
+    def validate_locales(self) -> "AdminServiceWriteRequest":
+        expected = set(SUPPORTED_CATEGORY_LOCALES)
+        if set(self.localizations) != expected:
+            raise ValueError("service_locales_invalid")
+        return self
+
+
+class AdminServiceResponse(BaseModel):
+    key: str
+    service_group: str
+    icon: str
+    status: str
+    sort_order: int
+    revision: int
+    localizations: dict[str, dict[str, str]]
+    offer_count: int
+    created_at: datetime | None
+    updated_at: datetime | None
+
+
+class AdminServiceListResponse(BaseModel):
+    services: list[AdminServiceResponse]
+
+
 class AdminAccessRulesInput(BaseModel):
     accepts_dogs: bool | None = None
     identity_document_required: bool | None = None
@@ -279,6 +335,13 @@ class AdminOfferWriteRequest(BaseModel):
     slug: str | None = Field(default=None, pattern=r"^[a-z0-9-]+$", max_length=200)
     management_mode: Literal["source", "manual"] = "manual"
     revision: int | None = Field(default=None, ge=1)
+    services: list[str] = Field(default_factory=list, max_length=50)
+    provider_approval_status: Literal[
+        "legacy_pending", "pending", "approved", "declined"
+    ] = "pending"
+    provider_approval_reference: str | None = Field(default=None, max_length=500)
+    provider_approval_scope: str | None = Field(default=None, max_length=2_000)
+    provider_approval_evidence: str | None = Field(default=None, max_length=2_000)
 
     @field_validator("needs")
     @classmethod
@@ -300,6 +363,12 @@ class AdminOfferWriteRequest(BaseModel):
         if self.expires_at.tzinfo is None:
             raise ValueError("expires_at_requires_timezone")
         self.languages = normalized_languages
+        if len(set(self.services)) != len(self.services):
+            raise ValueError("duplicate_services_are_not_allowed")
+        if any(not re.fullmatch(r"^[a-z0-9_-]{1,100}$", value) for value in self.services):
+            raise ValueError("invalid_service_key")
+        if self.provider_approval_status == "approved" and not self.provider_approval_scope:
+            raise ValueError("approved_provider_requires_scope")
         return self
 
 

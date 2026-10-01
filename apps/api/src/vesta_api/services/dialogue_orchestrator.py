@@ -83,6 +83,27 @@ def _build_match_query(
         for attribute in state.attributes
         if attribute.status in ("unknown", "declined")
     )
+    requested_services = tuple(
+        dict.fromkeys(
+            service
+            for key in (
+                "request.services.basic",
+                "request.services.counselling",
+                "request.services.addiction",
+            )
+            for service in (
+                values.get(key) if isinstance(values.get(key), list) else []
+            )
+            if isinstance(service, str)
+        )
+    )
+    primary_service_attribute = {
+        "basic_needs": "request.services.basic",
+        "counselling": "request.services.counselling",
+    }.get(state.need)
+    if not requested_services and primary_service_attribute in unknown_attributes:
+        requested_services = ("service_unspecified",)
+
     return MatchQuery(
         need=state.need,
         language=state.locale,
@@ -91,9 +112,11 @@ def _build_match_query(
         has_identity_document=values.get("person.has_identity_document"),
         gender=values.get("person.gender"),
         is_adult=values.get("person.is_adult"),
+        age=values.get("person.age"),
         user_location=user_location,
         unknown_attributes=unknown_attributes,
         service_topics=state.service_topics,
+        requested_services=requested_services,
     )
 
 
@@ -134,6 +157,7 @@ class DialogueOrchestrator:
             expires_at=created.expires_at,
             need=need,
             service_topics=service_topics,
+            requested_services=(),
         )
         self._session_store.save(state)
         return self._advance(state, now, user_location)
@@ -154,6 +178,7 @@ class DialogueOrchestrator:
             expires_at=created.expires_at,
             need="victim_support",
             service_topics=service_topics,
+            requested_services=(),
             safety_status="review",
         )
         question = next(
@@ -174,6 +199,7 @@ class DialogueOrchestrator:
             expires_at=state.expires_at,
             need=state.need,
             service_topics=state.service_topics,
+            requested_services=state.requested_services,
             attributes=state.attributes,
             safety_status="handoff",
             declined_question_keys=state.declined_question_keys,
@@ -254,6 +280,7 @@ class DialogueOrchestrator:
             expires_at=state.expires_at,
             need="victim_support",
             service_topics=state.service_topics,
+            requested_services=state.requested_services,
             attributes=state.attributes,
             safety_status="handoff",
             declined_question_keys=state.declined_question_keys,

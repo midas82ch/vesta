@@ -12,6 +12,7 @@ from vesta_api.domain.models import (
     GeoPoint,
     Offer,
     OfferText,
+    ProviderApprovalStatus,
     Source,
 )
 from vesta_api.repositories.admin_catalog import AdminCatalogRepository
@@ -104,6 +105,15 @@ class JsonOfferRepository:
                 if item.get("updated_at")
                 else None
             ),
+            services=tuple(str(value) for value in item.get("services", ())),
+            provider_approval_status=ProviderApprovalStatus(
+                str(item.get("provider_approval_status", "approved"))
+            ),
+            provider_approval_deadline=(
+                _parse_datetime(str(item["provider_approval_deadline"]))
+                if item.get("provider_approval_deadline")
+                else None
+            ),
         )
 
 
@@ -168,6 +178,11 @@ class AdminManagedOfferRepository:
                         if localization.status == "reviewed"
                     },
                     localization_required=True,
+                    services=item.services,
+                    provider_approval_status=ProviderApprovalStatus(
+                        item.provider_approval_status
+                    ),
+                    provider_approval_deadline=item.provider_approval_deadline,
                 )
             )
         return tuple(offers)
@@ -202,7 +217,10 @@ _LIST_OFFERS = text(
         verification.verified_by,
         verification.verified_at,
         verification.expires_at,
-        COALESCE(localizations.items, '{}'::jsonb) AS localizations
+        COALESCE(localizations.items, '{}'::jsonb) AS localizations,
+        COALESCE(services.items, ARRAY[]::text[]) AS services,
+        COALESCE(approval.status, 'pending') AS provider_approval_status,
+        approval.legacy_deadline AS provider_approval_deadline
     FROM offers AS offer
     JOIN organizations AS organization ON organization.id = offer.organization_id
     JOIN LATERAL (
@@ -237,6 +255,12 @@ _LIST_OFFERS = text(
         FROM offer_localizations
         WHERE offer_id = offer.id AND status = 'reviewed'
     ) AS localizations ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT array_agg(service_key ORDER BY service_key) AS items
+        FROM offer_services
+        WHERE offer_id = offer.id AND status = 'confirmed'
+    ) AS services ON TRUE
+    LEFT JOIN provider_approvals AS approval ON approval.offer_id = offer.id
     ORDER BY offer.name, offer.id
     """
 )
@@ -293,6 +317,11 @@ def _postgres_row_to_offer(row: Mapping[str, Any]) -> Offer:
             for locale, values in (row.get("localizations") or {}).items()
         },
         localization_required=True,
+        services=tuple(str(value) for value in row.get("services", ())),
+        provider_approval_status=ProviderApprovalStatus(
+            str(row.get("provider_approval_status", "approved"))
+        ),
+        provider_approval_deadline=row.get("provider_approval_deadline"),
     )
 
 

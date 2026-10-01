@@ -60,6 +60,14 @@ def create_match(
 ) -> MatchResponse:
     if payload.need not in {need.key for need in catalog.list_needs()}:
         raise HTTPException(status_code=422, detail="unknown_or_inactive_category")
+    known_services = {
+        option.value
+        for attribute in catalog.list_attributes()
+        if attribute.key.startswith("request.services.")
+        for option in attribute.options
+    }
+    if not set(payload.requested_services).issubset(known_services):
+        raise HTTPException(status_code=422, detail="unknown_requested_service")
     result = shortlist_match_result(
         service.match(
             MatchQuery(
@@ -69,6 +77,7 @@ def create_match(
                 has_identity_document=payload.has_identity_document,
                 gender=payload.gender,
                 is_adult=payload.is_adult,
+                age=payload.age,
                 user_location=(
                     payload.user_location.to_domain()
                     if payload.user_location is not None
@@ -77,6 +86,7 @@ def create_match(
                 at=datetime.now(UTC),
                 risk_flags=tuple(payload.risk_flags),
                 service_topics=tuple(payload.service_topics),
+                requested_services=tuple(payload.requested_services),
             )
         )
     )

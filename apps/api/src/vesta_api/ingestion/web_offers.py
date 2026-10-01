@@ -60,6 +60,7 @@ class CatalogOffer(BaseModel):
     name: str
     summary: str
     needs: list[str] = Field(min_length=1)
+    services: list[str] = Field(default_factory=list)
     languages: list[str] = Field(min_length=1)
     access: CatalogAccessRules
     availability: str
@@ -256,38 +257,14 @@ _UPSERT_OFFER = text(
             )::geography
         END,
         CAST(:availability AS offer_availability),
-        true,
+        false,
         false,
         'imported',
         'source',
         now()
     )
     ON CONFLICT (id) DO UPDATE SET
-        organization_id = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.organization_id ELSE offers.organization_id END,
-        slug = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.slug ELSE offers.slug END,
-        name = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.name ELSE offers.name END,
-        summary = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.summary ELSE offers.summary END,
-        languages = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.languages ELSE offers.languages END,
-        access_rules = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.access_rules ELSE offers.access_rules END,
-        contact = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.contact ELSE offers.contact END,
-        location = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.location ELSE offers.location END,
-        availability = CASE WHEN offers.management_mode = 'source'
-            THEN EXCLUDED.availability ELSE offers.availability END,
-        published = CASE WHEN offers.management_mode = 'source'
-            THEN true ELSE offers.published END,
-        is_demo = false,
-        revision = CASE WHEN offers.management_mode = 'source'
-            THEN offers.revision + 1 ELSE offers.revision END,
-        updated_at = CASE WHEN offers.management_mode = 'source'
-            THEN now() ELSE offers.updated_at END
+        slug = offers.slug
     RETURNING management_mode
     """
 )
@@ -300,6 +277,35 @@ _INSERT_CATEGORY = text(
     INSERT INTO offer_categories (offer_id, category)
     VALUES (:offer_id, :category)
     ON CONFLICT DO NOTHING
+    """
+)
+_INSERT_SERVICE = text(
+    """
+    INSERT INTO offer_services (
+        offer_id, service_key, status, evidence_url, evidence_note, verified_at
+    ) VALUES (
+        :offer_id, :service_key, 'confirmed', :evidence_url,
+        :evidence_note, :verified_at
+    )
+    ON CONFLICT (offer_id, service_key) DO NOTHING
+    """
+)
+_INSERT_PROVIDER_APPROVAL = text(
+    """
+    INSERT INTO provider_approvals (offer_id, status)
+    VALUES (:offer_id, 'pending')
+    ON CONFLICT (offer_id) DO NOTHING
+    """
+)
+_INSERT_SOURCE_REVISION = text(
+    """
+    INSERT INTO offer_source_revisions (
+        id, offer_id, source_url, content_sha256, extracted_data
+    ) VALUES (
+        :id, :offer_id, :source_url, :content_sha256,
+        CAST(:extracted_data AS jsonb)
+    )
+    ON CONFLICT (offer_id, content_sha256) DO NOTHING
     """
 )
 _UPSERT_VERIFICATION = text(
@@ -367,16 +373,9 @@ _UPSERT_GERMAN_LOCALIZATION = text(
         status, revision, reviewed_at, updated_at
     ) VALUES (
         :offer_id, 'de', :name, :summary, :contact_note,
-        'reviewed', 1, :reviewed_at, now()
+        'machine_draft', 1, NULL, now()
     )
-    ON CONFLICT (offer_id, locale) DO UPDATE SET
-        name = EXCLUDED.name,
-        summary = EXCLUDED.summary,
-        contact_note = EXCLUDED.contact_note,
-        status = 'reviewed',
-        revision = offer_localizations.revision + 1,
-        reviewed_at = EXCLUDED.reviewed_at,
-        updated_at = now()
+    ON CONFLICT (offer_id, locale) DO NOTHING
     """
 )
 
@@ -433,6 +432,13 @@ def _store_offer(
         f"{LEGACY_ID_NAMESPACE}/organizations/{offer.organization_key}",
     )
     with engine.begin() as connection:
+        existed = connection.execute(
+            _FIND_EXISTING_OFFER_ID,
+            {
+                "slug": offer.slug,
+                "legacy_slug": f"test-{offer.slug}",
+            },
+        ).scalar_one_or_none() is not None
         offer_id = _resolve_offer_id(connection, offer.slug)
         verification_id = uuid5(
             NAMESPACE_URL,
@@ -474,15 +480,44 @@ def _store_offer(
                 "availability": offer.availability,
             },
         ).scalar_one()
+        connection.execute(
+            _INSERT_SOURCE_REVISION,
+            {
+                "id": uuid4(),
+                "offer_id": offer_id,
+                "source_url": str(offer.source.url),
+                "content_sha256": page.content_sha256,
+                "extracted_data": offer.model_dump_json(),
+            },
+        )
         if management_mode == "source":
-            connection.execute(_DELETE_CATEGORIES, {"offer_id": offer_id})
-            connection.execute(
-                _INSERT_CATEGORY,
-                [
-                    {"offer_id": offer_id, "category": category}
-                    for category in offer.needs
-                ],
-            )
+            if not existed:
+                connection.execute(_DELETE_CATEGORIES, {"offer_id": offer_id})
+                connection.execute(
+                    _INSERT_CATEGORY,
+                    [
+                        {"offer_id": offer_id, "category": category}
+                        for category in offer.needs
+                    ],
+                )
+                if offer.services:
+                    connection.execute(
+                        _INSERT_SERVICE,
+                        [
+                            {
+                                "offer_id": offer_id,
+                                "service_key": service,
+                                "evidence_url": str(offer.source.url),
+                                "evidence_note": (
+                                    "Aus dem Quellenkatalog; vor Veröffentlichung "
+                                    "fachlich prüfen."
+                                ),
+                                "verified_at": checked_at,
+                            }
+                            for service in offer.services
+                        ],
+                    )
+                connection.execute(_INSERT_PROVIDER_APPROVAL, {"offer_id": offer_id})
             connection.execute(
                 _UPSERT_VERIFICATION,
                 {
@@ -505,7 +540,6 @@ def _store_offer(
                     "name": offer.name,
                     "summary": offer.summary,
                     "contact_note": offer.contact_note,
-                    "reviewed_at": checked_at,
                 },
             )
         connection.execute(

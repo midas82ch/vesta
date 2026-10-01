@@ -30,7 +30,11 @@ from vesta_api.domain.workflow_audit_models import (
 from vesta_api.repositories.dialogue_catalog import DialogueCatalogRepository
 from vesta_api.repositories.workflow_audit_log import WorkflowAuditLogRepository
 from vesta_api.services.dialogue_orchestrator import DialogueOrchestrator, DialogueTurnResult
-from vesta_api.services.safety import detect_safety_signal, safety_resources
+from vesta_api.services.safety import (
+    detect_safety_signal,
+    no_match_resources,
+    safety_resources,
+)
 from vesta_api.services.service_topics import detect_service_topics
 
 router = APIRouter(prefix="/v1/dialogue")
@@ -38,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 def _validated_answer_value(
     question: QuestionDefinition,
+    attribute: object,
     payload: AnswerRequest,
 ) -> object | None:
     if payload.declined and payload.unknown:
@@ -51,6 +56,28 @@ def _validated_answer_value(
         raise HTTPException(status_code=422, detail="boolean_answer_required")
     if question.answer_type == "single_choice" and not isinstance(payload.value, str):
         raise HTTPException(status_code=422, detail="choice_answer_required")
+    if question.answer_type == "multi_choice":
+        if (
+            not isinstance(payload.value, list)
+            or not all(isinstance(value, str) for value in payload.value)
+        ):
+            raise HTTPException(status_code=422, detail="multiple_choices_required")
+        if len(payload.value) < question.minimum_selections or len(payload.value) > 7:
+            raise HTTPException(status_code=422, detail="invalid_choice_count")
+        if len(set(payload.value)) != len(payload.value):
+            raise HTTPException(status_code=422, detail="duplicate_choices")
+        allowed = {
+            option.value for option in getattr(attribute, "options", ())
+        }
+        if any(value not in allowed for value in payload.value):
+            raise HTTPException(status_code=422, detail="unknown_choice")
+    if question.answer_type == "number":
+        if (
+            not isinstance(payload.value, int)
+            or isinstance(payload.value, bool)
+            or not 6 <= payload.value <= 120
+        ):
+            raise HTTPException(status_code=422, detail="valid_age_required")
 
     return payload.value
 
@@ -225,6 +252,25 @@ def _render_question(
     rendered = gateway.render_question(
         question=turn.question, attribute=attribute, locale=locale, session_id=session_id
     )
+    topic_service_map = {
+        "food": ("meal", "groceries"),
+        "hygiene": ("shower", "laundry"),
+        "medical": ("health",),
+        "addiction": ("addiction",),
+        "housing": ("housing",),
+        "finances": ("finances",),
+        "legal": ("legal",),
+        "mental_health": ("mental_health",),
+    }
+    available_values = {option.value for option in rendered.options}
+    preselected_values = list(
+        dict.fromkeys(
+            service
+            for topic in turn.state.service_topics
+            for service in topic_service_map.get(str(topic), ())
+            if service in available_values
+        )
+    )
     return RenderedQuestionResponse(
         question_key=turn.question.key,
         attribute_key=turn.question.attribute_key,
@@ -233,7 +279,14 @@ def _render_question(
         help_text=rendered.help_text,
         unknown_label=rendered.unknown_label,
         decline_label=rendered.decline_label,
-        options=[QuestionOptionResponse(value=o.value, label=o.label) for o in rendered.options],
+        options=[
+            QuestionOptionResponse(value=o.value, label=o.label, icon=o.icon)
+            for o in rendered.options
+        ],
+        presentation=turn.question.presentation,
+        selection_mode=turn.question.selection_mode,
+        minimum_selections=turn.question.minimum_selections,
+        preselected_values=preselected_values,
         source=rendered.source,
     )
 
@@ -281,6 +334,7 @@ def _record_system_logic(
                 "source": attribute.source,
             }
             for attribute in turn.state.attributes
+            if attribute.key != "person.age"
         ],
         "safety_status": turn.state.safety_status,
         "location_used": location_used,
@@ -425,14 +479,28 @@ def _turn_response(
         location_used=location_used,
     )
     handoff_reason = turn.match_result.handoff_reason if turn.match_result else None
-    resources = (
-        safety_resources(
+    if handoff_reason in ("immediate_danger", "victim_support_recommended"):
+        resources = safety_resources(
             locale,
             immediate_danger=handoff_reason == "immediate_danger",
         )
-        if handoff_reason in ("immediate_danger", "victim_support_recommended")
-        else ()
-    )
+    elif turn.match_result is not None and not turn.match_result.candidates:
+        values = turn.state.confirmed_values()
+        counselling_services = values.get("request.services.counselling")
+        resources = no_match_resources(
+            locale,
+            youth=(
+                turn.state.need == "sleep_tonight"
+                and isinstance(values.get("person.age"), int)
+                and int(values["person.age"]) < 18
+            ),
+            emotional_crisis=(
+                isinstance(counselling_services, list)
+                and "mental_health" in counselling_services
+            ),
+        )
+    else:
+        resources = ()
     response = DialogueTurnResponse(
         session_id=turn.state.session_id,
         ai_mode=gateway.mode,
@@ -524,7 +592,12 @@ def answer(
     workflow_log: Annotated[WorkflowAuditLogRepository, Depends(workflow_audit_log)],
 ) -> DialogueTurnResponse:
     question = _find_question(catalog, payload.question_key)
-    validated_value = _validated_answer_value(question, payload)
+    attribute_definition = catalog.get_attribute(question.attribute_key)
+    if attribute_definition is None:
+        raise HTTPException(status_code=404, detail="unknown_attribute_key")
+    validated_value = _validated_answer_value(
+        question, attribute_definition, payload
+    )
     now = datetime.now(UTC)
 
     try:
@@ -594,24 +667,28 @@ def answer(
             f"Eingabe: Antwort auf «{_question_text(question, turn.state.locale)}» "
             "ist unbekannt."
         )
+    elif question.attribute_key == "person.age":
+        answer_summary = "Eingabe: Das Alter wurde für diese Suche angegeben."
     else:
         answer_summary = (
             f"Eingabe: «{_question_text(question, turn.state.locale)}» = "
             f"{json.dumps(payload.value, ensure_ascii=False)}"
         )
+    answer_payload: dict[str, object] = {
+        "question_key": payload.question_key,
+        "attribute_key": question.attribute_key,
+        "unknown": payload.unknown,
+        "declined": payload.declined,
+    }
+    if question.attribute_key != "person.age":
+        answer_payload["value"] = payload.value
     _record_workflow_event(
         workflow_log,
         workflow_id=turn.state.session_id,
         stage="input",
         event_type="answer_submitted",
         summary=answer_summary,
-        payload={
-            "question_key": payload.question_key,
-            "attribute_key": question.attribute_key,
-            "value": payload.value,
-            "unknown": payload.unknown,
-            "declined": payload.declined,
-        },
+        payload=answer_payload,
     )
 
     return _turn_response(

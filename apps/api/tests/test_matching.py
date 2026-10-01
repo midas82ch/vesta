@@ -52,6 +52,7 @@ def offer(
     languages: tuple[str, ...] = ("de", "fr"),
     summary: str = "Nur für automatisierte Tests.",
     needs: tuple[str, ...] = (Need.SLEEP_TONIGHT,),
+    services: tuple[str, ...] = (),
 ) -> Offer:
     return Offer(
         id=offer_id,
@@ -81,6 +82,7 @@ def offer(
         is_demo=True,
         localizations=localizations or {},
         localization_required=localization_required,
+        services=services,
     )
 
 
@@ -198,9 +200,25 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertFalse(result.human_handoff_required)
         self.assertIsNone(result.handoff_reason)
 
-    def test_excludes_expired_information(self) -> None:
+    def test_keeps_recently_overdue_information_during_grace_period(self) -> None:
         service = MatchingService(
             InMemoryOfferRepository((offer(expires_at=NOW - timedelta(seconds=1)),))
+        )
+
+        result = service.match(
+            MatchQuery(need=Need.SLEEP_TONIGHT, language="de", at=NOW)
+        )
+
+        self.assertEqual(1, len(result.candidates))
+        self.assertIn(
+            "source_verification_overdue", result.candidates[0].uncertainties
+        )
+
+    def test_excludes_information_after_thirty_day_grace_period(self) -> None:
+        service = MatchingService(
+            InMemoryOfferRepository(
+                (offer(expires_at=NOW - timedelta(days=31)),)
+            )
         )
 
         result = service.match(
@@ -255,7 +273,7 @@ class MatchingServiceTest(unittest.TestCase):
                 need=Need.SLEEP_TONIGHT,
                 language="de",
                 gender="finta",
-                is_adult=False,
+                age=17,
                 at=NOW,
             )
         )
@@ -263,7 +281,8 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertEqual(1, len(result.candidates))
         self.assertEqual((), result.candidates[0].offer.access.accepted_genders)
         self.assertNotIn("target_group_matches", result.candidates[0].reasons)
-        self.assertIn("age_rule_requires_contact", result.candidates[0].uncertainties)
+        self.assertIn("age_rule_satisfied", result.candidates[0].reasons)
+        self.assertIn("age_rule_satisfied:14-23", result.candidates[0].reasons)
         self.assertFalse(
             any(item.reason == "target_group_not_accepted" for item in result.excluded_offers)
         )
@@ -529,6 +548,72 @@ class MatchingServiceTest(unittest.TestCase):
         self.assertIn(
             "service_topic_matches:addiction",
             result.candidates[0].reasons,
+        )
+
+    def test_confirmed_service_is_a_hard_filter(self) -> None:
+        la_gare = offer(
+            offer_id="la-gare",
+            name="La Gare",
+            needs=(Need.COUNSELLING,),
+            services=("addiction", "addiction_alcohol"),
+        )
+        opioid_service = offer(
+            offer_id="opioid-service",
+            name="Opioidberatung",
+            needs=(Need.COUNSELLING,),
+            services=("addiction", "addiction_opioids"),
+        )
+        service = MatchingService(
+            InMemoryOfferRepository((la_gare, opioid_service))
+        )
+
+        result = service.match(
+            MatchQuery(
+                need=Need.COUNSELLING,
+                language="de",
+                at=NOW,
+                requested_services=("addiction", "addiction_opioids"),
+            )
+        )
+
+        self.assertEqual(
+            ("opioid-service",), tuple(item.offer.id for item in result.candidates)
+        )
+        self.assertEqual(
+            "requested_service_not_confirmed", result.excluded_offers[0].reason
+        )
+
+    def test_exact_age_selects_pluto_only_inside_its_range(self) -> None:
+        pluto = offer(
+            offer_id="pluto",
+            minimum_age=14,
+            maximum_age=23,
+        )
+        service = MatchingService(InMemoryOfferRepository((pluto,)))
+
+        self.assertEqual(
+            1,
+            len(
+                service.match(
+                    MatchQuery(
+                        need=Need.SLEEP_TONIGHT,
+                        language="de",
+                        at=NOW,
+                        age=14,
+                    )
+                ).candidates
+            ),
+        )
+        self.assertEqual(
+            (),
+            service.match(
+                MatchQuery(
+                    need=Need.SLEEP_TONIGHT,
+                    language="de",
+                    at=NOW,
+                    age=24,
+                )
+            ).candidates,
         )
 
     def test_public_shortlist_keeps_three_best_and_audits_the_rest(self) -> None:

@@ -9,6 +9,7 @@ class Need(StrEnum):
     BASIC_NEEDS = "basic_needs"
     COUNSELLING = "counselling"
     VICTIM_SUPPORT = "victim_support"
+    DAYTIME_STAY = "daytime_stay"
 
 
 class Availability(StrEnum):
@@ -75,6 +76,13 @@ class Source:
     verified_by: str
 
 
+class ProviderApprovalStatus(StrEnum):
+    LEGACY_PENDING = "legacy_pending"
+    PENDING = "pending"
+    APPROVED = "approved"
+    DECLINED = "declined"
+
+
 @dataclass(frozen=True)
 class GeoPoint:
     latitude: float
@@ -111,6 +119,9 @@ class Offer:
     localization_required: bool = False
     content_language: str = "de"
     localization_fallback: bool = False
+    services: tuple[str, ...] = ()
+    provider_approval_status: ProviderApprovalStatus = ProviderApprovalStatus.APPROVED
+    provider_approval_deadline: datetime | None = None
 
     def __post_init__(self) -> None:
         if self.address is None and self.location is not None:
@@ -126,10 +137,12 @@ class MatchQuery:
     has_identity_document: bool | None = None
     gender: str | None = None
     is_adult: bool | None = None
+    age: int | None = None
     user_location: GeoPoint | None = None
     risk_flags: tuple[RiskFlag, ...] = ()
     unknown_attributes: tuple[str, ...] = ()
     service_topics: tuple[ServiceTopic, ...] = ()
+    requested_services: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

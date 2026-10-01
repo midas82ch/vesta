@@ -24,6 +24,7 @@ class InterpretationResult:
 class QuestionOption:
     value: str
     label: str
+    icon: str = "other"
 
 
 @dataclass(frozen=True)

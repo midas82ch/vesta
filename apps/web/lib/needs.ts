@@ -9,7 +9,26 @@ export type NeedIcon =
   | "clothing"
   | "shower"
   | "support"
+  | "daytime"
   | "other";
+
+export type ServiceIcon =
+  | NeedIcon
+  | "meal"
+  | "groceries"
+  | "laundry"
+  | "toilet"
+  | "locker"
+  | "chat"
+  | "housing"
+  | "wallet"
+  | "mental-health"
+  | "legal"
+  | "alcohol"
+  | "medication"
+  | "substances"
+  | "multiple"
+  | "question";
 
 export type NeedOption = {
   value: Need;
@@ -42,5 +61,11 @@ export const needs: NeedOption[] = [
     title: "need.victimSupport.title",
     detail: "need.victimSupport.detail",
     icon: "support",
+  },
+  {
+    value: "daytime_stay",
+    title: "need.daytime.title",
+    detail: "need.daytime.detail",
+    icon: "daytime",
   },
 ];

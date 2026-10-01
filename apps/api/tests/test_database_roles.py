@@ -105,6 +105,35 @@ class DatabaseRolePrivilegesTest(unittest.TestCase):
         self.assertNotIn("DELETE", worker.table_privileges["offers"])
         self.assertNotIn("offer_import_jobs", app.table_privileges)
 
+    def test_precise_catalog_tables_follow_least_privilege(self) -> None:
+        app = next(role for role in ROLES if role.username == "vesta_app")
+        ingest = next(role for role in ROLES if role.username == "vesta_ingest")
+        admin = next(role for role in ROLES if role.username == "vesta_admin")
+        worker = next(role for role in ROLES if role.username == "vesta_worker")
+
+        for table in (
+            "service_definitions",
+            "service_localizations",
+            "offer_services",
+            "provider_approvals",
+        ):
+            self.assertEqual(("SELECT",), app.table_privileges[table])
+
+        self.assertNotIn("offer_source_revisions", app.table_privileges)
+        self.assertEqual(
+            ("SELECT", "INSERT"), ingest.table_privileges["offer_source_revisions"]
+        )
+        self.assertEqual(
+            ("SELECT", "UPDATE"), admin.table_privileges["offer_source_revisions"]
+        )
+        self.assertEqual(
+            ("SELECT", "INSERT"), worker.table_privileges["offer_source_revisions"]
+        )
+
+        self.assertNotIn("UPDATE", ingest.table_privileges["service_definitions"])
+        self.assertNotIn("UPDATE", worker.table_privileges["service_definitions"])
+        self.assertNotIn("DELETE", admin.table_privileges["provider_approvals"])
+
 
 class DatabaseRoleUrlTest(unittest.TestCase):
     def test_replaces_admin_credentials_and_preserves_tls(self) -> None:

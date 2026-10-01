@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from urllib.parse import urlencode
 
-from pydantic import BaseModel, Field, StrictBool, field_validator
+from pydantic import BaseModel, Field, StrictBool, StrictInt, field_validator
 
 from vesta_api.domain.models import (
     Availability,
@@ -33,9 +33,20 @@ class MatchRequest(BaseModel):
     has_identity_document: bool | None = None
     gender: str | None = Field(default=None, max_length=40)
     is_adult: StrictBool | None = None
+    age: StrictInt | None = Field(default=None, ge=6, le=120)
     user_location: UserLocationInput | None = None
     risk_flags: list[RiskFlag] = Field(default_factory=list)
     service_topics: list[ServiceTopic] = Field(default_factory=list, max_length=9)
+    requested_services: list[str] = Field(default_factory=list, max_length=7)
+
+    @field_validator("requested_services")
+    @classmethod
+    def validate_requested_services(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("duplicate_requested_services")
+        if any(not value or len(value) > 100 for value in values):
+            raise ValueError("invalid_requested_service")
+        return values
 
 
 class OfferSourceResponse(BaseModel):

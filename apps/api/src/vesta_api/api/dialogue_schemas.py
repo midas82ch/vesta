@@ -51,6 +51,7 @@ class AnswerRequest(BaseModel):
 class QuestionOptionResponse(BaseModel):
     value: str
     label: str
+    icon: str = "other"
 
 
 class RenderedQuestionResponse(BaseModel):
@@ -62,6 +63,10 @@ class RenderedQuestionResponse(BaseModel):
     unknown_label: str
     decline_label: str
     options: list[QuestionOptionResponse]
+    presentation: Literal["list", "icon_grid"] = "list"
+    selection_mode: Literal["single", "multiple"] = "single"
+    minimum_selections: int = 1
+    preselected_values: list[str] = Field(default_factory=list)
     source: str
 
 

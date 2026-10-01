@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import timedelta
 from math import atan2, cos, radians, sin, sqrt
 
 from vesta_api.domain.models import (
@@ -9,6 +10,7 @@ from vesta_api.domain.models import (
     MatchQuery,
     MatchResult,
     Offer,
+    ProviderApprovalStatus,
 )
 from vesta_api.repositories.offers import OfferRepository
 from vesta_api.services.service_topics import detect_service_topics
@@ -18,6 +20,8 @@ PUBLIC_RESULT_LIMIT = 3
 EXPLICIT_ACCESS_MATCH_SCORE = 25
 AGE_ACCESS_MATCH_SCORE = 20
 SERVICE_TOPIC_MATCH_SCORE = 40
+SERVICE_MATCH_SCORE = 50
+VERIFICATION_GRACE = timedelta(days=30)
 
 
 def distance_in_meters(origin: GeoPoint, destination: GeoPoint) -> int:
@@ -91,10 +95,24 @@ class MatchingService:
     def _exclusion_reason(offer: Offer, query: MatchQuery) -> str | None:
         if not offer.published:
             return "offer_not_published"
-        if offer.source.expires_at <= query.at:
+        if offer.provider_approval_status is ProviderApprovalStatus.DECLINED:
+            return "provider_approval_declined"
+        if offer.provider_approval_status is ProviderApprovalStatus.PENDING:
+            return "provider_approval_missing"
+        if (
+            offer.provider_approval_status is ProviderApprovalStatus.LEGACY_PENDING
+            and offer.provider_approval_deadline is not None
+            and offer.provider_approval_deadline <= query.at
+        ):
+            return "provider_approval_deadline_expired"
+        if offer.source.expires_at + VERIFICATION_GRACE <= query.at:
             return "source_verification_expired"
         if query.need not in offer.needs:
             return "need_does_not_match"
+        requested_services = set(query.requested_services)
+        requested_services.discard("addiction_unsure")
+        if requested_services and not requested_services.issubset(set(offer.services)):
+            return "requested_service_not_confirmed"
         access = offer.access
         if query.dog is True and access.accepts_dogs is False:
             return "dog_not_accepted"
@@ -106,6 +124,11 @@ class MatchingService:
             return "adults_only"
         if access.maximum_age == 17 and query.is_adult is True:
             return "minors_only"
+        if query.age is not None:
+            if access.minimum_age is not None and query.age < access.minimum_age:
+                return "minimum_age_not_met"
+            if access.maximum_age is not None and query.age > access.maximum_age:
+                return "maximum_age_exceeded"
         return None
 
     @staticmethod
@@ -137,12 +160,31 @@ class MatchingService:
 
     @staticmethod
     def _evaluate(offer: Offer, query: MatchQuery) -> Candidate:
+        if offer.source.expires_at <= query.at:
+            offer = replace(offer, availability=Availability.CALL_TO_CONFIRM)
         access = offer.access
         target_group_unknown = not query.gender and bool(access.accepted_genders)
 
         score = 100
-        reasons = ["need_matches", "source_is_current"]
+        reasons = ["need_matches"]
         uncertainties: list[str] = []
+
+        if offer.source.expires_at <= query.at:
+            uncertainties.append("source_verification_overdue")
+        else:
+            reasons.append("source_is_current")
+
+        if query.requested_services:
+            matched_services = tuple(
+                service
+                for service in query.requested_services
+                if service != "addiction_unsure"
+            )
+            score += SERVICE_MATCH_SCORE * len(matched_services)
+            reasons.extend(
+                f"requested_service_matches:{service}"
+                for service in matched_services
+            )
 
         if query.language.lower() in offer.languages:
             score += 20
@@ -212,6 +254,8 @@ class MatchingService:
         has_age_rule = access.minimum_age is not None or access.maximum_age is not None
         if "person.is_adult" in query.unknown_attributes and has_age_rule:
             uncertainties.append("adult_status_must_be_confirmed")
+        if "person.age" in query.unknown_attributes and has_age_rule:
+            uncertainties.append("age_rule_requires_contact")
         if query.is_adult is not None and has_age_rule:
             exactly_resolved = access.minimum_age in (None, 18) and access.maximum_age in (
                 None,
@@ -225,6 +269,14 @@ class MatchingService:
             elif query.is_adult is False and access.maximum_age == 17:
                 score += AGE_ACCESS_MATCH_SCORE
                 reasons.append("minor_access_matches")
+        if query.age is not None and has_age_rule:
+            score += AGE_ACCESS_MATCH_SCORE
+            reasons.append("age_rule_satisfied")
+            reasons.append(
+                "age_rule_satisfied:"
+                f"{access.minimum_age if access.minimum_age is not None else 'any'}-"
+                f"{access.maximum_age if access.maximum_age is not None else 'any'}"
+            )
 
         distance_meters = (
             distance_in_meters(query.user_location, offer.location)
@@ -250,17 +302,36 @@ def shortlist_match_result(
 
     if limit < 1:
         raise ValueError("limit_must_be_positive")
-    if len(result.candidates) <= limit:
-        return result
-
-    selected = result.candidates[:limit]
-    lower_ranked = tuple(
-        ExcludedOffer(candidate.offer.id, candidate.offer.name, "lower_relevance_rank")
-        for candidate in result.candidates[limit:]
-    )
+    selected: list[Candidate] = []
+    rejected: list[ExcludedOffer] = []
+    organizations: set[str] = set()
+    for candidate in result.candidates:
+        organization = (
+            candidate.offer.organization_name or candidate.offer.id
+        ).casefold()
+        if organization in organizations:
+            rejected.append(
+                ExcludedOffer(
+                    candidate.offer.id,
+                    candidate.offer.name,
+                    "duplicate_organization_result",
+                )
+            )
+            continue
+        if len(selected) >= limit:
+            rejected.append(
+                ExcludedOffer(
+                    candidate.offer.id,
+                    candidate.offer.name,
+                    "lower_relevance_rank",
+                )
+            )
+            continue
+        organizations.add(organization)
+        selected.append(candidate)
     return MatchResult(
-        candidates=selected,
+        candidates=tuple(selected),
         human_handoff_required=result.human_handoff_required,
         handoff_reason=result.handoff_reason,
-        excluded_offers=result.excluded_offers + lower_ranked,
+        excluded_offers=(*result.excluded_offers, *rejected),
     )

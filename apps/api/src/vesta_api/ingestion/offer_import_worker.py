@@ -153,6 +153,36 @@ class OfferImportDraftStore:
                 ),
                 {"offer_id": offer_id, "needs": list(extracted.needs)},
             )
+            if extracted.services:
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO offer_services (
+                            offer_id, service_key, status, evidence_url,
+                            evidence_note, verified_at
+                        )
+                        SELECT :offer_id, key, 'draft', :source_url,
+                               'Maschinell extrahiert; fachliche Prüfung ausstehend',
+                               NULL
+                        FROM service_definitions
+                        WHERE key = ANY(:services) AND status <> 'archived'
+                        """
+                    ),
+                    {
+                        "offer_id": offer_id,
+                        "source_url": normalized_url,
+                        "services": list(extracted.services),
+                    },
+                )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO provider_approvals (offer_id, status)
+                    VALUES (:offer_id, 'pending')
+                    """
+                ),
+                {"offer_id": offer_id},
+            )
             connection.execute(
                 text(
                     """

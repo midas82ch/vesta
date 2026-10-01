@@ -687,6 +687,11 @@ class AdminRoutesTest(unittest.TestCase):
             "source_url": "https://example.org/rechtsberatung",
             "expires_at": expires_at,
             "management_mode": "manual",
+            "services": ["legal"],
+            "provider_approval_status": "approved",
+            "provider_approval_reference": "Bestätigung vom 01.09.2027",
+            "provider_approval_scope": "Rechtsberatung in Bern",
+            "provider_approval_evidence": "Telefonische Zustimmung dokumentiert.",
         }
         with TestClient(app) as client:
             client.post(
@@ -719,6 +724,92 @@ class AdminRoutesTest(unittest.TestCase):
                 for candidate in public_matches.json()["candidates"]
             ],
         )
+
+    def test_publication_requires_a_confirmed_service_for_precise_categories(self) -> None:
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            created = client.post(
+                "/v1/admin/offers",
+                json={
+                    "name": "Unpräzise Beratung",
+                    "organization_name": "Verein Hilfe",
+                    "summary": "Noch nicht fachlich eingeordnet.",
+                    "needs": ["counselling"],
+                    "languages": ["de"],
+                    "access_rules": {},
+                    "availability": "call_to_confirm",
+                    "contact_note": "Bitte vorher anrufen.",
+                    "source_label": "Manuelle Prüfung",
+                    "source_url": "https://example.org/unpraezise",
+                    "expires_at": "2027-09-01T23:59:59Z",
+                    "provider_approval_status": "approved",
+                    "provider_approval_reference": "Kontakt vom 01.09.2027",
+                    "provider_approval_scope": "Beratung",
+                    "provider_approval_evidence": "Telefonisch dokumentiert.",
+                },
+            )
+            self.assertEqual(201, created.status_code, created.text)
+            offer = created.json()
+            response = client.post(
+                f"/v1/admin/offers/{offer['id']}/lifecycle",
+                json={"lifecycle": "published", "revision": offer["revision"]},
+            )
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual(
+            "offer_requires_confirmed_services", response.json()["detail"]
+        )
+
+    def test_admin_can_manage_a_localized_service_definition(self) -> None:
+        localizations = {
+            locale: {
+                "label": f"Testleistung {locale}",
+                "description": f"Abgrenzung {locale}",
+            }
+            for locale in ("de", "fr", "en", "es", "pt", "ary")
+        }
+        with TestClient(app) as client:
+            client.post(
+                "/v1/admin/login",
+                json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+            )
+            created = client.post(
+                "/v1/admin/services",
+                json={
+                    "service_group": "addiction",
+                    "icon": "meal",
+                    "status": "draft",
+                    "sort_order": 99,
+                    "localizations": localizations,
+                },
+            )
+            self.assertEqual(201, created.status_code, created.text)
+            service = created.json()
+            self.assertEqual("draft", service["status"])
+
+            published = client.put(
+                f"/v1/admin/services/{service['key']}",
+                json={
+                    **service,
+                    "status": "published",
+                    "revision": service["revision"],
+                },
+            )
+            self.assertEqual(200, published.status_code, published.text)
+
+            archived = client.put(
+                f"/v1/admin/services/{service['key']}",
+                json={
+                    **published.json(),
+                    "status": "archived",
+                    "revision": published.json()["revision"],
+                },
+            )
+
+        self.assertEqual(200, archived.status_code, archived.text)
 
     def test_offer_rejects_unknown_or_inactive_category(self) -> None:
         with TestClient(app) as client:

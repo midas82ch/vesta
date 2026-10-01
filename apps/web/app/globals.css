@@ -1303,6 +1303,127 @@ legend {
   display: block;
 }
 
+/* Mobile-first service refinement: large toggle buttons instead of a
+   checkbox list. The visible label is part of every control; color is never
+   the only selected-state signal. */
+.icon-choice-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.icon-choice-item {
+  align-items: center;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 1rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  gap: 0.55rem;
+  justify-items: center;
+  line-height: 1.25;
+  min-height: 116px;
+  min-width: 0;
+  padding: 0.7rem 0.45rem;
+  position: relative;
+  text-align: center;
+}
+
+.icon-choice-item:hover:not(:disabled) {
+  border-color: var(--green);
+}
+
+.icon-choice-item:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+
+.icon-choice-item--selected {
+  background: var(--green-light);
+  border-color: var(--green);
+}
+
+.icon-choice-symbol {
+  align-items: center;
+  color: var(--green);
+  display: flex;
+  justify-content: center;
+}
+
+.icon-choice-symbol .need-symbol {
+  height: 38px;
+  width: 38px;
+}
+
+.icon-choice-check {
+  align-items: center;
+  background: var(--green);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  color: var(--paper);
+  display: flex;
+  height: 28px;
+  inset-block-start: 0.4rem;
+  inset-inline-end: 0.4rem;
+  justify-content: center;
+  position: absolute;
+  width: 28px;
+}
+
+.icon-choice-check .need-symbol {
+  height: 17px;
+  width: 17px;
+}
+
+.icon-choice-actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-block-start: 1rem;
+}
+
+.admin-text-button {
+  border: 0;
+  padding: 0;
+  color: var(--green);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-text-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.icon-choice-skip-actions {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dialogue-number-answer {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 42rem) {
+  .icon-choice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .icon-choice-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .choice-copy strong {
   font-size: 0.98rem;
   margin-block-end: 0.2rem;
