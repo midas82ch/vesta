@@ -1,16 +1,19 @@
+import json
 import sys
 import unittest
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from vesta_api.domain.admin_models import AdminUser  # noqa: E402
 from vesta_api.ingestion.offer_import_ai import (  # noqa: E402
+    _EXTRACTION_SCHEMA,
     ExtractedOffer,
     LocalizedOfferDraft,
+    OpenAiOfferImportGateway,
 )
 from vesta_api.ingestion.offer_import_worker import OfferImportProcessor  # noqa: E402
 from vesta_api.ingestion.safe_url import (  # noqa: E402
@@ -189,6 +192,40 @@ EXTRACTED = ExtractedOffer(
 
 
 class ExtractedOfferTest(unittest.TestCase):
+    def test_openai_extraction_schema_uses_only_supported_array_keywords(self) -> None:
+        self.assertNotIn("uniqueItems", json.dumps(_EXTRACTION_SCHEMA))
+
+    def test_openai_extraction_deduplicates_services_after_validation(self) -> None:
+        gateway = object.__new__(OpenAiOfferImportGateway)
+        gateway._call = Mock(  # type: ignore[method-assign]
+            return_value={
+                "source_language": "de",
+                "organization_name": "Hilfswerk",
+                "name": "Grundversorgung",
+                "summary": "Mahlzeit und Toilette.",
+                "languages": ["de"],
+                "needs": ["basic_needs"],
+                "availability": "call_to_confirm",
+                "contact_note": "Kontakt laut Quelle.",
+                "address": None,
+                "accepts_dogs": None,
+                "identity_document_required": None,
+                "accepted_genders": [],
+                "minimum_age": None,
+                "maximum_age": None,
+                "services": ["meal", "toilet", "meal"],
+                "evidence": [{"field": "services", "excerpt": "Mahlzeit und WC"}],
+            }
+        )
+
+        extracted = gateway.extract(
+            source_url="https://example.org/offer",
+            page_text="Mahlzeit und WC",
+            job_id="job-id",
+        )
+
+        self.assertEqual(("meal", "toilet"), extracted.services)
+
     def test_normalizes_all_gender_marker_to_no_restriction(self) -> None:
         extracted = replace(
             EXTRACTED,

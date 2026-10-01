@@ -125,7 +125,6 @@ _EXTRACTION_SCHEMA = {
         "services": {
             "type": "array",
             "items": {"type": "string", "enum": list(SUPPORTED_SERVICES)},
-            "uniqueItems": True,
         },
         "evidence": {
             "type": "array",
@@ -286,7 +285,7 @@ class OpenAiOfferImportGateway:
         )
         minimum_age = payload["minimum_age"]
         maximum_age = payload["maximum_age"]
-        services = tuple(str(value) for value in payload["services"])
+        services = tuple(dict.fromkeys(str(value) for value in payload["services"]))
         if any(value not in SUPPORTED_SERVICES for value in services):
             raise ValueError("invalid_service")
         return ExtractedOffer(
